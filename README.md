@@ -1,2 +1,3 @@
 # Loop
-The social network that will change this world.
+
+Basic stack. Est 24 days in dev.
