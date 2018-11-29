@@ -270,15 +270,15 @@ class App extends Component {
 					title="Register a new account"
 					submittext="Register"
 					_onSubmit={ () => null }>
+					<ScreenImage
+						_id="rn-presentation-register-image"
+						onUpload={ file => this.setDataValue("register", "avatar", file) }
+					/>
 					<ScreenInput
 						title="Name"
 						_placeholder="Oles Odynets"
 						_type="text"
 						_onChange={ value => this.setDataValue("register", "name", value) }
-					/>
-					<ScreenImage
-						_id="rn-presentation-register-image"
-						onUpload={ file => this.setDataValue("register", "avatar", file) }
 					/>
 				</Screen>
 			</div>

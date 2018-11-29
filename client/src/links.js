@@ -1,7 +1,7 @@
 const links = {
 	"PRESENTATION_PAGE": {
-		'absolute': '/presentation',
-		'route': '/presentation'
+		'absolute': '/login',
+		'route': '/login'
 	}
 }
 
