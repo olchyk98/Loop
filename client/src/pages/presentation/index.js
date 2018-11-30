@@ -405,7 +405,7 @@ class App extends Component {
 						>
 						<img className="rn-presentation-view-stage-icon" src={ icons.shield } alt="shield" />
 						<span className="rn-presentation-view-stage-title">Fast and Safe</span>
-						<span className="rn-presentation-virew-stage-desc">Secure and high protected storage what you can use to save your data.</span>
+						<span className="rn-presentation-virew-stage-desc">Secure and high protected storage that you can use for saving your data.</span>
 					</Stage>
 					<Stage
 						isOld={ this.isOldStage("CLEAN_STAGE") }

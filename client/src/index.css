@@ -36,7 +36,8 @@ html, body {
 }
 
 .rn:not(.nonav) {
-	height:calc(100vh - var(--navheight));
+	height:calc(100vh - var(--navheight) - 1px);
+	width:calc(100vw - var(--navwidth));
 }
 
 .global_error {
@@ -65,4 +66,9 @@ html, body {
 	transition:all var(--trans), opacity 0s;
 	opacity:1;
 	bottom:0;
+}
+
+.targetscreen {
+	width:100vw;
+	display:flex;
 }

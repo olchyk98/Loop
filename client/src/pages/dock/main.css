@@ -1,0 +1,74 @@
+/* WARNING: dock's bg 's' changing in navigation/main.css file */
+
+.gl-dock {
+	--paddingt:20px;
+
+	padding-top:var(--paddingt);
+	height:calc(100vh - var(--navheight) - var(--paddingt) - 1px);
+	width:var(--navwidth);
+	background:white;
+	border-right:1px solid var(--defaultborder);
+}
+
+.gl-dock-title {
+	text-transform:uppercase;
+	color:rgba(0, 0, 0, .3);
+	font-weight:600;
+	font-family:"Quicksand";
+	font-size:.8em;
+	margin-left:var(--nav_docklpadd);
+	margin-top:15px;
+}
+
+.gl-dock-title-navigation {
+	display:flex;
+	flex-direction:column;
+	align-items:stretch;
+	margin-top:5px;
+}
+
+.gl-dock-title-navigation-btn,
+.gl-dock-title-navigation-btn:before {
+	transition:all .2s ease-in-out;
+}
+
+.gl-dock-title-navigation-btn {
+	--height:40px;
+
+	text-align:left;
+	height:var(--height, 40px);
+	line-height:var(--height, 40px);
+	background:blue;
+	padding-left:var(--nav_docklpadd);
+	background:transparent;
+	font-size:.9em;
+	font-family:"Lato";
+	-webkit-font-smoothing:antialiased;
+	font-weight:500;
+	cursor:pointer;
+	position:relative;
+	color:rgba(0, 0, 0, .9);
+}
+
+.gl-dock-title-navigation-btn:not(.active):hover {
+	background:rgba(0, 0, 0, .01);
+}
+
+.gl-dock-title-navigation-btn:before {
+	content:'';
+	position:absolute;
+	left:0;
+	top:0;
+	height:100%;
+	width:3px;
+	background:#0E65D9;
+	opacity:0;
+}
+
+.gl-dock-title-navigation-btn.active {
+	background:#F6F9FE;
+}
+
+.gl-dock-title-navigation-btn.active:before {
+	opacity:1;
+}

@@ -1,0 +1,110 @@
+:root {
+	--nav_logow:150px;
+	--nav_accountw:150px;
+	--nav_docklpadd:22.5px;
+}
+
+.gl-nav,
+.gl-dock {
+	background:white;
+}
+
+.gl-nav {
+	--padding:10px;
+
+	height:calc(var(--navheight) - var(--padding) * 2);
+	padding-top:var(--padding);
+	padding-bottom:var(--padding);
+	border-bottom:1px solid var(--defaultborder);
+	width:100%;
+	display:flex;
+	position:relative;
+	align-items:stretch;
+}
+
+.gl-nav > * {
+	position:relative;
+}
+
+.gl-nav-logo {
+	width:var(--nav_logow);
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+
+.gl-nav-logo:after {
+	right:0;
+}
+
+.gl-nav-search {
+	--padding:12.5px;
+	--bw:45px;
+
+	width:calc(100vw - var(--nav_logow) - var(--nav_accountw) - var(--padding) * 2);
+	padding-left:var(--padding);
+	padding-right:var(--padding);
+	display:flex;
+	align-items:stretch;
+}
+
+.gl-nav-search-icon {
+	color:rgba(0, 0, 0, .3);
+	width:var(--bw);
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+
+.gl-nav-search-input {
+	font-size:.95em;
+	width:calc(100% - var(--bw));
+}
+
+.gl-nav-account {
+	width:var(--nav_accountw);
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+
+.gl-nav-account:before {
+	left:0;
+}
+
+.gl-nav-account-img {
+	--size:35px;
+	height:var(--size);
+	width:var(--size);
+	border-radius:50%;
+	border:1px solid rgba(0, 0, 0, .1);
+	transition:.2s;
+}
+
+.gl-nav-account-img > img {
+	height:100%;
+	width:100%;
+	object-fit:cover;
+	object-position:center;
+	border-radius:50%;
+}
+
+.gl-nav-logo:after,
+.gl-nav-account:before {
+	content:'';
+	position:absolute;
+	top:50%;
+	transform:translateY(-50%);
+	height:100%;
+	width:1px;
+	background:var(--defaultborder);
+}
+
+.gl-nav-account-logout {
+	margin-left:15px;
+	font-size:1.1em;
+	color:rgba(0, 0, 0, .35);
+	position:relative;
+	bottom:-1.5px;
+	cursor:pointer;
+}
