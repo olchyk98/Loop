@@ -1,8 +1,17 @@
 import React, { Component, Fragment } from 'react';
 import './main.css';
 
+import { gql } from 'apollo-boost';
+import { connect } from 'react-redux';
+
+import client from '../../apollo';
+import { cookieControl } from '../../swissKnife';
+import links from '../../links';
+
 import registerbg from './images/registerbg.jpg';
 import loginbg from './images/loginbg.jpg';
+import placeholderavatar from './images/placeholderavatar.jpg';
+
 const icons = {
 	phone: require('./images/phone.svg'),
 	cube: require('./images/cube.svg'),
@@ -29,17 +38,48 @@ class Stage extends Component {
 }
 
 class ScreenInput extends Component {
+	constructor(props) {
+		super(props);
+
+		this.tyvalidint = null;
+	}
+
+	handleChange = value => {
+		clearTimeout(this.tyvalidint);
+
+		this.tyvalidint = setTimeout(() => {
+			this.props.onExternalValidate(value, Boolean(value.replace(/ /g, "").length));
+		}, 500);
+	}
+
 	render() {
 		return(
 			<div className="rn-presentation-stage-input">
 				<span className="rn-presentation-stage-input-title">{ this.props.title }</span>
-				<input
-					type={ this.props._type }
-					required
-					onChange={ ({ target: { value } }) => this.props._onChange(value) }
-					placeholder={ this.props._placeholder }
-					className="rn-presentation-stage-input-field definp"
-				/>
+				<div className="rn-presentation-stage-input-fieldcontrol">
+					<input
+						type={ this.props._type }
+						required
+						onChange={ ({ target: { value } }) => { this.props._onChange(value); if(this.props.validatable) this.handleChange(value); } }
+						placeholder={ this.props._placeholder }
+						className="rn-presentation-stage-input-field definp"
+					/>
+					{
+						(this.props.validatable) ? (
+							<span
+								key={ (this.props.isValid) ? 'A':'B' }
+								className={ `rn-presentation-stage-input-status${ (this.props.isValid) ? " valid" : (this.props.isValid === false) ? " invalid" : "" }` }>
+								 {
+								 	(this.props.isValid) ? (
+								 		<i className="fas fa-check" />
+								 	) : (
+								 		<i className="fas fa-times" />
+								 	)
+								 }
+							</span>
+						) : null
+					}
+				</div>
 			</div>
 		);
 	}
@@ -57,7 +97,13 @@ class ScreenImage extends Component {
 					accept="image/*"
 				/>
 				<div className="rn-presentation-stage-image">
-					<img className="rn-presentation-stage-image-mat" src={ registerbg } alt="preview" />
+					<img
+						className="rn-presentation-stage-image-mat"
+						src={ this.props.preview }
+						alt="preview"
+						onLoad={ this.props._onLoad }
+						onError={ this.props._onError }
+					/>
 					<label htmlFor={ this.props._id } type="button" className="rn-presentation-stage-image-upload definp">
 						<i className="fas fa-camera" />
 					</label>
@@ -68,14 +114,28 @@ class ScreenImage extends Component {
 }
 
 class Screen extends Component {
+	getSubmitStatus = () => {
+		let a = {
+			true: "accepted",
+			false: "denied",
+			null: "loading"
+		}[this.props.submitStatus];
+
+		return a || "denied";
+	}
+
 	render() {
 		return(
-			<form onSubmit={ this.props._onSubmit } className={ `rn-presentation-stage rn-presentation-${ this.props.adiclass }${ (!this.props.visible) ? "" : " active" }` }>
+			<form onSubmit={ e => { e.preventDefault(); this.props._onSubmit(); } } className={ `rn-presentation-stage rn-presentation-${ this.props.adiclass }${ (!this.props.visible) ? "" : " active" }` }>
 				<img className="rn-presentation-stage-background" src={ this.props.background } alt="background" />
 				<div className="rn-presentation-stage-form">
 					<h2 className="rn-presentation-stage-form-title">{ this.props.title }</h2>
 					{ this.props.children }
-					<button type="submit" className="rn-presentation-stage-form-submit definp">{ this.props.submittext }</button>
+					<button type="submit" className={ `rn-presentation-stage-form-submit definp ${ this.getSubmitStatus() }` }>
+						<span style={{ width: "100%" }} className="accepted">{ this.props.submitText }</span>
+						<div className="denied"><i className="fas fa-times" /></div>
+						<div className="rn-presentation-stage-form-submit-loading loading" />
+					</button>
 				</div>
 			</form>
 		);
@@ -106,7 +166,7 @@ class App extends Component {
 			stageIndex: 0,
 			touchInit: null,
 			stageChanging: false,
-			currDisplay: "REGISTER_FORM",
+			currDisplay: "",
 			data: {
 				login: {
 					login: "",
@@ -114,9 +174,15 @@ class App extends Component {
 				},
 				register: {
 					name: "",
-					avatar: null
+					login: "",
+					password: "",
+					avatar: null,
+					previewAvatar: "",
+					avatarUploaded: null,
+					loginValid: null
 				}
-			}
+			},
+			isSubmiting: false
 		}
 	}
 
@@ -155,6 +221,21 @@ class App extends Component {
 	}
 
 	setDataValue = (screen, field, value) => {
+		if(screen === "register" && field === "avatar") {
+			URL.revokeObjectURL(this.state.data.register.previewAvatar);
+			return this.setState(({ data }) => ({
+				data: {
+					...data,
+					register: {
+						...data.register,
+						avatar: value,
+						previewAvatar: URL.createObjectURL(value),
+						avatarUploaded: null
+					}
+				}
+			}));
+		}
+
 		this.setState(({ data }) => ({
 			data: {
 				...data,
@@ -166,10 +247,129 @@ class App extends Component {
 		}));
 	}
 
+	loginUser = () => {
+		if(this.state.isSubmiting) return;
+
+		this.setState(() => ({ isSubmiting: true }));
+		let { login, password } = this.state.data.login;
+
+		client.mutate({
+			mutation: gql`
+				mutation($login: String!, $password: String!) {
+					loginUser(login: $login, password: $password) {
+						id,
+						lastAuthToken
+					}
+				}
+			`,
+			variables: {
+				login, password
+			}
+		}).then(({ data: { loginUser: data } }) => {
+			this.setState(() => ({ isSubmiting: false }));
+			if(!data) return this.props.castError("Invalid login or password. Please, try again.");
+
+			cookieControl.set("authdata", {
+				id: data.id,
+				authToken: data.lastAuthToken
+			});
+			window.location.href = links["HOME_PAGE"].absolute;			
+		}).catch(() => this.props.castError("An error occured when we've tried to log in to your account. Please, try again."));
+	}
+
+	registerUser = () => {
+		if(this.state.isSubmiting || !this.state.data.register.loginValid) return;
+
+		this.setState(() => ({ isSubmiting: true }));
+		let { name, login, password, avatar } = this.state.data.register;
+
+		client.mutate({
+			mutation: gql`
+				mutation($login: String!, $password: String!, $name: String!, $avatar: Upload!) {
+					registerUser(login: $login, password: $password, name: $name, avatar: $avatar) {
+						id,
+						lastAuthToken	
+					}
+				}
+			`,
+			variables: {
+				name, login, password,
+				avatar: avatar || ""
+			}
+		}).then(({ data: { registerUser: data } }) => {
+			this.setState(() => ({ isSubmiting: false }));
+			if(!data) return this.props.castError("We couldn't register your account. Please, try again.");
+
+			cookieControl.set("authdata", {
+				id: data.id,
+				authToken: data.lastAuthToken
+			});
+			window.location.href = links["HOME_PAGE"].absolute;
+		}).catch(() => this.props.castError("We couldn't register your account. Please, try again."));
+	}
+
+	_external_validateLogin = (login, prediction) => {
+		if(!prediction) return (
+			this.setState(({ data }) => ({
+				isSubmiting: false,
+				data: {
+					...data,
+					register: {
+						...data.register,
+						loginValid: null
+					}
+				}
+			}))
+		);
+
+		this.setState(() => ({ isSubmiting: true }));
+
+		client.query({
+			query: gql`
+				query($login: String!) {
+					loginExists(login: $login)
+				}
+			`,
+			variables: { login }
+		}).then(({ data: { loginExists: allowed } }) => {
+			this.setState(({ data }) => ({
+				isSubmiting: false,
+				data: {
+					...data,
+					register: {
+						...data.register,
+						loginValid: allowed
+					}
+				}
+			}));
+		}).catch(() => this.props.castError("We couldn't connect to our database. Please, restart the page."));
+	}
+
+	getSubmitStatus = screen => {
+		if(screen === 'register') {
+			let a = this.state,
+				b = this.state.data.register;
+
+			if(a.isSubmiting === true) return null;
+			if(
+				a.isSubmiting === false &&
+				this.state.data.register.avatarUploaded &&
+				b.loginValid !== false &&
+				(!b.login.length || b.login.length !== b.login.replace(/ /g, "").length)
+			) {
+				return true;
+			} else {
+				return this.state.data.register.avatarUploaded;
+			}
+		} else if(screen === 'login') {
+			return ((this.state.isSubmiting) ? null : true);
+		}
+	}
+
 	render() {
 		return(
 			<div
-				className="rn rn-presentation"
+				className="rn rn-presentation nonav"
 				onTouchStart={ ({ nativeEvent: { touches } }) => this.setState({ touchInit: { x: touches[0].pageX, y: touches[0].pageX } }) }
 				onTouchMove={ ({ nativeEvent: { touches }}) => this.handleTouchCarousel(touches[0].pageX, touches[0].pageX) }
 				onTouchEnd={ () => this.setState({ touchInit: null }) }
@@ -205,7 +405,7 @@ class App extends Component {
 						>
 						<img className="rn-presentation-view-stage-icon" src={ icons.shield } alt="shield" />
 						<span className="rn-presentation-view-stage-title">Fast and Safe</span>
-						<span className="rn-presentation-virew-stage-desc">Secure and high protected storage what you can use to submit your data.</span>
+						<span className="rn-presentation-virew-stage-desc">Secure and high protected storage what you can use to save your data.</span>
 					</Stage>
 					<Stage
 						isOld={ this.isOldStage("CLEAN_STAGE") }
@@ -248,18 +448,21 @@ class App extends Component {
 					adiclass="login"
 					visible={ this.state.currDisplay === "LOGIN_FORM" }
 					title="Login in to your account"
-					submittext="Log in"
-					_onSubmit={ () => null }>
+					submitText="Log in"
+					submitStatus={ this.getSubmitStatus('login') }
+					_onSubmit={ this.loginUser }>
 					<ScreenInput
 						title="Login"
 						_placeholder="set190283"
 						_type="text"
+						validatable={ false }
 						_onChange={ value => this.setDataValue("login", "login", value) }
 					/>
 					<ScreenInput
 						title="Password"
 						_placeholder="*******"
 						_type="password"
+						validatable={ false }
 						_onChange={ value => this.setDataValue("login", "password", value) }
 					/>
 				</Screen>
@@ -268,17 +471,38 @@ class App extends Component {
 					adiclass="register"
 					visible={ this.state.currDisplay === "REGISTER_FORM" }
 					title="Register a new account"
-					submittext="Register"
-					_onSubmit={ () => null }>
+					submitText="Register"
+					submitStatus={ this.getSubmitStatus('register') }
+					_onSubmit={ this.registerUser }>
 					<ScreenImage
 						_id="rn-presentation-register-image"
+						preview={ this.state.data.register.previewAvatar || placeholderavatar }
 						onUpload={ file => this.setDataValue("register", "avatar", file) }
+						_onLoad={ () => this.setDataValue("register", "avatarUploaded", true) }
+						_onError={ () => this.setDataValue("register", "avatarUploaded", false) } // even when def img
+					/>
+					<ScreenInput
+						title="Login"
+						_placeholder="set190283"
+						_type="text"
+						_onChange={ value => this.setDataValue("register", "login", value) }
+						onExternalValidate={ this._external_validateLogin }
+						validatable={ true }
+						isValid={ this.state.data.register.loginValid }
+					/>
+					<ScreenInput
+						title="Password"
+						_placeholder="*******"
+						_type="password"
+						_onChange={ value => this.setDataValue("register", "password", value) }
+						validatable={ false }
 					/>
 					<ScreenInput
 						title="Name"
 						_placeholder="Oles Odynets"
 						_type="text"
 						_onChange={ value => this.setDataValue("register", "name", value) }
+						validatable={ false }
 					/>
 				</Screen>
 			</div>
@@ -286,4 +510,9 @@ class App extends Component {
 	}
 }
 
-export default App;
+export default connect(
+	() => ({}),
+	{
+		castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } })
+	}
+)(App);

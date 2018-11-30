@@ -5,6 +5,7 @@ const {
 	GraphQLList,
 	GraphQLID,
 	GraphQLString,
+	GraphQLBoolean,
 	GraphQLInt
 } = require('graphql');
 const {
@@ -63,6 +64,13 @@ const RootQuery = new GraphQLObjectType({
 		users: {
 			type: new GraphQLList(UserType),
 			resolve: () => User.find({})
+		},
+		loginExists: {
+			type: GraphQLBoolean,
+			args: {
+				login: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			resolve: async (_, { login }) => !Boolean(await User.findOne({ login }))
 		}
 	}
 });
@@ -80,7 +88,7 @@ const RootMutation = new GraphQLObjectType({
 			},
 			async resolve(_, { login, password, name, avatar }) {
 				{
-					let a = User.find({ login });
+					let a = await User.findOne({ login });
 					if(a) return null;
 				}
 
@@ -89,15 +97,14 @@ const RootMutation = new GraphQLObjectType({
 				// receive image
 				if(avatar) {					
 					let { filename, stream } = await avatar;
-					var avatarPath = `/${ settings.files.avatars }/${ generateNoise(128) }.${ getExtension(filename) }`;
-					console.log(avatarPath);
+					var avatarPath = `/${ settings.files.avatars }/${ generateNoise(128) }.${ getExtension(filename) }`
 
 					stream.pipe(fileSystem.createWriteStream('.' + settings));
 				}
 
 				let user = await (new User({
 					login, password, name,
-					avatar: avatarPath || "",
+					avatar: avatarPath || settings.files.default,
 					description: "",
 					waitingFriends: [],
 					friends: [],

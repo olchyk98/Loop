@@ -14,6 +14,7 @@ mongoose.connect('mongodb://oles:0password@ds239029.mlab.com:39029/graphql-loop'
 mongoose.connection.once('open', () => console.log("Server was successfully connected to the database."))
 
 app.use(cors());
+app.use('/files', express.static('./files'));
 
 const apolloServer = new ApolloServer({
 	schema
