@@ -12,7 +12,7 @@
 	transition:all var(--presentation_slidetransition);
 }
 
-.rn-presentation * {
+.rn-presentation *:not(input, button) {
 	user-select:none;
 }
 
