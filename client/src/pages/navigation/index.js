@@ -16,7 +16,7 @@ class App extends Component {
 		return(
 			<div className="gl-nav">
 				<div className="gl-nav-logo">
-					<i className="fas fa-adjust" />
+					<span>MyLoop</span>
 				</div>
 				<div className="gl-nav-search">
 					<div className="gl-nav-search-icon">

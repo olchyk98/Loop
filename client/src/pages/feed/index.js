@@ -18,10 +18,10 @@ class NewGridPhoto extends Component {
 			<Fragment>
 				{
 					(!this.state.isLoaded) ? (
-						<div className="rn-feed-new-main-photos-photoplaceholder" />
+						<div className={ `rn-feed-new-main-photos-photoplaceholder${ (!this.props.inSphere) ? "" : " sphere" }` } />
 					) : null
 				}
-				<div className={ `rn-feed-new-main-photos-photo${ (this.state.isLoaded) ? "" : " off" }${ (!this.state.isError) ? "" : " error" }` } onClick={ this.props.onDelete }>
+				<div className={ `rn-feed-new-main-photos-photo${ (!this.props.inSphere) ? "" : " sphere" }${ (this.state.isLoaded) ? "" : " off" }${ (!this.state.isError) ? "" : " error" }` } onClick={ this.props.onDelete }>
 					<div className="rn-feed-new-main-photos-photo-delete">
 						<i className="fas fa-times" />
 					</div>
@@ -49,6 +49,7 @@ class NewAddonsBtn extends Component {
 					<input
 						type="file"
 						className="hidden"
+						accept="image/*"
 						onChange={ ({ target: { files } }) => this.props.onUpload(files[0]) }
 						id={ this.props._id }
 					/>
@@ -150,7 +151,6 @@ class New extends Component {
 			photos: a,
 			previewPhotos: b
 		}));
-
 	}
 
 	render() {
@@ -220,8 +220,6 @@ class FeedItemCollage extends Component {
 	constructor(props) {
 		super(props)
 
-		this.images = ["https://www.tripsavvy.com/thmb/Hmy5XouUohrAdoHHKT2bQe4z5EI=/960x0/filters:no_upscale():max_bytes(150000):strip_icc()/sunset-over-riddarholmen-chruch-in-old-town-stockholm-city--sweden-855564060-5ad546a404d1cf0037fbf9b3.jpg", "https://www.thelocal.se/userdata/images/article/1ed5b7db4dc056882b34f3d5645c25b1b5a77fc83976fdb3bb0c58141cc9c6be.jpg", "https://images.movehub.com/wp-content/uploads/2017/09/14170105/Sweden-things-to-know.jpeg", "https://www.enterprise.se/content/dam/ecom/locations/sweden/town-in-sweden-961x540.jpg"]
-
 		this.state = {
 			collageCursor: 0,
 			touchCursorX: null
@@ -233,7 +231,7 @@ class FeedItemCollage extends Component {
 		if(!xpos) return;
 
 		let b = 20,
-			c = this.images.length - 1,
+			c = this.props.images.length - 1,
 			d = d => this.setState(({ collageCursor: d1 }) => ({
 				collageCursor: d1 + d < 0 ? 0 : d1 + d > c ? c : d1 + d,
 				touchCursorX: null
@@ -264,7 +262,7 @@ class FeedItemCollage extends Component {
 						) : null
 					}
 					{
-						this.images.map((session, index) => (
+						this.props.images.map((session, index) => (
 							<FeedItemCollageImage
 								key={ index }
 								image={ session }
@@ -275,7 +273,7 @@ class FeedItemCollage extends Component {
 						))
 					}
 					{
-						(this.state.collageCursor !== this.images.length - 1) ? (
+						(this.state.collageCursor !== this.props.images.length - 1) ? (
 							<div
 								className="rn-feed-mat-item-collage-controls right"
 								onClick={ () => this.setState(({ collageCursor: a }) => ({ collageCursor: a + 1 })) }>
@@ -286,7 +284,7 @@ class FeedItemCollage extends Component {
 				</div>
 				<div className="rn-feed-mat-item-collage_control-progress">
 					{
-						this.images.map((_, index) => (
+						this.props.images.map((_, index) => (
 							<div
 								key={ index }
 								className="rn-feed-mat-item-collage_control-progress-dot"
@@ -300,7 +298,189 @@ class FeedItemCollage extends Component {
 	}
 }
 
+class FeedItemFeedbackButton extends Component {
+	render() {
+		return(
+			<button className="rn-feed-mat-item-feedback-btn definp">
+				<div className="rn-feed-mat-item-feedback-btn-icon">
+					{ this.props.icon }
+				</div>
+				<div className="rn-feed-mat-item-feedback-btn-counter">
+					<span>{ this.props.counter }</span>
+				</div>
+			</button>
+		);
+	}
+}
+
+class FeedItemComment extends Component {
+	render() {
+		return(
+			<div className="rn-feed-mat-item-comments-comment">
+				<div className="rn-feed-mat-item-comments-comment-avatar">
+					<img src={ image } alt="creator" title="Creator's avatar" />
+				</div>
+				<div className="rn-feed-mat-item-comments-comment-content">
+					<span className="rn-feed-mat-item-comments-comment-content-mat">
+						Hello, World!
+						Hello, World!
+						Hello, World!
+						Hello, World!
+						Hello, World!
+
+						Hello, World!
+						Hello, World!
+						Hello, World!
+						Hello, World!
+						Hello, World!
+						Hello, World!
+
+						Hello, World!
+					</span>
+					<div className="rn-feed-mat-item-comments-comment-content-controls">
+						<button className="rn-feed-mat-item-comments-comment-content-controls-like definp">
+							Like (42)
+						</button>
+						<span className="rn-feed-mat-item-comments-comment-content-controls-space">·</span>
+						<span className="rn-feed-mat-item-comments-comment-content-controls-time">3h</span>
+					</div>
+				</div>
+			</div>
+		);
+	}
+}
+
+class FeedItemCommentinput extends Component {
+	constructor(props) {
+		super(props);
+
+		this.state = {
+			text: "",
+			images: [],
+			imagesPreview: []
+		}
+
+		this.lastPhotoErrorUrl = "";
+	}
+
+	componentWillUnmount = () => {
+		this.state.imagesPreview.forEach(io => {
+			URL.revokeObjectURL(io);
+		});
+	}
+
+	setCommentValue = (field, value) => {
+		if(field === 'image') {
+			if(!value) return;
+
+			return this.setState(({ images, imagesPreview }) => ({
+				images: [
+					{
+						file: value,
+						id: images.length
+					},
+					...images
+				],
+				imagesPreview: [
+					{
+						url: URL.createObjectURL(value),
+						id: images.length
+					},
+					...imagesPreview
+				]
+			}));
+		}
+
+		this.setState(({ comment }) => ({
+			comment: {
+				...comment,
+				[field]: value
+			}
+		}));
+	}
+
+	deleteImage = id => {
+		let a = Array.from(this.state.images),
+			b = Array.from(this.state.imagesPreview);
+
+		a.splice(a.findIndex(io => io.id === id), 1);
+
+		let c = b.findIndex(io => io.id === id);
+		URL.revokeObjectURL(b[c].url);
+		b.splice(c, 1);
+
+		this.setState(() => ({
+			images: a,
+			imagesPreview: b
+		}));
+	}
+
+	recordImageError = (id, url) => {
+		if(this.lastPhotoErrorUrl === url) return;
+		this.lastPhotoErrorUrl = url;
+
+		let a = Array.from(this.state.images);
+		a.splice(a.findIndex(io => io.id === id), 1);
+		{
+			let b = this.state.imagesPreview;
+			URL.revokeObjectURL(b[b.findIndex(io => io.id === id)].url);
+		}
+		this.setState(() => ({ images: a }));
+	}
+
+	render() {
+		return(
+			<form className="rn-feed-mat-item-commentinput" onSubmit={ e => e.preventDefault() }>
+				<div className="rn-feed-mat-item-commentinput-avatar">
+					{
+						(!this.state.imagesPreview.length) ? null : (
+							<div className="rn-feed-mat-item-commentinput-avatar-photospreview">
+								{
+									this.state.imagesPreview.slice(0, 4).map(({ id, url }, index) => (
+										<NewGridPhoto
+											key={ index }
+											image={ url }
+											id={ id }
+											inSphere={ true }
+											onDelete={ () => this.deleteImage(id, url) }
+											_onError={ () => this.recordImageError(id) }
+										/>
+									))
+								}
+							</div>
+						)
+					}
+					<img src={ image } alt="you" title="Your avatar" />
+				</div>
+				<input
+					className="rn-feed-mat-item-commentinput-input definp"
+					placeholder="Write a comment..."
+					title="Leave your comment"
+					onChange={ ({ target: { value } }) => this.setCommentValue('text', value) }
+				/>
+				<div className="rn-feed-mat-item-commentinput-controls">
+					<input
+						type="file"
+						id="rn-feed-mat-item-commentinput-controls-file"
+						className="hidden"
+						onChange={ ({ target: { files } }) => this.setCommentValue('image', files[0]) }
+					/>
+					<label htmlFor="rn-feed-mat-item-commentinput-controls-file" className="rn-feed-mat-item-commentinput-controls-btn definp">
+						<i className="fas fa-camera-retro" />
+					</label>
+				</div>
+			</form>
+		);
+	}
+}
+
 class FeedItem extends Component {
+	constructor(props) {
+		super(props);
+
+		this.images = ["https://www.tripsavvy.com/thmb/Hmy5XouUohrAdoHHKT2bQe4z5EI=/960x0/filters:no_upscale():max_bytes(150000):strip_icc()/sunset-over-riddarholmen-chruch-in-old-town-stockholm-city--sweden-855564060-5ad546a404d1cf0037fbf9b3.jpg", "https://www.thelocal.se/userdata/images/article/1ed5b7db4dc056882b34f3d5645c25b1b5a77fc83976fdb3bb0c58141cc9c6be.jpg", "https://images.movehub.com/wp-content/uploads/2017/09/14170105/Sweden-things-to-know.jpeg", "https://www.enterprise.se/content/dam/ecom/locations/sweden/town-in-sweden-961x540.jpg"];
+	}
+
 	render() {
 		return(
 			<div className="rn-feed-mat-item rn-feed-item">
@@ -325,7 +505,41 @@ class FeedItem extends Component {
 					Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum, nibh in vulputate bibendum, augue.
 					Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum, nibh in vulputate bibendum, augue.
 				</p>
-				<FeedItemCollage />
+				<FeedItemCollage
+					images={ this.images }
+				/>
+				<div className="rn-feed-mat-item-feedback">
+					{
+						[
+							{
+								icon: <i className="far fa-heart" />,
+								counter: 2
+							},
+							{
+								icon: <i className="far fa-comment" />,
+								counter: 6
+							}
+						].map(({ icon, counter }, index) => (
+							<FeedItemFeedbackButton
+								key={ index }
+								icon={ icon }
+								counter={ counter }
+							/>
+						))
+					}
+				</div>
+				<div className="rn-feed-mat-item-comments">
+					<FeedItemComment />
+					<FeedItemComment />
+					<FeedItemComment />
+					<FeedItemComment />
+					<FeedItemComment />
+					<FeedItemComment />
+					<button className="rn-feed-mat-item-comments-loadmore definp">
+						Load more
+					</button>
+				</div>
+				<FeedItemCommentinput />
 			</div>
 		);
 	}
