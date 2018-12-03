@@ -1,11 +1,12 @@
 import React, { Component, Fragment } from 'react';
 import './main.css';
 
+import { connect } from 'react-redux';
+
 import { cookieControl } from '../../swissKnife';
 import links from '../../links';
 
 import Loadericon from '../__forall__/loader.icon/';
-
 const image = 'https://lolstatic-a.akamaihd.net/frontpage/apps/prod/LolGameInfo-Harbinger/en_US/8588e206d560a23f4d6dd0faab1663e13e84e21d/assets/assets/images/gi-landing-top.jpg';
 
 class NotificationsDockItem extends Component {
@@ -80,7 +81,8 @@ class App extends Component {
 
 		this.state = {
 			visibleNotifications: false,
-			visibleSearch: false
+			visibleSearch: false,
+			validatedSearch: false
 		}
 
 		this.searchInt = null
@@ -92,16 +94,23 @@ class App extends Component {
 	}
 
 	search = value => {
-		 clearTimeout(this.searchInt);
-		 let a = !value.replace(/ /g, "").length;
-		 this.setState(() => ({
-		 	visibleSearch: !a
-		 }));
-		 if(a) return;
+		if(value === false) {
+			return this.setState(({ validatedSearch: a }) => ({
+				visibleSearch: a
+			}));
+		}
 
-		 this.searchInt = setTimeout(() => {
-		 	console.log("REQUEST SENDED!");
-		 }, 400);
+		let a = !value.replace(/ /g, "").length;
+		clearTimeout(this.searchInt);
+		this.setState(() => ({
+			visibleSearch: !a,
+			validatedSearch: !a
+		}));
+		if(a) return;
+
+		this.searchInt = setTimeout(() => {
+			console.log("REQUEST SENDED!");
+		}, 400);
 	}
 
 	render() {
@@ -114,6 +123,9 @@ class App extends Component {
 				<div className="gl-nav">
 					<div className="gl-nav-logo">
 						<span>MyLoop</span>
+						<div onClick={ this.props.toggleSmallDock }>
+							<i className="fas fa-bars" />
+						</div>
 					</div>
 					<div className="gl-nav-search">
 						<div className="gl-nav-search-icon">
@@ -124,6 +136,7 @@ class App extends Component {
 							placeholder="Search..."
 							title="Here you can find something"
 							onChange={ ({ target: { value } }) => this.search(value) }
+							onClick={ () => this.search(false) }
 						/>
 						<div className={ `gl-nav-search-dock${ (!this.state.visibleSearch) ? "" : " visible" }` }>
 							{/* <Loadericon /> */}
@@ -147,7 +160,7 @@ class App extends Component {
 						</div>
 					</div>
 					<div className="gl-nav-account">
-						<button onClick={ () => this.setState({ visibleNotifications: true }) } className="gl-nav-account-spc definp">
+						<button onClick={ () => this.setState(({ visibleNotifications: a }) => ({ visibleNotifications: !a })) } className="gl-nav-account-spc definp">
 							<i className="far fa-bell" />
 							<div className={ `gl-nav-account-notifications-dock${ (!this.state.visibleNotifications) ? "" : " visible" }` }>
 								<NotificationsDockItem />
@@ -182,4 +195,9 @@ class App extends Component {
 	}
 }
 
-export default App;
+export default connect(
+	() => ({}),
+	{
+		toggleSmallDock: () => ({ type: 'TOGGLE_SMALL_DOCK', payload: '' })
+	}
+)(App);
