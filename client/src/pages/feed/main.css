@@ -12,7 +12,7 @@
 	max-width:500px;
 	padding-left:var(--feed_feeditempaddlr);
 	padding-right:var(--feed_feeditempaddlr);
-	width:calc(100% - var(--feed_feeditempaddlr) * 2)!important;
+	width:calc(100% - var(--feed_feeditempaddlr) * 2);
 	background:white;
 	border:1px solid var(--defaultborder);
 	display:flex;

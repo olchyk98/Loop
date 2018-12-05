@@ -67,7 +67,7 @@ class App extends Component {
 		super(props);
 
 		this.state = {
-			stage: "GALLERY_STAGE", // TIMELINE_STAGE, FRIENDS_STAGE, GALLERY_STAGE
+			stage: "TIMELINE_STAGE", // TIMELINE_STAGE, FRIENDS_STAGE, GALLERY_STAGE
 			friendsStage: "MAIN_STAGE"
 		}
 	}
@@ -83,7 +83,7 @@ class App extends Component {
 							src={ image }
 							alt="Cover"
 						/>
-						<input type="file" id="rn-account-thumb-cover-edit" />
+						<input type="file" className="hidden" id="rn-account-thumb-cover-edit" />
 						<label htmlFor="rn-account-thumb-cover-edit" className="rn-account-thumb-cover-edit definp">
 							<i className="fas fa-camera-retro" />
 							<span>Edit Cover</span>
@@ -130,7 +130,7 @@ class App extends Component {
 							Friends
 						</div>
 						<div className="rn-account-display-friends-nav">
-							<div>
+							<div className="rn-account-display-friends-nav-mat">
 								<ThumbNavButton
 									title="All Friends"
 									counter="238"
@@ -146,7 +146,7 @@ class App extends Component {
 									_onClick={ () => this.setState({ friendsStage: "REQUESTS_STAGE" }) }
 								/>
 							</div>
-							<div>
+							<div className="rn-account-display-friends-nav-ss">
 								<div className="rn-account-display-friends-nav-search">
 									<input
 										placeholder="Search..."

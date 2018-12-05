@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css?family=Gothic+A1|Lato|Quicksand|Roboto');
 
 :root {
-	--defaultborder:rgba(0, 0, 0, .1);
+	--defaultborder:rgba(0, 0, 0, .05);
 	--navheight:60px;
 	--navwidth:250px;
 }
@@ -53,13 +53,6 @@ html, body {
 	flex-shrink:0;
 }
 
-@media only screen and (max-width: 1100px) {
-	.rn-feed {
-		align-items:center!important;
-		padding-left:0!important;
-	}
-}
-
 .global_error {
 	--height:37.5px;
 	--trans:1s;
@@ -91,4 +84,144 @@ html, body {
 .targetscreen {
 	width:100vw;
 	display:flex;
+}
+
+@media only screen and (max-width: 1100px) {
+	.rn:not(.nonav) {
+		align-items:center!important;
+		padding-left:0!important;
+	}
+}
+
+@media only screen and (max-width:815px) {
+	/*.rn-feed-mat-item-collage {
+		width:calc(100% - 45px)!important;
+	}*/
+}
+
+@media only screen and (max-width:750px) {
+	.gl-nav-logo > span {
+		display:none!important;
+	}
+
+	.gl-nav-logo > div {
+		display:block!important;
+	}
+
+	.gl-nav-search {
+		width:100%!important;
+	}
+
+	.gl-nav-account {
+		flex-shrink:0!important;
+	}
+
+	.gl-nav-search-dock,
+	.gl-nav-account-notifications-dock,
+	.gl-dock {
+		--pd:15px;
+
+		width:calc(100vw - var(--pd))!important!important;
+		left:calc(var(--pd) / 2)!important;
+		position:fixed!important;
+		top:calc(var(--nav_realheight) + var(--nav_realpadd) * 2 + 1px)!important;
+	}
+
+	.gl-dock {
+		z-index:50;
+		transform:translateX(-100vw)!important;
+		transition:all .25s ease-in-out!important;
+		box-shadow:0px 0px 15px -5px rgba(0, 0, 0, .5)!important;
+	}
+
+	.gl-dock.show {
+		transform:translateX(0)!important;
+		left:0!important;
+	}
+
+	.rn {
+		width:calc(100% - 15px)!important;
+		margin-left:auto!important;
+		margin-right:auto!important;
+	}
+
+	.rn-account > * {
+		width:100%!important;
+	}
+}
+
+@media only screen and (max-width:600px) {
+	.rn-presentation-navarrow {
+		visibility:hidden!important;
+	}	
+}
+
+@media only screen and (max-width:475px) {
+	.rn-account-thumb-nav-img {
+		align-items:center!important;
+		position:absolute!important;
+		height:80%!important; /* XXX */
+		top:15px!important;
+		left:50%!important;
+		transform:translateX(-50%)!important;
+		flex-direction:column!important;
+		z-index:7!important;
+		justify-content:center!important;
+	}
+
+/*	.rn-feed-mat-item {
+		width:calc(100% - 15px)!important;
+	}*/
+
+	.rn-account-thumb-nav-img > img {
+		--size:75px;
+
+		height:var(--size)!important;
+		width:var(--size)!important;
+		box-shadow:0px 0px 15px -2.5px rgba(0, 0, 0, .5);
+	}
+
+	.rn-account-thumb-nav-name {
+		position:relative!important;
+		top:inherit!important;
+		left:50%!important;
+		transform:inherit!important;
+	}
+
+	.rn-account-thumb-nav-btn,
+	.rn-account-thumb-cover-edit {
+		z-index:8!important;
+	}
+
+	.rn-feed-item {
+		--padding:7.5px;
+
+		padding-left:var(--padding)!important;
+		padding-right:var(--padding)!important;
+	}
+
+	.rn-account-thumb-cover-img {
+		filter:blur(20px);
+		transform:scale(1.2);
+	}
+
+	.rn-account-thumb-cover {
+		overflow:hidden!important;
+	}
+
+	.rn-account-display-friends-nav-grid-user {
+		width:100%!important;
+	}
+
+	.rn-account-display-friends-nav {
+		flex-direction:column-reverse;
+	}
+
+	.rn-account-display-item-title {
+		margin-bottom:30px;
+	}
+
+	.rn-account-display-friends-nav-ss {
+		margin-bottom:10px;
+	}
 }

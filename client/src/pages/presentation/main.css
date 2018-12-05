@@ -409,9 +409,3 @@
 .rn-presentation-stage-image:hover > .rn-presentation-stage-image-upload {
 	opacity:1;
 }
-
-@media only screen and (max-width:600px) {
-	.rn-presentation-navarrow {
-		visibility:hidden;
-	}	
-}

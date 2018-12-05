@@ -7,6 +7,8 @@ import Feed from './pages/feed';
 import Navigation from './pages/navigation';
 import Dock from './pages/dock';
 import Account from './pages/account';
+import Settings from './pages/settings';
+import Chat from './pages/chat';
 
 // Redux
 import store from './store';
@@ -21,7 +23,9 @@ import links from './links'; // pages routes
 const pages = {
 	'Presentation': Presentation,
 	'Feed': Feed,
-	'Account': Account
+	'Account': Account,
+	'Settings': Settings,
+	'Chat': Chat
 }
 
 // Needle Route

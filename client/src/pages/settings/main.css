@@ -1,0 +1,236 @@
+.rn-settings {
+	display:flex;
+	flex-direction:column;
+}
+
+.rn-settings-account {
+	--paddingtb:40px;
+	--paddinglr:20px;
+
+	padding-left:var(--paddinglr);
+	padding-right:var(--paddinglr);
+	padding-top:var(--paddingtb);
+	padding-bottom:var(--paddingtb);
+	margin-top:20px;
+	background:linear-gradient(135deg, #6496FF, #4B5FFF);
+	border-radius:3px;
+	display:flex;
+	flex-direction:column;
+	margin-bottom:45px;
+}
+
+.rn-settings-account-title {
+	font-size:.8em;
+	color:rgba(255, 255, 255, .75);
+	margin-bottom:5px;
+}
+
+.rn-settings-account-name {
+	--margin:2.5px;
+
+	font-size:2em;
+	font-family:"Roboto";
+	-webkit-font-smoothing:antialiased;
+	font-weight:600;
+	color:rgba(255, 255, 255, .9);
+	margin-top:var(--margin);
+	margin-bottom:var(--margin);
+}
+
+.rn-settings-account-login {
+	color:white;
+	font-size:1.1em;
+	font-weight:400;
+	font-family:"Quicksand";
+}
+
+.rn-settings-account,
+.rn-settings-isl {
+	box-shadow:0px 0px 45px -15px rgba(0, 0, 0, .5);
+}
+
+.rn-settings-isl {
+	--padding:25px;
+	--margin:10px;
+
+	margin-top:var(--margin);
+	margin-bottom:var(--margin);
+	width:calc(600px - var(--padding) * 2);
+	max-width:calc(100% - 15px);
+	padding:var(--padding);
+	border-radius:5px;
+	background:white;
+	display:flex;
+	flex-direction:column;
+	align-items:flex-start;
+}
+
+.rn-settings-isl:first-child {
+	margin-top:0;
+}
+
+.rn-settings-isl:last-child {
+	margin-bottom:0;
+}
+
+.rn-settings-isl-title {
+	font-weight:600;
+	font-family:"Roboto";
+	-webkit-font-smoothing:antialiased;
+	color:black;
+	font-size:1.5em;
+}
+
+.rn-settings-isl-desc {
+	margin-top:5px;
+	margin-bottom:15px;
+	font-size:.9em;
+	color:rgba(0, 0, 0, .5);
+	font-family:"Gothic A1";
+}
+
+.rn-settings-isl-submit {
+	--padding:25px;
+
+	margin-top:15px;
+	border-radius:3px;
+	font-size:.9em;
+	color:white;
+	font-family:"Gothic A1";
+	font-weight:500;
+	padding-left:var(--padding);
+	padding-right:var(--padding);
+	height:40px;
+	background:red;
+	cursor:pointer;
+	background:#55A7FB;
+	transition:.15s;
+}
+
+.rn-settings-isl-submit:active {
+	transform:scale(.9);
+}
+
+.rn-settings-isl-input {
+	--margin:10px;
+
+	margin-top:var(--margin);
+	margin-bottom:var(--margin);
+	display:flex;
+	flex-direction:column;
+	align-items:flex-start;
+}
+
+.rn-settings-isl-input:first-child {
+	margin-top:0;
+}
+
+.rn-settings-isl-input:last-child {
+	margin-bottom:0;
+}
+
+.rn-settings-isl-input-title {
+	font-size:.75em;
+	color:rgba(0, 0, 0, .5);
+	font-family:"Gothic A1";
+	font-weight:400;
+	margin-bottom:5px;
+	text-transform:capitalize;
+}
+
+.rn-settings-isl-input-field {
+	height:40px;
+	width:195px;
+	background:#F8F9FC;
+	border:1px solid var(--defaultborder);
+	position:relative;
+	display:flex;
+	border-radius:5px;
+	align-items:stretch;
+}
+
+.rn-settings-isl-input-field > div {
+	height:100%;
+	width:30px;
+	flex-shrink:0;
+	display:flex;
+	align-items:center;
+}
+
+.rn-settings-isl-input-field > input {
+	--padding:10px;
+
+	padding-left:var(--padding);
+	padding-right:var(--padding);
+	height:100%;
+	width:100%;
+	font-size:.9em;
+	color:rgba(0, 0, 0, .9);
+	font-family:"Lato";
+}
+
+.rn-settings-isl-st {
+	display:flex;
+	flex-direction:column;
+	position:relative;
+}
+
+.rn-settings-isl-switch {
+	--margin:10px;
+
+	margin-top:var(--margin);
+	margin-bottom:var(--margin);
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	width:100%;
+	cursor:pointer;
+}
+
+.rn-settings-isl-switch > span {
+	font-weight:600;
+	font-family:"Gothic A1";
+	font-size:.95em;
+	color:rgba(0, 0, 0, .75);
+}
+
+.rn-settings-isl-switch > div,
+.rn-settings-isl-switch > div > div {
+	transition:.25s;
+}
+
+.rn-settings-isl-switch > div {
+	height:15px;
+	width:40px;
+	background:black;
+	position:relative;
+	border-radius:45px;
+	background:#EEF0F4;
+	margin-left:40px;
+}
+
+.rn-settings-isl-switch > div > div {
+	--size:20px;
+	--ws:100%;
+
+	height:var(--size);
+	width:var(--size);
+	border-radius:50%;
+	background:white;
+	border:1px solid var(--defaultborder);
+	position:absolute;
+	top:50%;
+	transform:translateY(-50%);
+	left:calc(var(--size) / 6 * -1);
+}
+
+.rn-settings-isl-switch.active > div {
+	background:#AAD3FD;
+}
+
+.rn-settings-isl-switch.active > div > div {
+	transform:translate(calc(var(--ws) - 2px), -50%);
+	left:0;
+	background:#55A7FB;
+	border:1px solid transparent;
+}

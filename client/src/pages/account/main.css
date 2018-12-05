@@ -92,7 +92,7 @@
 	width:calc(100% - var(--padding) * 2);
 	display:flex;
 	align-items:center;
-	position:relative;
+/*	position:relative;*/
 	z-index:9;
 }
 
@@ -107,6 +107,7 @@
 	position:relative;
 	display:flex;
 	align-items:flex-end;
+	z-index:7;
 }
 
 .rn-account-thumb-nav-img > img {
@@ -189,7 +190,7 @@
 	 position:relative;
 }
 
-.rn-account-display-timeline > * {
+.rn-account-display-timeline > *:not(.rn-feed-mat-item) {
 	width:100%!important;
 }
 
@@ -266,6 +267,10 @@
 	display:flex;
 	align-items:center;
 	height:100%;
+}
+
+.rn-account-display-friends-nav-mat {
+	flex-shrink:0;
 }
 
 .rn-account-display-friends-nav-search {

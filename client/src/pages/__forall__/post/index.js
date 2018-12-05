@@ -21,24 +21,29 @@ class FeedItemCollage extends Component {
 
 		this.state = {
 			collageCursor: 0,
-			touchCursorX: null
+			touchCursorPos: null
 		}
 	}
 
 	handleSlideCollage = a => {
-		let xpos = this.state.touchCursorX;
-		if(!xpos) return;
+		let pos = this.state.touchCursorPos;
+		if(!pos) return;
 
-		let b = 20,
+		let b = 10, // for x
+			e = 15, // for y
 			c = this.props.images.length - 1,
 			d = d => this.setState(({ collageCursor: d1 }) => ({
 				collageCursor: d1 + d < 0 ? 0 : d1 + d > c ? c : d1 + d,
-				touchCursorX: null
+				touchCursorPos: null
 			}));
 
-		if(a > xpos + b) {
+		if(
+			(a.y < pos.x && pos.x - a.y > e) || // top
+			(a.y > pos.x && a.y - pos.x > e) // bottom
+		) return;
+		if(a > pos.x + b) {
 			d(-1);
-		} else if(a + b < xpos) {
+		} else if(a + b < pos.x) {
 			d(1);
 		}
 	}
@@ -48,18 +53,29 @@ class FeedItemCollage extends Component {
 			<div className="rn-feed-mat-item-collage_control">
 				<div
 					className="rn-feed-mat-item-collage"
-					onTouchStart={ ({ nativeEvent: { touches } }) => this.setState({ touchCursorX: touches[0].clientX }) }
-					onTouchMove={ ({ nativeEvent: { touches } }) => this.handleSlideCollage(touches[0].clientX) }
-					onTouchEnd={ () => this.setState({ touchCursorX: null }) }>
-					{
-						(this.state.collageCursor !== 0) ? (
-							<div
-								className="rn-feed-mat-item-collage-controls left"
-								onClick={ () => this.setState(({ collageCursor: a }) => ({ collageCursor: a - 1 })) }>
-								<i className="fas fa-angle-left" />
-							</div>
-						) : null
-					}
+					onTouchStart={ ({ nativeEvent: { touches } }) => this.setState({ touchCursorPos: { x: touches[0].clientX, y: touches[0].clientY } }) }
+					onTouchMove={ ({ nativeEvent: { touches } }) => this.handleSlideCollage(touches[0].clientX, touches[0].clientY) }
+					onTouchEnd={ () => this.setState({ touchCursorPos: null }) }>
+					<div className="rn-feed-mat-item-collage-controlscc">
+						{
+							(this.state.collageCursor !== 0) ? (
+								<div
+									className="rn-feed-mat-item-collage-controls left"
+									onClick={ () => this.setState(({ collageCursor: a }) => ({ collageCursor: a - 1 })) }>
+									<i className="fas fa-angle-left" />
+								</div>
+							) : null
+						}
+						{
+							(this.state.collageCursor !== this.props.images.length - 1) ? (
+								<div
+									className="rn-feed-mat-item-collage-controls right"
+									onClick={ () => this.setState(({ collageCursor: a }) => ({ collageCursor: a + 1 })) }>
+									<i className="fas fa-angle-right" />
+								</div>
+							) : null
+						}
+					</div>
 					{
 						this.props.images.map((session, index) => (
 							<FeedItemCollageImage
@@ -71,15 +87,6 @@ class FeedItemCollage extends Component {
 							/>
 						))
 					}
-					{
-						(this.state.collageCursor !== this.props.images.length - 1) ? (
-							<div
-								className="rn-feed-mat-item-collage-controls right"
-								onClick={ () => this.setState(({ collageCursor: a }) => ({ collageCursor: a + 1 })) }>
-								<i className="fas fa-angle-right" />
-							</div>
-						) : null
-					}
 				</div>
 				<div className="rn-feed-mat-item-collage_control-progress">
 					{
@@ -88,6 +95,7 @@ class FeedItemCollage extends Component {
 								key={ index }
 								className="rn-feed-mat-item-collage_control-progress-dot"
 								active={ (this.state.collageCursor === index).toString() }
+								onClick={ () => this.setState({ collageCursor: index }) }
 							/>
 						))
 					}
