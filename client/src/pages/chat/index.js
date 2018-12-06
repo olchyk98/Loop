@@ -3,13 +3,39 @@ import './main.css';
 
 const image = "https://lolstatic-a.akamaihd.net/frontpage/apps/prod/LolGameInfo-Harbinger/en_US/8588e206d560a23f4d6dd0faab1663e13e84e21d/assets/assets/images/gi-landing-top.jpg";
 
+class ConversationMember extends Component {
+	static defaultProps = {
+		isMoreTrack: false,
+		moreInt: 1
+	}
+
+	render() {
+		return(
+			<div className="rn-chat-conversations-item-content-members-item">
+				{
+					(!this.props.isMoreTrack) ? (
+						<img
+							className="rn-chat-conversations-item-content-members-item-mg"
+							src={ image }
+							alt="member"
+							title="Conversation member"
+						/>
+					) : (
+						<span className="rn-chat-conversations-item-content-members-item-mr">{ this.props.moreInt }+</span>
+					)
+				}
+			</div>
+		);
+	}
+}
+
 class Conversation extends Component {
 	render() {
 		return(
-			<div className="rn-chat-conversations-item">
+			<div className="rn-chat-conversations-item purple">
 				<div className="rn-chat-conversations-item-previewimg">
 					<div className="rn-chat-conversations-item-previewimg-image">
-					<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ image } title="Conversation's member" />
+					<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ image } title="Conversation member" />
 						<div className="rn-chat-conversations-item-previewimg-not" />
 					</div>
 				</div>
@@ -20,7 +46,26 @@ class Conversation extends Component {
 							<span className="rn-chat-conversations-item-content-title-placeholder">•</span>
 							<span className="rn-chat-conversations-item-content-title-time">13:24</span>
 						</div>
-						<div></div>
+						<div className="rn-chat-conversations-item-content-controls">
+							<button className="rn-chat-conversations-item-content-controls-btn definp">
+								<i className="fas fa-ellipsis-h" />
+							</button>
+						</div>
+					</div>
+					<div className="rn-chat-conversations-item-content-last"> {/* className: lastinrow */}
+						<span className="rn-chat-conversations-item-content-last-name">Oles Odynets</span>
+						<span className="rn-chat-conversations-item-content-last-content">
+							{ this.props.content }
+						</span>
+					</div>
+					<div className="rn-chat-conversations-item-content-members">
+						<ConversationMember
+							isMoreTrack={ true }
+							moreInt={ 2 }
+						/>
+						<ConversationMember
+							
+						/>
 					</div>
 				</div>
 			</div>
@@ -29,6 +74,14 @@ class Conversation extends Component {
 }
 
 class App extends Component {
+	constructor(props) {
+		super(props);
+
+		this.state = {
+			stage: "LIST_STAGE"
+		}
+	}
+
 	render() {
 		return(
 			<div className="rn rn-chat">
@@ -41,7 +94,33 @@ class App extends Component {
 					/>
 				</div>
 				<div className="rn-chat-conversations">
-					<Conversation />
+					<Conversation
+						content="Hello, World!"
+					/>
+					<Conversation
+						content="Hello, World!  Hello, World!"
+					/>
+					<Conversation
+						content="Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World!"
+					/>
+					<Conversation
+						content="Hello, World!  Hello, World!"
+					/>
+					<Conversation
+						content="Hello, World!  Hello, World!"
+					/>
+					<Conversation
+						content="Hello, World!"
+					/>
+					<Conversation
+						content="Hello, World!"
+					/>
+					<Conversation
+						content="Hello, World!"
+					/>
+					<Conversation
+						content="Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World!"
+					/>
 				</div>
 			</div>
 		);
