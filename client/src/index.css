@@ -153,7 +153,7 @@ html, body {
 @media only screen and (max-width:600px) {
 	.rn-presentation-navarrow {
 		visibility:hidden!important;
-	}	
+	}
 }
 
 @media only screen and (max-width:475px) {
@@ -214,14 +214,14 @@ html, body {
 	}
 
 	.rn-account-display-friends-nav {
-		flex-direction:column-reverse;
+		flex-direction:column-reverse!important;
 	}
 
 	.rn-account-display-item-title {
-		margin-bottom:30px;
+		margin-bottom:30px!important;
 	}
 
 	.rn-account-display-friends-nav-ss {
-		margin-bottom:10px;
+		margin-bottom:10px!important;
 	}
 }

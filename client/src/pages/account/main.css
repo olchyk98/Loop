@@ -130,6 +130,7 @@
 	font-family:"Quicksand";
 	-webkit-font-smoothing:antialiased;
 	font-size:1.2em;
+	white-space:nowrap;
 }
 
 .rn-account-thumb-nav-btn-title,
