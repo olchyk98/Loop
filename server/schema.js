@@ -332,7 +332,7 @@ const RootMutation = new GraphQLObjectType({
 						"Image"
 					];
 
-					// I need the break function, so I should use for-loop, instead of forEach
+					// I need the break statement, so I should use for-loop, instead of forEach
 					for(let io of b) {
 						let c = eval(io);
 						// if(!c) continue;
