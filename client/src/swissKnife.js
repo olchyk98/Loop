@@ -26,7 +26,7 @@ const cookieControl = {
 	}
 }
 
-function convertTime(time, addon = "", complete = true) { // clf
+function convertTime(time, addon = "", complete = true, refill = false) { // clf
 	if(!time) return "";
 
 	time = parseInt(time);
@@ -36,40 +36,54 @@ function convertTime(time, addon = "", complete = true) { // clf
 			c = c1 => a - time < c1,
 			d = Math.round;
 
-	if(c(60)) {
-		return d((a - time)) + "s" + (addon ? " " + addon : "");
-	} else if(c(3600)) {
-		return d((a - time) / 60) + "m" + (addon ? " " + addon : "");
-	} else if(c(86400)) {
-		return d((a - time) / 3600) + "h" + (addon ? " " + addon : "");
-	} else if(c(604800)) {
-		return d((a - time) / 86400) + "d" + (addon ? " " + addon : "");
-	} else if(c(2419200)) {
-		return d((a - time) / 604800) + "w" + (addon ? " " + addon : "");
-	} else if(time < 0) {
-		return "";
-	} else if(complete) {
+	function comp() {
 		let e = new Date(time * 1000),
-				f = [
-					"Jan",
-					"Feb",
-					"March",
-					"Apr",
-					"May",
-					"June",
-					"July",
-					"Aug",
-					"Sep",
-					"Oct",
-					"Nov",
-					"Sep",
-					"Oct",
-					"Nov",
-					"Dec"
-				][e.getMonth()];
-		return `${ f } ${ e.getDate() }, ${ e.getFullYear() } ${ e.getHours() }:${ e.getMinutes() }`;
+			f = [
+				"Jan",
+				"Feb",
+				"March",
+				"Apr",
+				"May",
+				"June",
+				"July",
+				"Aug",
+				"Sep",
+				"Oct",
+				"Nov",
+				"Sep",
+				"Oct",
+				"Nov",
+				"Dec"
+			][e.getMonth()];
+		return `${ f } ${ e.getDate() }, ${ e.getFullYear() } ${ e.getHours() }:${ e.getMinutes() }`
+	}
+
+	if(!refill) {
+		if(c(60)) { // < minutes
+			return d((a - time)) + "s" + ((addon && " " + addon) || "");
+		} else if(c(3600)) { // < hours
+			return d((a - time) / 60) + "m" + ((addon && " " + addon) || "");
+		} else if(c(86400)) { // < days
+			return d((a - time) / 3600) + "h" + ((addon && " " + addon) || "");
+		} else if(c(604800)) { // < weeks
+			return d((a - time) / 86400) + "d" + ((addon && " " + addon) || "");
+		} else if(c(2419200)) { // < month
+			return d((a - time) / 604800) + "w" + ((addon && " " + addon) || "");
+		} else if(time < 0) { // tmp err?
+			return "";
+		} else if(complete) {
+			return comp();
+		} else {
+			return "";
+		}
 	} else {
-		return "";
+		// If less than day Then show hours:minutes Else show fulldate
+		if(c(86400)) {
+			let e = new Date(time * 1000);
+			return `${ e.getHours() }:${ e.getMinutes() }`;
+		} else {
+			return comp();
+		}
 	}
 }
 

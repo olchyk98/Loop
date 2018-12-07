@@ -2,9 +2,12 @@ import React, { Component, Fragment } from 'react';
 import './main.css';
 
 import { connect } from 'react-redux';
+import { gql } from 'apollo-boost';
 
 import { cookieControl } from '../../swissKnife';
 import links from '../../links';
+import client from '../../apollo';
+import api from '../../api';
 
 import Loadericon from '../__forall__/loader.icon/';
 const image = 'https://lolstatic-a.akamaihd.net/frontpage/apps/prod/LolGameInfo-Harbinger/en_US/8588e206d560a23f4d6dd0faab1663e13e84e21d/assets/assets/images/gi-landing-top.jpg';
@@ -88,6 +91,34 @@ class App extends Component {
 		this.searchInt = null
 	}
 
+	componentDidMount() {
+		this.fetchAPI();
+	}
+
+	fetchAPI = () => {
+		let { id, authToken } = cookieControl.get("authdata"),
+			errorTxt = "This application was loaded incorrectly. Please, restart the page."
+
+		client.query({
+			query: gql`
+				query($id: ID!, $authToken: String!) {
+					user(id: $id, authToken: $authToken) {
+						id,
+						avatar,
+						name
+					}
+				}
+			`,
+			variables: {
+				id, authToken
+			}
+		}).then(({ data: { user } }) => {
+			if(!user) return this.props.castError(errorTxt);
+
+			this.props.setUserData(user);
+		}).catch(() => this.props.castError(errorTxt))
+	}
+
 	logout = () => {
 		cookieControl.delete("authdata");
 		window.location.href = links["PRESENTATION_PAGE"].absolute;
@@ -162,6 +193,7 @@ class App extends Component {
 					<div className="gl-nav-account">
 						<button onClick={ () => this.setState(({ visibleNotifications: a }) => ({ visibleNotifications: !a })) } className="gl-nav-account-spc definp">
 							<i className="far fa-bell" />
+							<div className="gl-nav-account-spc-dot"></div>
 							<div className={ `gl-nav-account-notifications-dock${ (!this.state.visibleNotifications) ? "" : " visible" }` }>
 								<NotificationsDockItem />
 								<NotificationsDockItem />
@@ -183,7 +215,7 @@ class App extends Component {
 							</div>
 						</button>
 						<div className="gl-nav-account-img">
-							<img src={ image } alt="" title="Your avatar" />
+							<img src={ ((this.props.user && this.props.user.avatar && api.storage + this.props.user.avatar) || "") } alt="" title="Your avatar" />
 						</div>
 						<button onClick={ this.logout } className="gl-nav-account-spc definp">
 							<i className="fas fa-sign-out-alt" />
@@ -195,9 +227,17 @@ class App extends Component {
 	}
 }
 
+const mapStateToProps = ({ user: { userdata: user } }) => ({
+	user
+});
+
+const mapActionsToProps = {
+	toggleSmallDock: () => ({ type: 'TOGGLE_SMALL_DOCK', payload: '' }),
+	setUserData: payload => ({ type: 'SET_USER_DATA', payload }),
+	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } })
+}
+
 export default connect(
-	() => ({}),
-	{
-		toggleSmallDock: () => ({ type: 'TOGGLE_SMALL_DOCK', payload: '' })
-	}
+	mapStateToProps,
+	mapActionsToProps
 )(App);

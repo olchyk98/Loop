@@ -5,9 +5,9 @@ const UserSchema = new mongoose.Schema({
 	login: String,
 	password: String,
 	avatar: String,
-	cover: "",
+	cover: String,
 	description: String,
-	url: "",
+	url: String,
 	waitingFriends: Array,
 	friends: Array,
 	authTokens: Array

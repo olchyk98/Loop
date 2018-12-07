@@ -1,10 +1,16 @@
 import React, { Component, Fragment } from 'react';
 import './main.css';
 
+import { connect } from 'react-redux';
+import { gql } from 'apollo-boost';
+
+import client from '../../apollo';
+import { cookieControl } from '../../swissKnife';
+import api from '../../api';
+
+import LoadingIcon from '../__forall__/loader.icon'
 import FeedItem from '../__forall__/post';
 import NewGridPhoto from '../__forall__/gridphoto';
-
-const image = 'https://occ-0-726-41.1.nflxso.net/art/c0c0e/af353b54475c9667ac96f986de8003b72edc0c0e.png';
 
 class NewAddonsBtn extends Component {
 	render() {
@@ -132,7 +138,7 @@ class New extends Component {
 				<div className={ `rn-feed-new-main${ (!this.state.previewPhotos.length) ? "" : " ph-expand" }` }>
 					<div className="rn-feed-new-main-image">
 						<div className="rn-feed-new-main-image-overlay">
-							<img alt="you" title="Your photo" src={ image } />
+							<img alt="you" title="Your photo" src={ this.props.uavatar } />
 						</div>
 					</div>
 					<div className="rn-feed-new-main-field_control">
@@ -172,14 +178,107 @@ class New extends Component {
 }
 
 class App extends Component {
+	constructor(props) {
+		super(props);
+
+		this.state = {
+			posts: false
+		}
+	}
+
+	componentDidMount() {
+		// Fetch data from an API
+		let { id, authToken } = cookieControl.get("authdata"),
+			errorTxt = "Sorry, we couldn't load your feed. Please, restart the page.";
+
+		client.query({
+			query: gql`
+				query($id: ID!, $authToken: String!) {
+					getFeed(id: $id, authToken: $authToken) {
+						id,
+						content,
+						time,
+						likesInt,
+						commentsInt,
+						creator {
+							id,
+							name,
+							avatar
+						},
+						images {
+							id,
+							url
+						},
+						comments {
+							id,
+							content,
+							creator {
+								id,
+								avatar,
+								name
+							},
+							likesInt
+						}
+					}
+				}
+			`,
+			variables: {
+				id, authToken
+			}
+		}).then(({ data: { getFeed } }) => {
+			if(!getFeed) this.props.castError(errorTxt);
+
+
+			this.setState(() => ({
+				posts: getFeed
+			}));
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
 	render() {
 		return(
 			<div className="rn rn-feed">
-				<New />
-				<FeedItem />
+				<New
+					uavatar={
+						((this.props.userdata &&
+							Object.keys(this.props.userdata).length &&
+							api.storage + this.props.userdata.avatar)
+						|| "")
+					}
+				/>
+				{
+					(this.state.posts !== false) ? (
+						this.state.posts.map(({ id, content, creator, time, commentsInt, likesInt, images, comments }) => (
+							<FeedItem
+								key={ id }
+								id={ id }
+								content={ content }
+								creator={ creator }
+								time={ time }
+								likesInt={ likesInt }
+								commentsInt={ commentsInt }
+								images={ images }
+								comments={ comments }
+							/>
+						))
+					) : (
+						<LoadingIcon />
+					)
+				}
 			</div>
 		);
 	}
 }
 
-export default App;
+const mapStateToProps = ({ user: { userdata } }) => ({
+	userdata
+});
+
+const mapActionsToProps = {
+	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } })
+}
+
+export default connect(
+	mapStateToProps,
+	mapActionsToProps
+)(App);

@@ -3,7 +3,10 @@ import './main.css';
 
 import NewGridPhoto from '../gridphoto';
 
-const image = 'https://occ-0-726-41.1.nflxso.net/art/c0c0e/af353b54475c9667ac96f986de8003b72edc0c0e.png';
+import { connect } from 'react-redux';
+
+import api from '../../../api';
+import { convertTime } from '../../../swissKnife';
 
 class FeedItemCollageImage extends Component {
 	render() {
@@ -125,31 +128,18 @@ class FeedItemComment extends Component {
 		return(
 			<div className="rn-feed-mat-item-comments-comment">
 				<div className="rn-feed-mat-item-comments-comment-avatar">
-					<img src={ image } alt="creator" title="Creator's avatar" />
+					<img src={ ((this.props.creator.avatar && api.storage + this.props.creator.avatar) || "") } alt="creator" title="Creator's avatar" />
 				</div>
 				<div className="rn-feed-mat-item-comments-comment-content">
 					<span className="rn-feed-mat-item-comments-comment-content-mat">
-						Hello, World!
-						Hello, World!
-						Hello, World!
-						Hello, World!
-						Hello, World!
-
-						Hello, World!
-						Hello, World!
-						Hello, World!
-						Hello, World!
-						Hello, World!
-						Hello, World!
-
-						Hello, World!
+						{ this.props.content }
 					</span>
 					<div className="rn-feed-mat-item-comments-comment-content-controls">
 						<button className="rn-feed-mat-item-comments-comment-content-controls-like definp">
-							Like (42)
+							Like ({ this.props.likesInt })
 						</button>
 						<span className="rn-feed-mat-item-comments-comment-content-controls-space">·</span>
-						<span className="rn-feed-mat-item-comments-comment-content-controls-time">3h</span>
+						<span className="rn-feed-mat-item-comments-comment-content-controls-time">{ convertTime(this.props.time, "ago") }</span>
 					</div>
 				</div>
 			</div>
@@ -257,7 +247,7 @@ class FeedItemCommentinput extends Component {
 							</div>
 						)
 					}
-					<img src={ image } alt="you" title="Your avatar" />
+					<img src={ this.props.uavatar } alt="you" title="Your avatar" />
 				</div>
 				<input
 					className="rn-feed-mat-item-commentinput-input definp"
@@ -282,49 +272,42 @@ class FeedItemCommentinput extends Component {
 }
 
 class App extends Component {
-	constructor(props) {
-		super(props);
-
-		this.images = ["https://www.tripsavvy.com/thmb/Hmy5XouUohrAdoHHKT2bQe4z5EI=/960x0/filters:no_upscale():max_bytes(150000):strip_icc()/sunset-over-riddarholmen-chruch-in-old-town-stockholm-city--sweden-855564060-5ad546a404d1cf0037fbf9b3.jpg", "https://www.thelocal.se/userdata/images/article/1ed5b7db4dc056882b34f3d5645c25b1b5a77fc83976fdb3bb0c58141cc9c6be.jpg", "https://images.movehub.com/wp-content/uploads/2017/09/14170105/Sweden-things-to-know.jpeg", "https://www.enterprise.se/content/dam/ecom/locations/sweden/town-in-sweden-961x540.jpg"];
-	}
-
 	render() {
 		return(
 			<div className="rn-feed-mat-item rn-feed-item">
 				<div className="rn-feed-mat-item-head">
 					<div className="rn-feed-mat-item-head-info">
 						<div className="rn-feed-mat-item-head-info-avatar">
-							<img src={ image } alt="creator" title="Creator's avatar" />
+							<img src={ ((this.props.creator.avatar && api.storage + this.props.creator.avatar) || "") } alt="creator" title="Creator's avatar" />
 						</div>
 						<div className="rn-feed-mat-item-head-info-mat">
 							<div className="rn-feed-mat-item-head-info-mat-name">
-								<p>Oles Odynets</p>
+								<p>{ this.props.creator.name }</p>
 							</div>
-							<p className="rn-feed-mat-item-head-info-mat-date">8 hours ago</p>
+							<p className="rn-feed-mat-item-head-info-mat-date">{ convertTime(this.props.time, "ago") }</p>
 						</div>
 					</div>
 				</div>
-				<p className="rn-feed-mat-item-content">
-					Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum, nibh in vulputate bibendum, augue.
-					Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum, nibh in vulputate bibendum, augue.
-					Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum, nibh in vulputate bibendum, augue.
-					Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum, nibh in vulputate bibendum, augue.
-					Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum, nibh in vulputate bibendum, augue.
-					Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum, nibh in vulputate bibendum, augue.
+				<p className={ `rn-feed-mat-item-content${ (!this.props.images || !this.props.images.length) ? " single" : ""  }` }>
+					{ this.props.content }
 				</p>
-				<FeedItemCollage
-					images={ this.images }
-				/>
+				{
+					(this.props.images) ? null : (
+						<FeedItemCollage
+							images={ this.props.images }
+						/>
+					)
+				}
 				<div className="rn-feed-mat-item-feedback">
 					{
 						[
 							{
 								icon: <i className="far fa-heart" />,
-								counter: 2
+								counter: this.props.likesInt
 							},
 							{
 								icon: <i className="far fa-comment" />,
-								counter: 6
+								counter: this.props.commentsInt
 							}
 						].map(({ icon, counter }, index) => (
 							<FeedItemFeedbackButton
@@ -336,20 +319,34 @@ class App extends Component {
 					}
 				</div>
 				<div className="rn-feed-mat-item-comments">
-					<FeedItemComment />
-					<FeedItemComment />
-					<FeedItemComment />
-					<FeedItemComment />
-					<FeedItemComment />
-					<FeedItemComment />
+					{
+						this.props.comments.map(({ id, content, creator, likesInt, time }) => (
+							<FeedItemComment
+								key={ id }
+								id={ id }
+								content={ content }
+								creator={ creator }
+								time={ time }
+								likesInt={ likesInt }
+							/>
+						))
+					}
 					<button className="rn-feed-mat-item-comments-loadmore definp">
-						Load more
+						Load more (limit as notificator)
 					</button>
 				</div>
-				<FeedItemCommentinput />
+				<FeedItemCommentinput
+					uavatar={ ((this.props.userdata && Object.keys(this.props.userdata).length && api.storage + this.props.userdata.avatar) || "") }
+				/>
 			</div>
 		);
 	}
 }
 
-export default App;
+const mapStateToProps = ({ user: { userdata } }) => ({
+	userdata
+});
+
+export default connect(
+	mapStateToProps
+)(App);

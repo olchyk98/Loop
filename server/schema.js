@@ -14,11 +14,17 @@ const {
 
 const fileSystem = require('fs');
 
-const { User } = require('./models');
+const {
+	User,
+	Post,
+	Image,
+	Comment
+} = require('./models');
+
 const settings = require('./settings');
 
 function validateAccount(_id, authToken) {
-	return User.find({
+	return User.findOne({
 		_id,
 		authTokens: {
 			$in: [authToken]
@@ -48,12 +54,121 @@ const UserType = new GraphQLObjectType({
 		name: { type: GraphQLString },
 		avatar: { type: GraphQLString },
 		description: { type: GraphQLString },
-		waitingFriends: { type: new GraphQLList(GraphQLID) }, // USERS that are WAITING for this USER
-		friends: { type: new GraphQLList(GraphQLID) },
+		posts: {
+			type: new GraphQLList(PostType),
+			resolve: ({ id }) => Post.find({ creatorID: id }).sort({ time: -1 })
+		},
+		waitingFriends: {
+			type: new GraphQLList(UserType),
+			resolve: ({ waitingFriends }) => User.find({
+				_id: {
+					$in: waitingFriends
+				}
+			})
+		}, // USERS that are WAITING for this USER
+		friends: {
+			type: new GraphQLList(UserType),
+			resolve: ({ friends }) => User.find({
+				_id: {
+					$in: friends
+				}
+			})
+		},
 		authTokens: { type: new GraphQLList(GraphQLString) },
+		subscribers: {
+			type: new GraphQLList(UserType),
+			resolve: ({ subscribers }) => User.find({
+				_id: {
+					$in: subscribers
+				}
+			})
+		},
 		lastAuthToken: {
 			type: GraphQLString,
 			resolve: ({ authTokens }) => (authTokens.slice(-1) && authTokens.slice(-1)[0]) || ""
+		}
+	})
+});
+
+const PostType = new GraphQLObjectType({
+	name: "PostType",
+	fields: () => ({
+		id: { type: GraphQLID },
+		creatorID: { type: GraphQLID },
+		content: { type: GraphQLString },
+		time: { type: GraphQLString },
+		likes: { type: new GraphQLList(GraphQLID) },
+		likesInt: {
+			type: GraphQLInt,
+			resolve: ({ likes }) => likes.length
+		},
+		images: {
+			type: new GraphQLList(ImageType),
+			resolve: ({ id }) => User.find({ postID: id })
+		},
+		creator: {
+			type: UserType,
+			resolve: ({ creatorID }) => User.findById(creatorID)
+		},
+		comments: {
+			type: new GraphQLList(CommentType),
+			resolve: ({ id }) => Comment.find({ postID: id })
+		},
+		commentsInt: {
+			type: GraphQLInt,
+			resolve: ({ id }) => Comment.count({ postID: id })
+		}
+	})
+});
+
+const ImageType = new GraphQLObjectType({
+	name: "ImageType",
+	fields: () => ({
+		id: { type: GraphQLID },
+		creatorID: { type: GraphQLID },
+		postID: { type: GraphQLString },
+		url: { type: GraphQLString },
+		time: { type: GraphQLString },
+		likes: { type: new GraphQLList(GraphQLID) },
+		likesInt: {
+			type: GraphQLInt,
+			resolve: ({ likes: { length: a } }) => a
+		},
+		comments: {
+			type: CommentType,
+			resolve: ({ id }) => Commnet.find({ postID: id })
+		},
+		creator: {
+			type: UserType,
+			resolve: ({ creatorID }) => User.findById(creatorID)
+		}
+	})
+});
+
+const CommentType = new GraphQLObjectType({
+	name: "CommentType",
+	fields: () => ({
+		id: { type: GraphQLID },
+		creatorID: { type: GraphQLID },
+		postID: { type: GraphQLID },
+		content: { type: GraphQLString },
+		time: { type: GraphQLString },
+		likes: { type: new GraphQLList(GraphQLID) },
+		likesInt: {
+			type: GraphQLInt,
+			resolve: ({ likes: { length: a } }) => a
+		},
+		comments: {
+			type: new GraphQLList(CommentType),
+			resolve: ({ id }) => Commnet.find({ postID: id })
+		},
+		creator: {
+			type: UserType,
+			resolve: ({ creatorID }) => User.findById(creatorID)
+		},
+		images: {
+			type: new GraphQLList(ImageType),
+			resolve: ({ id }) => Image.find({ postID: id })
 		}
 	})
 });
@@ -65,12 +180,52 @@ const RootQuery = new GraphQLObjectType({
 			type: new GraphQLList(UserType),
 			resolve: () => User.find({})
 		},
+		user: {
+			type: UserType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: GraphQLID }
+			},
+			async resolve(_, { id, authToken, targetID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				return (targetID) ? User.findById(targetID) : a;
+			}
+		},
 		loginExists: {
 			type: GraphQLBoolean,
 			args: {
 				login: { type: new GraphQLNonNull(GraphQLString) }
 			},
 			resolve: async (_, { login }) => !Boolean(await User.findOne({ login }))
+		},
+		posts: {
+			type: new GraphQLList(PostType),
+			resolve: () => Post.find({})
+		},
+		getFeed: {
+			type: new GraphQLList(PostType),
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			async resolve(_, { id, authToken }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				return Post.find({
+					$or: [
+						{
+							creatorID: {
+								$in: a.subscribers
+							}
+						},
+						{ creatorID: id }
+					]
+				}).sort({ time: -1 });
+			}
 		}
 	}
 });
@@ -126,6 +281,83 @@ const RootMutation = new GraphQLObjectType({
 						authTokens: generateNoise() 
 					}
 				}, (__, a) => a);
+			}
+		},
+		publishPost: {
+			type: PostType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				content: { type: GraphQLString },
+				images: { type: new GraphQLList(GraphQLUpload) }
+			},
+			async resolve(_, { id, authToken, content, images }) {
+				if(!content && (!images || !images.length)) return null;
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				const post = await (
+					new Post({
+						creatorID: id,
+						content,
+						time: new Date,
+						likes: []
+					})
+				).save();
+
+				return post;
+			}
+		},
+		commentItem: {
+			type: CommentType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
+				content: { type: GraphQLString },
+				images: { type: new GraphQLList(GraphQLUpload) }
+			},
+			async resolve(_, { id, authToken, targetID, content, images }) {
+				// Global validation
+				if(!content && (!images || !images.length)) return null;
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				// Target validation
+				let inTarget = false;
+				{
+					let b = [
+						"Post",
+						"Comment",
+						"Image"
+					];
+
+					// I need the break function, so I should use for-loop, instead of forEach
+					for(let io of b) {
+						let c = eval(io);
+						// if(!c) continue;
+						let d = await c.findById(targetID);
+
+						if(d) {
+							inTarget = true;
+							break;
+						}
+					}
+				}
+				if(!inTarget) return null;
+
+				// // Publish
+				const comment = await (
+					new Comment({
+						creatorID: id,
+						postID: targetID,
+						content,
+						time: new Date,
+						likes: []
+					})
+				).save();
+
+				return comment;
 			}
 		}
 	}

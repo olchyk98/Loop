@@ -30,9 +30,13 @@ class ConversationMember extends Component {
 }
 
 class Conversation extends Component {
+	static defaultProps = {
+		color: "white"
+	}
+
 	render() {
 		return(
-			<div className="rn-chat-conversations-item purple">
+			<div className={ `rn-chat-conversations-item ${ this.props.color }` }>
 				<div className="rn-chat-conversations-item-previewimg">
 					<div className="rn-chat-conversations-item-previewimg-image">
 					<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ image } title="Conversation member" />
@@ -48,7 +52,7 @@ class Conversation extends Component {
 						</div>
 						<div className="rn-chat-conversations-item-content-controls">
 							<button className="rn-chat-conversations-item-content-controls-btn definp">
-								<i className="fas fa-ellipsis-h" />
+								<i className="fas fa-trash" />
 							</button>
 						</div>
 					</div>
@@ -96,30 +100,39 @@ class App extends Component {
 				<div className="rn-chat-conversations">
 					<Conversation
 						content="Hello, World!"
+						color="red"
 					/>
 					<Conversation
 						content="Hello, World!  Hello, World!"
+						color="blue"
 					/>
 					<Conversation
 						content="Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World!"
+						color="purple"
 					/>
 					<Conversation
 						content="Hello, World!  Hello, World!"
+						color="clouds"
 					/>
 					<Conversation
 						content="Hello, World!  Hello, World!"
+						color="sea"
 					/>
 					<Conversation
 						content="Hello, World!"
+						color="red"
 					/>
 					<Conversation
 						content="Hello, World!"
+						color="pink"
 					/>
 					<Conversation
 						content="Hello, World!"
+						color="orange"
 					/>
 					<Conversation
 						content="Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World!"
+						color="red"
 					/>
 				</div>
 			</div>
