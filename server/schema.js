@@ -104,7 +104,7 @@ const PostType = new GraphQLObjectType({
 		},
 		images: {
 			type: new GraphQLList(ImageType),
-			resolve: ({ id }) => User.find({ postID: id })
+			resolve: ({ id }) => Image.find({ postID: id })
 		},
 		creator: {
 			type: UserType,
@@ -116,7 +116,7 @@ const PostType = new GraphQLObjectType({
 		},
 		commentsInt: {
 			type: GraphQLInt,
-			resolve: ({ id }) => Comment.count({ postID: id })
+			resolve: ({ id }) => Comment.countDocuments({ postID: id })
 		}
 	})
 });
@@ -205,6 +205,10 @@ const RootQuery = new GraphQLObjectType({
 			type: new GraphQLList(PostType),
 			resolve: () => Post.find({})
 		},
+		images: {
+			type: new GraphQLList(ImageType),
+			resolve: () => Image.find({})
+		},
 		getFeed: {
 			type: new GraphQLList(PostType),
 			args: {
@@ -252,14 +256,14 @@ const RootMutation = new GraphQLObjectType({
 				// receive image
 				if(avatar) {					
 					let { filename, stream } = await avatar;
-					var avatarPath = `/${ settings.files.avatars }/${ generateNoise(128) }.${ getExtension(filename) }`
+					var avatarPath = `${ settings.files.avatars }/${ generateNoise(128) }.${ getExtension(filename) }`
 
 					stream.pipe(fileSystem.createWriteStream('.' + settings));
 				}
 
 				let user = await (new User({
 					login, password, name,
-					avatar: avatarPath || settings.files.default,
+					avatar: avatarPath || settings.default.avatar,
 					description: "",
 					waitingFriends: [],
 					friends: [],
@@ -289,14 +293,15 @@ const RootMutation = new GraphQLObjectType({
 				id: { type: new GraphQLNonNull(GraphQLID) },
 				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				content: { type: GraphQLString },
-				images: { type: new GraphQLList(GraphQLUpload) }
+				images: { type: new GraphQLList(new GraphQLNonNull(GraphQLUpload)) }
 			},
 			async resolve(_, { id, authToken, content, images }) {
 				if(!content && (!images || !images.length)) return null;
 				let a = await validateAccount(id, authToken);
 				if(!a) return null;
 
-				const post = await (
+				// Publish
+				let post = await (
 					new Post({
 						creatorID: id,
 						content,
@@ -304,6 +309,32 @@ const RootMutation = new GraphQLObjectType({
 						likes: []
 					})
 				).save();
+
+				// Weird solution :P Looks like I'm drunk
+				if(images && images.length) { // Receive images and set them in db
+					post.images = [];
+
+					await (new Promise(resolve => {
+						images.forEach(async (io, index, arr) => {
+							let { stream, filename } = await io;
+
+							let link = `${ settings.files.images }/${ generateNoise(128) }.${ getExtension(filename) }`;
+							stream.pipe(fileSystem.createWriteStream('.' + link));
+
+							let b = await (
+								new Image({
+									creatorID: id,
+									postID: post._id,
+									url: link,
+									time: new Date,
+									likes: []
+								})
+							).save();
+							post.images.push(b);
+							if(index === arr.length - 1) resolve(true);
+						});
+					}));
+				}
 
 				return post;
 			}
@@ -346,7 +377,7 @@ const RootMutation = new GraphQLObjectType({
 				}
 				if(!inTarget) return null;
 
-				// // Publish
+				// Publish
 				const comment = await (
 					new Comment({
 						creatorID: id,

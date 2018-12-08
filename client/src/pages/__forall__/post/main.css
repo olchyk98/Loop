@@ -85,6 +85,17 @@
 	margin-bottom:0;
 }
 
+.rn-feed-mat-item-content-tag {
+	color:rebeccapurple;
+	cursor:pointer;
+	transition:.1s;
+}
+
+.rn-feed-mat-item-content-tag:hover {
+	text-decoration:underline;
+	color:blue;
+}
+
 .rn-feed-mat-item-collage_control {
 	width:calc(100% + var(--gl-post__itempadd) * 2);
 	left:calc(var(--gl-post__itempadd) * -1);

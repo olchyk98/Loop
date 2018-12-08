@@ -21,7 +21,8 @@ class NewAddonsBtn extends Component {
 						type="file"
 						className="hidden"
 						accept="image/*"
-						onChange={ ({ target: { files } }) => this.props.onUpload(files[0]) }
+						multiple
+						onChange={ ({ target: { files } }) => this.props.onUpload(files) }
 						id={ this.props._id }
 					/>
 					<label htmlFor={ this.props._id } className="rn-feed-new-btn definp">
@@ -56,6 +57,7 @@ class New extends Component {
 		}
 
 		this.lastPhotoErrorUrl = "";
+		this.inputRef = React.createRef();
 	}
 
 	componentWillUnmount() {
@@ -66,21 +68,37 @@ class New extends Component {
 
 	setValue = (field, value) => {
 		if(field === 'photos') {
-			if(!value) return;
+			if(!value || !value.length) return;
+
+			let pics = [],
+				picsPrev = [];
+
+			/*
+				So, FileList doesn't have forEach function in his prototype,
+				but it supports indexing navigation.
+					- I should use for-loop.
+			*/
+			/*
+				for-loop body är någonting som repeteras igen och igen
+			*/
+			for(let io of value) {
+				pics.push({
+					file: io,
+					id: this.state.photos.length
+				});
+				picsPrev.push({
+					url: URL.createObjectURL(io),
+					id: this.state.photos.length
+				});
+			}
 
 			return this.setState(({ photos, previewPhotos }) => ({
 				photos: [
-					{
-						file: value,
-						id: photos.length
-					},
+					...pics,
 					...photos
 				],
 				previewPhotos: [
-					{
-						url: URL.createObjectURL(value),
-						id: photos.length
-					},
+					...picsPrev,
 					...previewPhotos
 				]
 			}));
@@ -124,6 +142,29 @@ class New extends Component {
 		}));
 	}
 
+	publish = () => {
+		// Send to main component
+			// Get data
+		const { text, photos } = this.state;
+			// Push all images to array
+		let images = [];
+		photos.forEach(io => {
+			let a = io.file;
+			if(a) images.push(a);
+			else console.err("Image was not loaded correctly! NEW POST |COMPONENT : PUBLISH |FUNCTION!PRIMARY", a); // debug
+		})
+			// Send
+		this.props.onPublish(text, images);
+
+		// Set to default
+		this.inputRef.value = this.lastPhotoErrorUrl = "";
+		this.setState(() => ({
+			text: "",
+			photos: [],
+			previewPhotos: []
+		}));
+	}
+
 	render() {
 		return(
 			<div className="rn-feed-new rn-feed-item">
@@ -145,6 +186,7 @@ class New extends Component {
 						<textarea
 							className="rn-feed-new-main-field definp"
 							placeholder="How is your day going?"
+							ref={ ref => this.inputRef = ref }
 							onChange={ ({ target: { value } }) => this.setValue('text', value) }
 						/>
 						<div className="rn-feed-new-main-photos">
@@ -170,7 +212,7 @@ class New extends Component {
 							onUpload={ file => this.setValue('photos', file) }
 						/>
 					</div>
-					<button className="rn-feed-new-addons-submit definp">Post</button>
+					<button className="rn-feed-new-addons-submit definp" onClick={ this.publish }>Post</button>
 				</div>
 			</div>
 		);
@@ -182,7 +224,8 @@ class App extends Component {
 		super(props);
 
 		this.state = {
-			posts: false
+			posts: false,
+			isPosting: false
 		}
 	}
 
@@ -235,6 +278,65 @@ class App extends Component {
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
+	publishPost = (text, images) => {
+		if((!text || !text.replace(/ /g, "").length) && (!images || !images.length)) return;
+
+		let { id, authToken } = cookieControl.get("authdata"),
+			errorTxt = "We couldn't publish your post. Please, try later.";
+
+		let sQr = pl => this.setState(() => ({ isPosting: pl }));
+		sQr(true);
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $content: String, $images: [Upload!]) {
+				  publishPost(
+				    id: $id,
+				    authToken: $authToken,
+				    content: $content,
+				    images: $images
+				  ) {
+				    id,
+					content,
+					time,
+					likesInt,
+					commentsInt,
+					creator {
+						id,
+						name,
+						avatar
+					},
+					images {
+						id,
+						url
+					},
+					comments {
+						id,
+						content,
+						creator {
+							id,
+							avatar,
+							name
+						},
+						likesInt
+					}
+				  }
+				}
+			`,
+			variables: {
+				id, authToken, images,
+				content: text
+			}
+		}).then(({ data: { publishPost: post } }) => {
+			sQr(false);
+			if(!post) return this.props.castError(errorTxt);
+
+			this.setState(({ posts }) => ({
+				posts: (posts) ? ([ post, ...posts ]) : [post]
+			}));
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
 	render() {
 		return(
 			<div className="rn rn-feed">
@@ -245,7 +347,19 @@ class App extends Component {
 							api.storage + this.props.userdata.avatar)
 						|| "")
 					}
+					onPublish={ this.publishPost }
 				/>
+				{
+					(!this.state.isPosting) ? null : (
+						<LoadingIcon
+							style={{
+								marginTop: "0px",
+								marginBottom: "10px",
+								marginLeft: "inherit"
+							}}
+						/>
+					)
+				}
 				{
 					(this.state.posts !== false) ? (
 						this.state.posts.map(({ id, content, creator, time, commentsInt, likesInt, images, comments }) => (
@@ -262,7 +376,11 @@ class App extends Component {
 							/>
 						))
 					) : (
-						<LoadingIcon />
+						<LoadingIcon
+							style={{
+								marginLeft: "inherit"
+							}}
+						/>
 					)
 				}
 			</div>

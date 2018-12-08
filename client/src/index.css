@@ -56,7 +56,7 @@ html, body {
 
 .global_error {
 	--height:37.5px;
-	--trans:1s;
+	--trans:.35s;
 
 	position:fixed;
 	bottom:calc(var(--height) * -1);
@@ -76,10 +76,20 @@ html, body {
 	transition-timing-function:cubic-bezier(0.77, 0, 0.175, 1);
 }
 
+.global_error > span {
+	opacity:0;
+	transition:all var(--trans) ease-in-out;
+}
+
 .global_error.active {
 	transition:all var(--trans), opacity 0s;
 	opacity:1;
 	bottom:0;
+}
+
+.global_error.active > span {
+	transition:all var(--trans) var(--trans) ease-in-out;
+	opacity:1;
 }
 
 .targetscreen {
@@ -92,13 +102,18 @@ html, body {
 		align-items:center!important;
 		padding-left:0!important;
 	}
+
+	.rn:not(.nonav) > * {
+		margin-left:auto!important;
+		margin-right:auto!important;
+	}
 }
 
-@media only screen and (max-width:815px) {
-	/*.rn-feed-mat-item-collage {
+/*@media only screen and (max-width:815px) {
+	.rn-feed-mat-item-collage {
 		width:calc(100% - 45px)!important;
-	}*/
-}
+	}
+}*/
 
 @media only screen and (max-width:750px) {
 	.gl-nav-logo > span {

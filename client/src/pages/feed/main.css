@@ -240,6 +240,11 @@
 	font-family:"Gothic A1";
 	line-height:calc(var(--submith) + 20px);
 	background:#4267B1;
+	transition:.125s;
+}
+
+.rn-feed-new-addons-submit:active {
+	transform:scale(.95);
 }
 
 .rn-feed-new-addons {

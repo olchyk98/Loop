@@ -9,10 +9,14 @@ import api from '../../../api';
 import { convertTime } from '../../../swissKnife';
 
 class FeedItemCollageImage extends Component {
+	componentDidMount() {
+		this.forceUpdate();
+	}
+
 	render() {
 		return(
-			<div className={ `rn-feed-mat-item-collage-image${ (!this.props.isOld) ? "" : " old" }${ (!this.props.isActive) ? "" : " active" }${ (!this.props.isNew) ? "" : " new" }` }>
-				<img src={ this.props.image } alt="in" title="Image" />
+			<div onClick={ () => this.props._onClick } className={ `rn-feed-mat-item-collage-image${ (!this.props.isOld) ? "" : " old" }${ (!this.props.isActive) ? "" : " active" }${ (!this.props.isNew) ? "" : " new" }` }>
+				<img src={ api.storage + this.props.image } alt="in" title="Image" />
 			</div>
 		);
 	}
@@ -80,13 +84,14 @@ class FeedItemCollage extends Component {
 						}
 					</div>
 					{
-						this.props.images.map((session, index) => (
+						this.props.images.map(({ url, id }, index) => (
 							<FeedItemCollageImage
 								key={ index }
-								image={ session }
+								image={ url }
 								isNew={ this.state.collageCursor < index }
 								isActive={ this.state.collageCursor === index }
 								isOld={ this.state.collageCursor > index }
+								_onClick={ () => id } // open
 							/>
 						))
 					}
@@ -132,7 +137,7 @@ class FeedItemComment extends Component {
 				</div>
 				<div className="rn-feed-mat-item-comments-comment-content">
 					<span className="rn-feed-mat-item-comments-comment-content-mat">
-						{ this.props.content }
+						this.props.content
 					</span>
 					<div className="rn-feed-mat-item-comments-comment-content-controls">
 						<button className="rn-feed-mat-item-comments-comment-content-controls-like definp">
@@ -272,6 +277,20 @@ class FeedItemCommentinput extends Component {
 }
 
 class App extends Component {
+	constructor(props) {
+		super(props);
+
+		this.updateInt = null;
+	}
+
+	componentDidMount() {
+		this.updateInt = setInterval(() => this.forceUpdate(), 50000); // every 50s (50000ms)
+	}
+
+	componentWillUnmount() {
+		clearInterval(this.updateInt);
+	}
+
 	render() {
 		return(
 			<div className="rn-feed-mat-item rn-feed-item">
@@ -282,17 +301,26 @@ class App extends Component {
 						</div>
 						<div className="rn-feed-mat-item-head-info-mat">
 							<div className="rn-feed-mat-item-head-info-mat-name">
-								<p>{ this.props.creator.name }</p>
+								{ this.props.creator.name }
 							</div>
 							<p className="rn-feed-mat-item-head-info-mat-date">{ convertTime(this.props.time, "ago") }</p>
 						</div>
 					</div>
 				</div>
 				<p className={ `rn-feed-mat-item-content${ (!this.props.images || !this.props.images.length) ? " single" : ""  }` }>
-					{ this.props.content }
+					{
+						this.props.content.split(' ').map((session, index) => {
+							if(!session.match(/#[A-Za-z]+/g)) {
+								return session + ' ';
+							} else {
+								return <span className="rn-feed-mat-item-content-tag" key={ index }>{ session } </span>;
+							}
+						})
+					}
+					
 				</p>
 				{
-					(this.props.images) ? null : (
+					(!this.props.images || !this.props.images.length) ? null : (
 						<FeedItemCollage
 							images={ this.props.images }
 						/>
