@@ -258,13 +258,17 @@
 	color:rgba(0, 0, 0, .75);
 }
 
+.rn-feed-mat-item-feedback-btn.active > * {
+	color:red;
+}
+
 .rn-feed-mat-item-feedback-btn-counter {
 	font-size:1.3em;
 	color:rgba(0, 0, 0, .65);
 	transition:.4s;
 }
 
-.rn-feed-mat-item-feedback-btn:hover .rn-feed-mat-item-feedback-btn-counter {
+.rn-feed-mat-item-feedback-btn:not(.active):hover .rn-feed-mat-item-feedback-btn-counter {
 	color:black;
 }
 

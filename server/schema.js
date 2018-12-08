@@ -43,7 +43,8 @@ function generateNoise(l = 256) {
 	return a;
 }
 
-let getExtension = a => a.match(/[^\\]*\.(\w+)$/)[1];
+let getExtension = a => a.match(/[^\\]*\.(\w+)$/)[1],
+	str = a => a.toString();
 
 const UserType = new GraphQLObjectType({
 	name: "User",
@@ -101,6 +102,13 @@ const PostType = new GraphQLObjectType({
 		likesInt: {
 			type: GraphQLInt,
 			resolve: ({ likes }) => likes.length
+		},
+		isLiked: {
+			type: GraphQLBoolean,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			resolve: ({ likes }, { id }) => likes.includes(str(id))
 		},
 		images: {
 			type: new GraphQLList(ImageType),
@@ -389,6 +397,37 @@ const RootMutation = new GraphQLObjectType({
 				).save();
 
 				return comment;
+			}
+		},
+		likePost: {
+			type: PostType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, targetID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await Post.findById(targetID);
+				if(!b) return;
+
+				let c = !b.likes.includes(id);
+
+				await b.updateOne({
+					[ (c) ? '$addToSet': '$pull' ]: {
+						likes: id
+					}
+				});
+
+				if(c) {
+					b.likes.push(id)
+				} else {
+					b.likes.splice(b.likes.findIndex(io => str(io) === str(id)), 1);
+				}
+
+				return b;
 			}
 		}
 	}

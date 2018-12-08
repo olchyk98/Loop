@@ -227,6 +227,8 @@ class App extends Component {
 			posts: false,
 			isPosting: false
 		}
+
+		this.screenRef = React.createRef();
 	}
 
 	componentDidMount() {
@@ -243,6 +245,7 @@ class App extends Component {
 						time,
 						likesInt,
 						commentsInt,
+						isLiked(id: $id),
 						creator {
 							id,
 							name,
@@ -301,6 +304,7 @@ class App extends Component {
 					time,
 					likesInt,
 					commentsInt,
+					isLiked(id: $id),
 					creator {
 						id,
 						name,
@@ -339,7 +343,7 @@ class App extends Component {
 
 	render() {
 		return(
-			<div className="rn rn-feed">
+			<div className="rn rn-feed" ref={ ref => this.screenRef = ref }>
 				<New
 					uavatar={
 						((this.props.userdata &&
@@ -362,7 +366,7 @@ class App extends Component {
 				}
 				{
 					(this.state.posts !== false) ? (
-						this.state.posts.map(({ id, content, creator, time, commentsInt, likesInt, images, comments }) => (
+						this.state.posts.map(({ id, content, isLiked, creator, time, commentsInt, likesInt, images, comments }) => (
 							<FeedItem
 								key={ id }
 								id={ id }
@@ -370,9 +374,11 @@ class App extends Component {
 								creator={ creator }
 								time={ time }
 								likesInt={ likesInt }
+								isLiked={ isLiked }
 								commentsInt={ commentsInt }
 								images={ images }
 								comments={ comments }
+								parentScreen={ this.screenRef }
 							/>
 						))
 					) : (

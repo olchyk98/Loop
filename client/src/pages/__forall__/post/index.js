@@ -1,12 +1,14 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import './main.css';
 
 import NewGridPhoto from '../gridphoto';
 
 import { connect } from 'react-redux';
+import { gql } from 'apollo-boost';
 
+import client from '../../../apollo';
 import api from '../../../api';
-import { convertTime } from '../../../swissKnife';
+import { cookieControl, convertTime } from '../../../swissKnife';
 
 class FeedItemCollageImage extends Component {
 	componentDidMount() {
@@ -116,9 +118,9 @@ class FeedItemCollage extends Component {
 class FeedItemFeedbackButton extends Component {
 	render() {
 		return(
-			<button className="rn-feed-mat-item-feedback-btn definp">
-				<div className="rn-feed-mat-item-feedback-btn-icon">
-					{ this.props.icon }
+			<button className={ `rn-feed-mat-item-feedback-btn definp${ (!this.props.isActive) ? "" : " active" }` } onClick={ this.props._onClick }>
+				<div className="rn-feed-mat-item-feedback-btn-icon" key={ (!this.props.isActive) ? 'A' : 'B' }>
+					{ (!this.props.isActive) ? this.props.icon : this.props.activeIcon || this.props.icon }
 				</div>
 				<div className="rn-feed-mat-item-feedback-btn-counter">
 					<span>{ this.props.counter }</span>
@@ -137,7 +139,7 @@ class FeedItemComment extends Component {
 				</div>
 				<div className="rn-feed-mat-item-comments-comment-content">
 					<span className="rn-feed-mat-item-comments-comment-content-mat">
-						this.props.content
+						{ this.props.content }
 					</span>
 					<div className="rn-feed-mat-item-comments-comment-content-controls">
 						<button className="rn-feed-mat-item-comments-comment-content-controls-like definp">
@@ -258,6 +260,7 @@ class FeedItemCommentinput extends Component {
 					className="rn-feed-mat-item-commentinput-input definp"
 					placeholder="Write a comment..."
 					title="Leave your comment"
+					ref={ ref => this.props._onRef(ref) }
 					onChange={ ({ target: { value } }) => this.setCommentValue('text', value) }
 				/>
 				<div className="rn-feed-mat-item-commentinput-controls">
@@ -280,7 +283,14 @@ class App extends Component {
 	constructor(props) {
 		super(props);
 
+		this.state = {
+			likesInt: null,
+			isLiked: null,
+			commentsInt: null
+		}
+
 		this.updateInt = null;
+		this.commentInputRef = React.createRef();
 	}
 
 	componentDidMount() {
@@ -289,6 +299,65 @@ class App extends Component {
 
 	componentWillUnmount() {
 		clearInterval(this.updateInt);
+	}
+
+	navigateFeedback = event => {
+		switch(event) {
+			case 'LIKE_ACTION': {
+				if(this.state.fetchingLike) return;
+
+				this.setState(({ likesInt: a, isLiked: b }, { isLiked: c, likesInt: d }) => ({
+					likesInt: (Number.isInteger(a)) ? (!b) ? a + 1 : a - 1 : (!c) ? d + 1 : d - 1,
+					isLiked: (typeof b === 'boolean') ? !b : !c,
+					fetchingLike: true
+				}));
+
+				let { id, authToken } = cookieControl.get("authdata"),
+					errorTxt = "We couldn't like this tweet. Please, try again."
+
+				client.mutate({
+					mutation: gql`
+						mutation($id: ID!, $authToken: String!, $targetID: ID!) {
+						  likePost(
+						    id: $id,
+						    authToken: $authToken,
+						    targetID: $targetID
+						  ) {
+						    id,
+						    likesInt,
+						    isLiked(id: $id)
+						  }
+						}
+					`,
+					variables: {
+						id, authToken,
+						targetID: this.props.id
+					}
+				}).then(({ data: { likePost } }) => {
+					this.setState(() => ({ fetchingLike: false }));
+					if(!likePost) return this.props.castError(errorTxt);
+
+					this.setState(() => ({
+						likesInt: likePost.likesInt,
+						isLiked: likePost.isLiked
+					}));
+				}).catch(() => this.props.castError(errorTxt));
+			}
+			break;
+			case 'COMMENT_ACTION': {
+				this.commentInputRef.focus();
+				this.props.parentScreen.scrollTo({
+					top: this.commentInputRef.getBoundingClientRect().top,
+					behavior: 'smooth'
+				});
+			}
+			break;
+			default:break;
+		}
+	}
+
+	sendComment = () => {
+		
 	}
 
 	render() {
@@ -313,7 +382,7 @@ class App extends Component {
 							if(!session.match(/#[A-Za-z]+/g)) {
 								return session + ' ';
 							} else {
-								return <span className="rn-feed-mat-item-content-tag" key={ index }>{ session } </span>;
+								return <Fragment key={ index }><span className="rn-feed-mat-item-content-tag">{ session }</span> </Fragment>;
 							}
 						})
 					}
@@ -331,17 +400,25 @@ class App extends Component {
 						[
 							{
 								icon: <i className="far fa-heart" />,
-								counter: this.props.likesInt
+								activeIcon: <i className="fas fa-heart" />,
+								counter: (Number.isInteger(this.state.likesInt)) ? this.state.likesInt : this.props.likesInt,
+								action: "LIKE_ACTION",
+								active: (typeof this.state.isLiked === 'boolean') ? this.state.isLiked : this.props.isLiked
 							},
 							{
 								icon: <i className="far fa-comment" />,
-								counter: this.props.commentsInt
+								counter: (Number.isInteger(this.state.commentsInt)) ? this.state.commentsInt : this.props.commentsInt,
+								action: "COMMENT_ACTION",
+								active: false
 							}
-						].map(({ icon, counter }, index) => (
+						].map(({ icon, counter, action, active, activeIcon }, index) => (
 							<FeedItemFeedbackButton
 								key={ index }
 								icon={ icon }
 								counter={ counter }
+								isActive={ active }
+								activeIcon={ activeIcon }
+								_onClick={ () => this.navigateFeedback(action) }
 							/>
 						))
 					}
@@ -365,6 +442,7 @@ class App extends Component {
 				</div>
 				<FeedItemCommentinput
 					uavatar={ ((this.props.userdata && Object.keys(this.props.userdata).length && api.storage + this.props.userdata.avatar) || "") }
+					_onRef={ ref => this.commentInputRef = ref }
 				/>
 			</div>
 		);
@@ -375,6 +453,11 @@ const mapStateToProps = ({ user: { userdata } }) => ({
 	userdata
 });
 
+const mapActionsToProps = {
+	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } })
+}
+
 export default connect(
-	mapStateToProps
+	mapStateToProps,
+	mapActionsToProps
 )(App);
