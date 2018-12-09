@@ -174,22 +174,32 @@ class FeedItemCommentinput extends Component {
 	}
 
 	setCommentValue = (field, value) => {
-		if(field === 'image') {
-			if(!value) return;
+		if(field === 'images') {
+			if(!value || !value.length) return;
+
+			let a = [],
+				b = [],
+				c = this.state.images.length;
+
+			for(let ma = 0; ma < value.length; ma++) {
+				let io = value[ma];
+				a.push({
+					file: io,
+					id: c + ma
+				});
+				b.push({
+					url: URL.createObjectURL(io),
+					id: c + ma
+				});
+			}
 
 			return this.setState(({ images, imagesPreview }) => ({
 				images: [
-					{
-						file: value,
-						id: images.length
-					},
+					...a,
 					...images
 				],
 				imagesPreview: [
-					{
-						url: URL.createObjectURL(value),
-						id: images.length
-					},
+					...b,
 					...imagesPreview
 				]
 			}));
@@ -268,7 +278,9 @@ class FeedItemCommentinput extends Component {
 						type="file"
 						id="rn-feed-mat-item-commentinput-controls-file"
 						className="hidden"
-						onChange={ ({ target: { files } }) => this.setCommentValue('image', files[0]) }
+						accept="image/*"
+						multiple
+						onChange={ ({ target: { files } }) => this.setCommentValue('images', files) }
 					/>
 					<label htmlFor="rn-feed-mat-item-commentinput-controls-file" className="rn-feed-mat-item-commentinput-controls-btn definp">
 						<i className="fas fa-camera-retro" />
@@ -301,7 +313,7 @@ class App extends Component {
 		clearInterval(this.updateInt);
 	}
 
-	navigateFeedback = event => {
+	sendFeedback = event => {
 		switch(event) {
 			case 'LIKE_ACTION': {
 				if(this.state.fetchingLike) return;
@@ -345,19 +357,11 @@ class App extends Component {
 			}
 			break;
 			case 'COMMENT_ACTION': {
-				this.commentInputRef.focus();
-				this.props.parentScreen.scrollTo({
-					top: this.commentInputRef.getBoundingClientRect().top,
-					behavior: 'smooth'
-				});
+					
 			}
 			break;
 			default:break;
 		}
-	}
-
-	sendComment = () => {
-		
 	}
 
 	render() {
@@ -402,13 +406,19 @@ class App extends Component {
 								icon: <i className="far fa-heart" />,
 								activeIcon: <i className="fas fa-heart" />,
 								counter: (Number.isInteger(this.state.likesInt)) ? this.state.likesInt : this.props.likesInt,
-								action: "LIKE_ACTION",
+								action: () => this.sendFeedback('LIKE_ACTION'),
 								active: (typeof this.state.isLiked === 'boolean') ? this.state.isLiked : this.props.isLiked
 							},
 							{
 								icon: <i className="far fa-comment" />,
 								counter: (Number.isInteger(this.state.commentsInt)) ? this.state.commentsInt : this.props.commentsInt,
-								action: "COMMENT_ACTION",
+								action: () => {
+									this.commentInputRef.focus();
+									this.props.parentScreen.scrollTo({
+										top: this.commentInputRef.getBoundingClientRect().top,
+										behavior: 'smooth'
+									});
+								},
 								active: false
 							}
 						].map(({ icon, counter, action, active, activeIcon }, index) => (
@@ -418,7 +428,7 @@ class App extends Component {
 								counter={ counter }
 								isActive={ active }
 								activeIcon={ activeIcon }
-								_onClick={ () => this.navigateFeedback(action) }
+								_onClick={ action }
 							/>
 						))
 					}
@@ -443,6 +453,7 @@ class App extends Component {
 				<FeedItemCommentinput
 					uavatar={ ((this.props.userdata && Object.keys(this.props.userdata).length && api.storage + this.props.userdata.avatar) || "") }
 					_onRef={ ref => this.commentInputRef = ref }
+					_onSubmit={ () => this.sendFeedback('COMMENT_ACTION') }
 				/>
 			</div>
 		);

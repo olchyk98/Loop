@@ -71,7 +71,8 @@ class New extends Component {
 			if(!value || !value.length) return;
 
 			let pics = [],
-				picsPrev = [];
+				picsPrev = [],
+				id = this.state.photos.length;
 
 			/*
 				So, FileList doesn't have forEach function in his prototype,
@@ -81,14 +82,15 @@ class New extends Component {
 			/*
 				for-loop body är någonting som repeteras igen och igen
 			*/
-			for(let io of value) {
+			for(let ma = 0; ma < value.length; ma++) {
+				let io = value[ma];
 				pics.push({
 					file: io,
-					id: this.state.photos.length
+					id: id + ma
 				});
 				picsPrev.push({
 					url: URL.createObjectURL(io),
-					id: this.state.photos.length
+					id: id + ma
 				});
 			}
 
@@ -378,7 +380,7 @@ class App extends Component {
 								commentsInt={ commentsInt }
 								images={ images }
 								comments={ comments }
-								parentScreen={ this.screenRef }
+								// parentScreen={ this.screenRef }
 							/>
 						))
 					) : (
