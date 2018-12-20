@@ -380,7 +380,7 @@ class App extends Component {
 								commentsInt={ commentsInt }
 								images={ images }
 								comments={ comments }
-								// parentScreen={ this.screenRef }
+								parentScreen={ this.screenRef }
 							/>
 						))
 					) : (

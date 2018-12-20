@@ -167,7 +167,7 @@ class FeedItemCommentinput extends Component {
 		this.lastPhotoErrorUrl = "";
 	}
 
-	componentWillUnmount = () => {
+	componentWillUnmount() {
 		this.state.imagesPreview.forEach(io => {
 			URL.revokeObjectURL(io);
 		});
@@ -276,13 +276,15 @@ class FeedItemCommentinput extends Component {
 				<div className="rn-feed-mat-item-commentinput-controls">
 					<input
 						type="file"
-						id="rn-feed-mat-item-commentinput-controls-file"
+						id={ `rn-feed-mat-item-commentinput-controls-file-${ this.props.rootId }` } // ARE YOU FUCKEN SRSLY??? I HATE MYSELF
 						className="hidden"
 						accept="image/*"
 						multiple
-						onChange={ ({ target: { files } }) => this.setCommentValue('images', files) }
+						onChange={ ({ target: { files } }) => {
+							this.setCommentValue('images', files);
+						} }
 					/>
-					<label htmlFor="rn-feed-mat-item-commentinput-controls-file" className="rn-feed-mat-item-commentinput-controls-btn definp">
+					<label htmlFor={ `rn-feed-mat-item-commentinput-controls-file-${ this.props.rootId }` } className="rn-feed-mat-item-commentinput-controls-btn definp">
 						<i className="fas fa-camera-retro" />
 					</label>
 				</div>
@@ -356,10 +358,7 @@ class App extends Component {
 				}).catch(() => this.props.castError(errorTxt));
 			}
 			break;
-			case 'COMMENT_ACTION': {
-					
-			}
-			break;
+			case 'COMMENT_ACTION':break;
 			default:break;
 		}
 	}
@@ -454,6 +453,7 @@ class App extends Component {
 					uavatar={ ((this.props.userdata && Object.keys(this.props.userdata).length && api.storage + this.props.userdata.avatar) || "") }
 					_onRef={ ref => this.commentInputRef = ref }
 					_onSubmit={ () => this.sendFeedback('COMMENT_ACTION') }
+					rootId={ this.props.id }
 				/>
 			</div>
 		);

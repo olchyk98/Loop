@@ -8,7 +8,7 @@ const schema = require('./schema');
 
 const app = express();
 
-mongoose.connect('mongodb://oles:0password@ds239029.mlab.com:39029/graphql-loop', {
+mongoose.connect('mongodb://oles:0password@ds113935.mlab.com:13935/dev-tunaconnect', {
 	useNewUrlParser: true
 });
 mongoose.connection.once('open', () => console.log("Server was successfully connected to the database."))
