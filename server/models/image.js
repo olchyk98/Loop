@@ -6,7 +6,8 @@ const ImageSchema = new Schema({
 	postID: String,
 	url: String,
 	time: Date,
-	likes: Array
+	likes: Array,
+	targetType: String
 });
 
 module.exports = mongoose.model("Image", ImageSchema);

@@ -153,7 +153,7 @@ class App extends Component {
 				/>
 				<div className="gl-nav">
 					<div className="gl-nav-logo">
-						<span>MyLoop</span>
+						<span>TConnect</span>
 						<div onClick={ this.props.toggleSmallDock }>
 							<i className="fas fa-bars" />
 						</div>

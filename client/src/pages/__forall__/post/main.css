@@ -329,11 +329,14 @@
 .rn-feed-mat-item-comments-comment-content {
 	display:flex;
 	flex-direction:column;
+	align-items:flex-start;
+	width:100%;
 }
 
 .rn-feed-mat-item-comments-comment-content-mat {
-	--padding:12.5px;
+	--padding:10px;
 
+	width:auto;
 	padding:var(--padding);
 	border-radius:1rem;
 	background:#EFF1F3;
@@ -369,6 +372,23 @@
 	color:rgba(0, 0, 0, .5);
 	font-weight:500;
 	font-family:"Quicksand";
+}
+
+.rn-feed-mat-item-comments-comment-content-images {
+	margin-top:15px;
+	margin-bottom:5px;
+	width:100%;
+	height:145px;
+	position:relative;
+	cursor:pointer;
+}
+
+.rn-feed-mat-item-comments-comment-content-images > img {
+	height:100%;
+	max-width:100%;
+	object-fit:cover;
+	object-position:center;
+	border-radius:1.25rem;
 }
 
 .rn-feed-mat-item-commentinput {

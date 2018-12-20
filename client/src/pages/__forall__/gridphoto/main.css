@@ -44,10 +44,15 @@
 .rn-feed-new-main-photos-photoplaceholder.sphere,
 .rn-feed-new-main-photos-photo.sphere {
 	--margin:1px;
-	--size:calc(37.5px / 2 - var(--margin) * 2);
+	--size:30px;
 
 	width:var(--size);
 	height:var(--size);
 	margin-left:var(--margin);
 	margin-right:var(--margin);
+}
+
+.rn-feed-new-main-photos-photo.sphere > .rn-feed-new-main-photos-photo-delete,
+.rn-feed-new-main-photos-photo.sphere > .rn-feed-new-main-photos-photo-error {
+	font-size:1em;
 }

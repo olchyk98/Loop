@@ -265,7 +265,12 @@ class App extends Component {
 								avatar,
 								name
 							},
-							likesInt
+							likesInt,
+							isLiked(id: $id),
+							image {
+								id,
+								url
+							}
 						}
 					}
 				}
@@ -275,7 +280,6 @@ class App extends Component {
 			}
 		}).then(({ data: { getFeed } }) => {
 			if(!getFeed) this.props.castError(errorTxt);
-
 
 			this.setState(() => ({
 				posts: getFeed
@@ -324,7 +328,12 @@ class App extends Component {
 							avatar,
 							name
 						},
-						likesInt
+						likesInt,
+						isLiked(id: $id),
+						image {
+							id,
+							url
+						}
 					}
 				  }
 				}

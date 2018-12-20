@@ -137,6 +137,7 @@ const ImageType = new GraphQLObjectType({
 		postID: { type: GraphQLString },
 		url: { type: GraphQLString },
 		time: { type: GraphQLString },
+		targetType: { type: GraphQLString },
 		likes: { type: new GraphQLList(GraphQLID) },
 		likesInt: {
 			type: GraphQLInt,
@@ -166,6 +167,13 @@ const CommentType = new GraphQLObjectType({
 			type: GraphQLInt,
 			resolve: ({ likes: { length: a } }) => a
 		},
+		isLiked: {
+			type: GraphQLBoolean,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			resolve: ({ likes }, { id }) => likes.includes(id)
+		},
 		comments: {
 			type: new GraphQLList(CommentType),
 			resolve: ({ id }) => Commnet.find({ postID: id })
@@ -174,9 +182,13 @@ const CommentType = new GraphQLObjectType({
 			type: UserType,
 			resolve: ({ creatorID }) => User.findById(creatorID)
 		},
-		images: {
-			type: new GraphQLList(ImageType),
-			resolve: ({ id }) => Image.find({ postID: id })
+		image: {
+			type: ImageType,
+			async resolve({ id }) {
+				let a = await Image.findOne({ postID: id });
+
+				return a || null;
+			}
 		}
 	})
 });
@@ -207,7 +219,7 @@ const RootQuery = new GraphQLObjectType({
 			args: {
 				login: { type: new GraphQLNonNull(GraphQLString) }
 			},
-			resolve: async (_, { login }) => !Boolean(await User.findOne({ login }))
+			resolve: async (_, { login }) => !(await User.findOne({ login }))
 		},
 		posts: {
 			type: new GraphQLList(PostType),
@@ -335,7 +347,8 @@ const RootMutation = new GraphQLObjectType({
 									postID: post._id,
 									url: link,
 									time: new Date,
-									likes: []
+									likes: [],
+									targetType: "POST_TYPE"
 								})
 							).save();
 							post.images.push(b);
@@ -354,11 +367,11 @@ const RootMutation = new GraphQLObjectType({
 				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				targetID: { type: new GraphQLNonNull(GraphQLID) },
 				content: { type: GraphQLString },
-				images: { type: new GraphQLList(GraphQLUpload) }
+				image: { type: GraphQLUpload }
 			},
-			async resolve(_, { id, authToken, targetID, content, images }) {
+			async resolve(_, { id, authToken, targetID, content, image }) {
 				// Global validation
-				if(!content && (!images || !images.length)) return null;
+				if(!content && !image) return null;
 				let a = await validateAccount(id, authToken);
 				if(!a) return null;
 
@@ -371,7 +384,6 @@ const RootMutation = new GraphQLObjectType({
 						"Image"
 					];
 
-					// I need the break statement, so I should use for-loop, instead of forEach
 					for(let io of b) {
 						let c = eval(io);
 						// if(!c) continue;
@@ -385,7 +397,7 @@ const RootMutation = new GraphQLObjectType({
 				}
 				if(!inTarget) return null;
 
-				// Publish
+				// Publish comment
 				const comment = await (
 					new Comment({
 						creatorID: id,
@@ -395,6 +407,22 @@ const RootMutation = new GraphQLObjectType({
 						likes: []
 					})
 				).save();
+
+				// Receive image
+				if(image) {
+					let { stream, filename } = await image;
+
+					let link = `${ settings.files.images }/${ generateNoise(128) }.${ getExtension(filename) }`;
+					stream.pipe(fileSystem.createWriteStream('.' + link));
+
+					await (new Image({
+						creatorID: id,
+						postID: comment._id,
+						url: link,
+						time: new Date,
+						likes: []
+					})).save();
+				}
 
 				return comment;
 			}
@@ -408,7 +436,7 @@ const RootMutation = new GraphQLObjectType({
 			},
 			async resolve(_, { id, authToken, targetID }) {
 				let a = await validateAccount(id, authToken);
-				if(!a) return null;
+				if(!a || !targetID) return null;
 
 				let b = await Post.findById(targetID);
 				if(!b) return;
@@ -423,6 +451,37 @@ const RootMutation = new GraphQLObjectType({
 
 				if(c) {
 					b.likes.push(id)
+				} else {
+					b.likes.splice(b.likes.findIndex(io => str(io) === str(id)), 1);
+				}
+
+				return b;
+			}
+		},
+		likeComment: {
+			type: CommentType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, targetID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a || !targetID) return null;
+
+				let b = await Comment.findById(targetID);
+				if(!b) return;
+
+				let c = !b.likes.includes(id);
+
+				await b.updateOne({
+					[ (c) ? '$addToSet': '$pull' ]: {
+						likes: id
+					}
+				});
+
+				if(c) {
+					b.likes.push(id);
 				} else {
 					b.likes.splice(b.likes.findIndex(io => str(io) === str(id)), 1);
 				}

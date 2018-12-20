@@ -36,7 +36,7 @@ class Conversation extends Component {
 
 	render() {
 		return(
-			<div className={ `rn-chat-conversations-item ${ this.props.color }` }>
+			<div className={ `rn-chat-conversations-item ${ this.props.color || "white" }` }>
 				<div className="rn-chat-conversations-item-previewimg">
 					<div className="rn-chat-conversations-item-previewimg-image">
 					<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ image } title="Conversation member" />

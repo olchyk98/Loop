@@ -2,6 +2,7 @@ import React, { Component, Fragment } from 'react';
 import './main.css';
 
 import NewGridPhoto from '../gridphoto';
+import Loadericon from '../loader.icon';
 
 import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
@@ -131,6 +132,54 @@ class FeedItemFeedbackButton extends Component {
 }
 
 class FeedItemComment extends Component {
+	constructor(props) {
+		super(props);
+
+		this.state = {
+			isLiked: null,
+			likesInt: null,
+			isLiking: false
+		}
+	}
+
+	likeComment = () => {
+		if(this.state.isLiking) return;
+		let qRa = pl => this.setState(() => ({ isLiking: pl }));
+
+		qRa(true);
+		this.setState(( { isLiked: a, likesInt: b }, { isLiked: c, likesInt: d } ) => ({
+			isLiked: (a) ? !a : !c,
+			likesInt: (a) ? !a : !c ? a + 1 : -1
+		}));
+
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "We couldn't submit your like. Please, try again.";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $targetID: ID!) {
+					likeComment(id: $id, authToken: $authToken, targetID: $targetID) {
+						id,
+						likesInt,
+						isLiked(id: $id)
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				targetID: this.props.id
+			}
+		}).then(({ data: { likeComment } }) => {
+			qRa(false);
+			if(!likeComment) return this.props.castError(errorTxt);
+
+			this.setState(() => ({
+				isLiked: likeComment.isLiked,
+				likesInt: likeComment.likesInt
+			}));
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
 	render() {
 		return(
 			<div className="rn-feed-mat-item-comments-comment">
@@ -138,12 +187,23 @@ class FeedItemComment extends Component {
 					<img src={ ((this.props.creator.avatar && api.storage + this.props.creator.avatar) || "") } alt="creator" title="Creator's avatar" />
 				</div>
 				<div className="rn-feed-mat-item-comments-comment-content">
-					<span className="rn-feed-mat-item-comments-comment-content-mat">
-						{ this.props.content }
-					</span>
+					{
+						(!this.props.content) ? null : (
+							<div className="rn-feed-mat-item-comments-comment-content-mat">
+								{ this.props.content }
+							</div>
+						)
+					}
+					{
+						(!this.props.image) ? null : (
+							<div className="rn-feed-mat-item-comments-comment-content-images">
+								<img src={ api.storage + this.props.image.url } alt="comment addon" />
+							</div>
+						)
+					}
 					<div className="rn-feed-mat-item-comments-comment-content-controls">
-						<button className="rn-feed-mat-item-comments-comment-content-controls-like definp">
-							Like ({ this.props.likesInt })
+						<button className="rn-feed-mat-item-comments-comment-content-controls-like definp" onClick={ this.likeComment }>
+							Like{ ( ((this.state.isLiked === null) ? this.props.isLiked : this.state.isLiked) ? "d" : "" ) } ({ this.state.likesInt || this.props.likesInt })
 						</button>
 						<span className="rn-feed-mat-item-comments-comment-content-controls-space">·</span>
 						<span className="rn-feed-mat-item-comments-comment-content-controls-time">{ convertTime(this.props.time, "ago") }</span>
@@ -160,107 +220,79 @@ class FeedItemCommentinput extends Component {
 
 		this.state = {
 			text: "",
-			images: [],
-			imagesPreview: []
+			image: null,
+			imagePreview: null
 		}
 
-		this.lastPhotoErrorUrl = "";
+		this.inputRef = this.fileIRef =  React.createRef();
 	}
 
 	componentWillUnmount() {
-		this.state.imagesPreview.forEach(io => {
-			URL.revokeObjectURL(io);
-		});
+		URL.revokeObjectURL(this.state.imagePreview);
 	}
 
 	setCommentValue = (field, value) => {
-		if(field === 'images') {
-			if(!value || !value.length) return;
+		if(field === 'image') {
+			if(!value) return;
 
-			let a = [],
-				b = [],
-				c = this.state.images.length;
-
-			for(let ma = 0; ma < value.length; ma++) {
-				let io = value[ma];
-				a.push({
-					file: io,
-					id: c + ma
-				});
-				b.push({
-					url: URL.createObjectURL(io),
-					id: c + ma
-				});
-			}
-
-			return this.setState(({ images, imagesPreview }) => ({
-				images: [
-					...a,
-					...images
-				],
-				imagesPreview: [
-					...b,
-					...imagesPreview
-				]
+			return this.setState(() => ({
+				image: value,
+				imagePreview: URL.createObjectURL(value)
 			}));
 		}
 
 		this.setState(({ comment }) => ({
-			comment: {
-				...comment,
-				[field]: value
-			}
+			[field]: value
 		}));
 	}
 
-	deleteImage = id => {
-		let a = Array.from(this.state.images),
-			b = Array.from(this.state.imagesPreview);
-
-		a.splice(a.findIndex(io => io.id === id), 1);
-
-		let c = b.findIndex(io => io.id === id);
-		URL.revokeObjectURL(b[c].url);
-		b.splice(c, 1);
+	deleteImage = () => {
+		URL.revokeObjectURL(this.state.imagePreview);
+		this.fileIRef.value = [];
 
 		this.setState(() => ({
-			images: a,
-			imagesPreview: b
+			image: null,
+			imagePreview: null
 		}));
 	}
 
 	recordImageError = (id, url) => {
-		if(this.lastPhotoErrorUrl === url) return;
-		this.lastPhotoErrorUrl = url;
+		URL.revokeObjectURL(this.state.imagePreview);
+		this.fileIRef.value = [];
 
-		let a = Array.from(this.state.images);
-		a.splice(a.findIndex(io => io.id === id), 1);
-		{
-			let b = this.state.imagesPreview;
-			URL.revokeObjectURL(b[b.findIndex(io => io.id === id)].url);
-		}
-		this.setState(() => ({ images: a }));
+		this.setState(() => ({
+			image: null
+		}));
 	}
 
 	render() {
 		return(
-			<form className="rn-feed-mat-item-commentinput" onSubmit={ e => e.preventDefault() }>
+			<form className="rn-feed-mat-item-commentinput" onSubmit={ e => {
+				e.preventDefault();
+
+				this.props._onSubmit({
+					content: this.state.text,
+					image: this.state.image
+				});
+
+				this.lastPhotoErrorUrl = this.inputRef.value = "";
+				this.fileIRef.value = [];
+				this.setState(() => ({
+					image: null,
+					imagePreview: null,
+					text: ""
+				}));
+			} }>
 				<div className="rn-feed-mat-item-commentinput-avatar">
 					{
-						(!this.state.imagesPreview.length) ? null : (
+						(!this.state.imagePreview) ? null : (
 							<div className="rn-feed-mat-item-commentinput-avatar-photospreview">
-								{
-									this.state.imagesPreview.slice(0, 4).map(({ id, url }, index) => (
-										<NewGridPhoto
-											key={ index }
-											image={ url }
-											id={ id }
-											inSphere={ true }
-											onDelete={ () => this.deleteImage(id, url) }
-											_onError={ () => this.recordImageError(id) }
-										/>
-									))
-								}
+								<NewGridPhoto
+									image={ this.state.imagePreview }
+									inSphere={ true }
+									onDelete={ this.deleteImage }
+									_onError={ this.recordImageError }
+								/>
 							</div>
 						)
 					}
@@ -270,7 +302,10 @@ class FeedItemCommentinput extends Component {
 					className="rn-feed-mat-item-commentinput-input definp"
 					placeholder="Write a comment..."
 					title="Leave your comment"
-					ref={ ref => this.props._onRef(ref) }
+					ref={ ref => {
+						this.inputRef = ref;
+						this.props._onRef(ref);
+					} }
 					onChange={ ({ target: { value } }) => this.setCommentValue('text', value) }
 				/>
 				<div className="rn-feed-mat-item-commentinput-controls">
@@ -279,9 +314,9 @@ class FeedItemCommentinput extends Component {
 						id={ `rn-feed-mat-item-commentinput-controls-file-${ this.props.rootId }` } // ARE YOU FUCKEN SRSLY??? I HATE MYSELF
 						className="hidden"
 						accept="image/*"
-						multiple
-						onChange={ ({ target: { files } }) => {
-							this.setCommentValue('images', files);
+						ref={ ref => this.fileIRef = ref }
+						onChange={ ({ target: { files: [image] } }) => {
+							this.setCommentValue('image', image);
 						} }
 					/>
 					<label htmlFor={ `rn-feed-mat-item-commentinput-controls-file-${ this.props.rootId }` } className="rn-feed-mat-item-commentinput-controls-btn definp">
@@ -300,7 +335,9 @@ class App extends Component {
 		this.state = {
 			likesInt: null,
 			isLiked: null,
-			commentsInt: null
+			commentsInt: null,
+			comments: null,
+			isCommenting: false
 		}
 
 		this.updateInt = null;
@@ -315,7 +352,7 @@ class App extends Component {
 		clearInterval(this.updateInt);
 	}
 
-	sendFeedback = event => {
+	sendFeedback = (event, rsdata = {}) => {
 		switch(event) {
 			case 'LIKE_ACTION': {
 				if(this.state.fetchingLike) return;
@@ -326,7 +363,7 @@ class App extends Component {
 					fetchingLike: true
 				}));
 
-				let { id, authToken } = cookieControl.get("authdata"),
+				const { id, authToken } = cookieControl.get("authdata"),
 					errorTxt = "We couldn't like this tweet. Please, try again."
 
 				client.mutate({
@@ -358,8 +395,65 @@ class App extends Component {
 				}).catch(() => this.props.castError(errorTxt));
 			}
 			break;
-			case 'COMMENT_ACTION':break;
-			default:break;
+			case 'COMMENT_ACTION': {
+				let { content, image } = rsdata;
+
+				if(!content.replace(/ /g, "").length && !image) return;	
+
+				const { id, authToken } = cookieControl.get("authdata"),
+					  errorTxt = "We couldn't publish your comment. Please, try again.";
+
+				this.setState(({ commentsInt: a }, { commentsInt: b }) => ({
+					isCommenting: true,
+					commentsInt: (a) ? a + 1 : b + 1
+				}));
+
+				client.mutate({ // *CommentType
+					mutation: gql`
+						mutation($id: ID!, $authToken: String!, $targetID: ID!, $content: String, $image: Upload) {
+							commentItem(id: $id, authToken: $authToken, targetID: $targetID, content: $content, image: $image) {
+								id,
+								content,
+								creator {
+									id,
+									avatar,
+									name
+								},
+								likesInt,
+								isLiked(id: $id),
+								image {
+									id,
+									url
+								}
+							}
+						}
+					`,
+					variables: {
+						id, authToken,
+						targetID: this.props.id,
+						content,
+						image
+					}
+				}).then(({ data: { commentItem } }) => {
+					this.setState(() => ({
+						isCommenting: false
+					}));
+					if(!commentItem) return this.props.castError(errorTxt);
+
+					this.setState(({ comments: a }, { comments: b }) => ({
+						comments: (a) ? [
+							...a,
+							commentItem
+						] : [
+							...b,
+							commentItem
+						]
+					}));
+				}).catch(() => this.props.castError(errorTxt));
+			}
+			// eslint-disable-next-line
+			break;
+			default:break; // isCommenting!!!
 		}
 	}
 
@@ -434,7 +528,7 @@ class App extends Component {
 				</div>
 				<div className="rn-feed-mat-item-comments">
 					{
-						this.props.comments.map(({ id, content, creator, likesInt, time }) => (
+						(this.state.comments || this.props.comments || []).map(({ id, image, content, creator, likesInt, isLiked, time }) => (
 							<FeedItemComment
 								key={ id }
 								id={ id }
@@ -442,8 +536,22 @@ class App extends Component {
 								creator={ creator }
 								time={ time }
 								likesInt={ likesInt }
+								isLiked={ isLiked }
+								image={ image }
+								castError={ this.props.castError }
 							/>
 						))
+					}
+					{
+						(!this.state.isCommenting) ? null : (
+							<Loadericon
+								style={{
+									height: "15px",
+									width: "15px",
+									borderWidth: "2px"
+								}}
+							/>	
+						)
 					}
 					<button className="rn-feed-mat-item-comments-loadmore definp">
 						Load more (limit as notificator)
@@ -452,7 +560,7 @@ class App extends Component {
 				<FeedItemCommentinput
 					uavatar={ ((this.props.userdata && Object.keys(this.props.userdata).length && api.storage + this.props.userdata.avatar) || "") }
 					_onRef={ ref => this.commentInputRef = ref }
-					_onSubmit={ () => this.sendFeedback('COMMENT_ACTION') }
+					_onSubmit={ data => this.sendFeedback('COMMENT_ACTION', data) }
 					rootId={ this.props.id }
 				/>
 			</div>
