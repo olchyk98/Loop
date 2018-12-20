@@ -190,7 +190,7 @@ html, body {
 	}*/
 
 	.rn-account-thumb-nav-img > img {
-		--size:75px;
+		--size:115px;
 
 		height:var(--size)!important;
 		width:var(--size)!important;

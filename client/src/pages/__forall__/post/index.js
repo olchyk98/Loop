@@ -9,7 +9,7 @@ import { gql } from 'apollo-boost';
 
 import client from '../../../apollo';
 import api from '../../../api';
-import { cookieControl, convertTime } from '../../../swissKnife';
+import { cookieControl, convertTime } from '../../../utils';
 
 class FeedItemCollageImage extends Component {
 	componentDidMount() {

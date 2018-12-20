@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
 
 import client from '../../apollo';
-import { cookieControl } from '../../swissKnife';
+import { cookieControl } from '../../utils';
 import api from '../../api';
 
 import LoadingIcon from '../__forall__/loader.icon'
@@ -73,15 +73,7 @@ class New extends Component {
 			let pics = [],
 				picsPrev = [],
 				id = this.state.photos.length;
-
-			/*
-				So, FileList doesn't have forEach function in his prototype,
-				but it supports indexing navigation.
-					- I should use for-loop.
-			*/
-			/*
-				for-loop body är någonting som repeteras igen och igen
-			*/
+				
 			for(let ma = 0; ma < value.length; ma++) {
 				let io = value[ma];
 				pics.push({

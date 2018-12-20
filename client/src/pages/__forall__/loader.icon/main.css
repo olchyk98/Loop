@@ -5,8 +5,8 @@
 	margin-left:auto;
 	margin-right:auto;
 	margin-top:25px;
-	height:var(--size);
-	width:var(--size);
+	height:var(--size)!important;
+	width:var(--size)!important;
 	border-radius:50%;
 	background:transparent;
 	border:5px solid rebeccapurple;

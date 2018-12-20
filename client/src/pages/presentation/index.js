@@ -5,7 +5,7 @@ import { gql } from 'apollo-boost';
 import { connect } from 'react-redux';
 
 import client from '../../apollo';
-import { cookieControl } from '../../swissKnife';
+import { cookieControl } from '../../utils';
 import links from '../../links';
 
 import registerbg from './images/registerbg.jpg';

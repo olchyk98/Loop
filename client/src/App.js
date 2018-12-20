@@ -1,5 +1,5 @@
 import React, { Component, Fragment } from 'react';
-import { cookieControl } from './swissKnife';
+import { cookieControl } from './utils';
 
 // Pages
 import Presentation from './pages/presentation';

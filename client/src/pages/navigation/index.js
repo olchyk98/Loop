@@ -4,7 +4,7 @@ import './main.css';
 import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
 
-import { cookieControl } from '../../swissKnife';
+import { cookieControl } from '../../utils';
 import links from '../../links';
 import client from '../../apollo';
 import api from '../../api';

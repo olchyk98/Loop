@@ -4,7 +4,8 @@ const settings = {
 		images: '/files/images'
 	},
 	default: {
-		avatar: '/files/default/placeholderavatar.jpg'
+		avatar: '/files/default/placeholderavatar.jpg',
+		cover: '/files/default/placeholdercover.jpg'
 	}
 }
 

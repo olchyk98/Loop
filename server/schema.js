@@ -55,9 +55,32 @@ const UserType = new GraphQLObjectType({
 		name: { type: GraphQLString },
 		avatar: { type: GraphQLString },
 		description: { type: GraphQLString },
+		cover: { type: GraphQLString },
+		gallery: {
+			type: new GraphQLList(ImageType),
+			resolve: ({ id }) => Image.find({
+				creatorID: id,
+				targetType: {
+					$ne: "COMMENT_TYPE"
+				}
+			})
+		},
+		galleryImages: {
+			type: GraphQLInt,
+			resolve: ({ id }) => Image.countDocuments({
+				creatorID: id,
+				targetType: {
+					$ne: "COMMENT_TYPE"
+				}
+			})
+		},
 		posts: {
 			type: new GraphQLList(PostType),
 			resolve: ({ id }) => Post.find({ creatorID: id }).sort({ time: -1 })
+		},
+		postsInt: {
+			type: GraphQLInt,
+			resolve: ({ id }) => Post.countDocuments({ creatorID: id }).sort({ time: -1 })
 		},
 		waitingFriends: {
 			type: new GraphQLList(UserType),
@@ -205,7 +228,7 @@ const RootQuery = new GraphQLObjectType({
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
 				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: GraphQLID }
+				targetID: { type: GraphQLString }
 			},
 			async resolve(_, { id, authToken, targetID }) {
 				let a = await validateAccount(id, authToken);
@@ -287,6 +310,7 @@ const RootMutation = new GraphQLObjectType({
 					description: "",
 					waitingFriends: [],
 					friends: [],
+					cover: settings.default.cover,
 					authTokens: [token]
 				})).save();
 
@@ -420,7 +444,8 @@ const RootMutation = new GraphQLObjectType({
 						postID: comment._id,
 						url: link,
 						time: new Date,
-						likes: []
+						likes: [],
+						targetType: "COMMENT_TYPE"
 					})).save();
 				}
 
