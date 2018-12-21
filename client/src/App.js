@@ -19,14 +19,8 @@ import { Route, Switch, Redirect } from 'react-router';
 import { BrowserRouter } from 'react-router-dom';
 import links from './links'; // pages routes
 
-// Internal Pages router
-const pages = {
-	'Presentation': Presentation,
-	'Feed': Feed,
-	'Account': Account,
-	'Settings': Settings,
-	'Chat': Chat
-}
+// Other stuff
+import PhotoModal from './pages/__forall__/photo.modal';
 
 // Needle Route
 const NeedleRoute = ({ path, condition, component: Component, redirect: Redirect, ...settings }) => (
@@ -93,7 +87,7 @@ class App extends Component {
 	constructor(props) {
 		super(props);
 
-		this.authdata = cookieControl.get("authdata");
+		this.cookieID = cookieControl.get("authdata");
 	}
 
 	render() {
@@ -102,62 +96,57 @@ class App extends Component {
 				<BrowserRouter>
 					<Fragment>
 						<GlobalError />
+						<PhotoModal
+							store={ store }
+						/>
 						{
-							(this.authdata) ? (
+							(this.cookieID) ? (
 								<Navigation />
 							) : null
 						}
 						<div className="targetscreen">
 							{
-								(this.authdata) ? (
+								(this.cookieID) ? (
 									<Dock />
 								) : null
 							}
 							<Switch>
-									{
-										Object.values(links).map(({ route, cookieRequired, componentName }, index) => (
-											<NeedleRoute
-												key={ index }
-												path={ route }
-												condition={ (cookieRequired) ? this.authdata : !this.authdata }
-												component={ pages[componentName] }
-												redirect={ (cookieRequired) ? Presentation : Feed }
-												exact
-											/>
-										))
-									}
-									{/*
-
-										<NeedleRoute
-											path={ links["HOME_PAGE"].route }
-											condition={ this.authdata }
-											component={ Feed }
-											redirect={ Presentation }
-											exact
-										/>
-										<NeedleRoute
-											path={ links["ACCOUNT_PAGE"].route }
-											condition={ this.authdata }
-											component={ Account }
-											redirect={ Presentation }
-											exact
-										/>
-										<NeedleRoute
-											path={ links["PRESENTATION_PAGE"].route }
-											condition={ !this.authdata }
-											component={ Presentation }
-											redirect={ Feed }
-											exact
-										/>
-
-									*/}
-									<Redirect to={
-										(this.authdata) ? (
-											links["HOME_PAGE"].route
-										) : (
-											links["PRESENTATION_PAGE"].route
-										)
-									} />
+								<NeedleRoute
+									path={ links["HOME_PAGE"].route }
+									condition={ this.cookieID }
+									component={ Feed }
+									redirect={ Presentation }
+									exact
+								/>
+								<NeedleRoute
+									path={ links["ACCOUNT_PAGE"].route }
+									condition={ this.cookieID }
+									component={ Account }
+									redirect={ Presentation }
+									exact
+								/>
+								<NeedleRoute
+									path={ links["SETTINGS_PAGE"].route }
+									condition={ this.cookieID }
+									component={ Settings }
+									redirect={ Presentation }
+									exact
+								/>
+								<NeedleRoute
+									path={ links["CHAT_PAGE"].route }
+									condition={ this.cookieID }
+									component={ Chat }
+									redirect={ Presentation }
+									exact
+								/>
+								<NeedleRoute
+									path={ links["PRESENTATION_PAGE"].route }
+									condition={ !this.cookieID }
+									component={ Presentation }
+									redirect={ Feed }
+									exact
+								/>
+								<Redirect to={ links[ (this.cookieID) ? "HOME_PAGE" : "PRESENTATION_PAGE" ].route } />
 							</Switch>
 						</div>
 					</Fragment>				

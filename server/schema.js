@@ -162,13 +162,24 @@ const ImageType = new GraphQLObjectType({
 		time: { type: GraphQLString },
 		targetType: { type: GraphQLString },
 		likes: { type: new GraphQLList(GraphQLID) },
+		isLiked: {
+			type: GraphQLBoolean,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			resolve: ({ likes }, { id }) => likes.includes(id)
+		},
 		likesInt: {
 			type: GraphQLInt,
-			resolve: ({ likes: { length: a } }) => a
+			resolve: ({ likes }) => likes.length
 		},
 		comments: {
-			type: CommentType,
-			resolve: ({ id }) => Commnet.find({ postID: id })
+			type: new GraphQLList(CommentType),
+			resolve: ({ id }) => Comment.find({ postID: id })
+		},
+		commentsInt: {
+			type: GraphQLInt,
+			resolve: ({ id }) => Comment.countDocuments({ postID: id })
 		},
 		creator: {
 			type: UserType,
@@ -188,7 +199,7 @@ const CommentType = new GraphQLObjectType({
 		likes: { type: new GraphQLList(GraphQLID) },
 		likesInt: {
 			type: GraphQLInt,
-			resolve: ({ likes: { length: a } }) => a
+			resolve: ({ likes }) => likes.length
 		},
 		isLiked: {
 			type: GraphQLBoolean,
@@ -247,6 +258,13 @@ const RootQuery = new GraphQLObjectType({
 		posts: {
 			type: new GraphQLList(PostType),
 			resolve: () => Post.find({})
+		},
+		image: {
+			type: ImageType,
+			args: {
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			resolve: (_, { targetID }) => Image.findById(targetID)
 		},
 		images: {
 			type: new GraphQLList(ImageType),
@@ -354,8 +372,7 @@ const RootMutation = new GraphQLObjectType({
 					})
 				).save();
 
-				// Weird solution :P Looks like I'm drunk
-				if(images && images.length) { // Receive images and set them in db
+				if(images && images.length) {
 					post.images = [];
 
 					await (new Promise(resolve => {
@@ -495,6 +512,37 @@ const RootMutation = new GraphQLObjectType({
 				if(!a || !targetID) return null;
 
 				let b = await Comment.findById(targetID);
+				if(!b) return;
+
+				let c = !b.likes.includes(id);
+
+				await b.updateOne({
+					[ (c) ? '$addToSet': '$pull' ]: {
+						likes: id
+					}
+				});
+
+				if(c) {
+					b.likes.push(id);
+				} else {
+					b.likes.splice(b.likes.findIndex(io => str(io) === str(id)), 1);
+				}
+
+				return b;
+			}
+		},
+		likeImage: {
+			type: ImageType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, targetID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return;
+
+				let b = await Image.findById(targetID);
 				if(!b) return;
 
 				let c = !b.likes.includes(id);

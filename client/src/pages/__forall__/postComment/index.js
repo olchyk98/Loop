@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import './main.css';
 
 import { gql } from 'apollo-boost';
+import { connect } from 'react-redux';
 
 import client from '../../../apollo';
 import api from '../../../api';
@@ -72,7 +73,7 @@ class Hero extends Component {
 					}
 					{
 						(!this.props.image) ? null : (
-							<div className="rn-feed-mat-item-comments-comment-content-images">
+							<div className="rn-feed-mat-item-comments-comment-content-images" onClick={ () => this.props.openPhoto(this.props.image.id) }>
 								<img src={ api.storage + this.props.image.url } alt="comment addon" />
 							</div>
 						)
@@ -90,4 +91,12 @@ class Hero extends Component {
 	}
 }
 
-export default Hero;
+export default connect(
+	() => ({}),
+	{
+		openPhoto: payload => ({
+			type: "TOGGLE_PHOTO_MODAL",
+			payload
+		})
+	}
+)(Hero);

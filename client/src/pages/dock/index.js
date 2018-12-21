@@ -25,17 +25,30 @@ class App extends Component {
 			<div className={ `gl-dock${ (!this.props.showDock) ? "" : " show" }` }>
 				<span className="gl-dock-title">Menu</span>
 				<div className="gl-dock-title-navigation">
-					{
-						Object.values(links).map(({ absolute: link, navTitle }, index) => ((navTitle) ? (
-							<DockBtn
-								key={ index }
-								title={ navTitle }
-								active={ '/'+window.location.href.split("/")[3].toLowerCase() === link }
-								_to={ link }
-								_onClick={ () => this.forceUpdate() }
-							/>
-						) : null))
-					}
+					<DockBtn
+						title="Home"
+						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["HOME_PAGE"].absolute }
+						_to={ links["HOME_PAGE"].absolute }
+						_onClick={ () => this.forceUpdate() }
+					/>
+					<DockBtn
+						title="Profile"
+						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["ACCOUNT_PAGE"].absolute }
+						_to={ links["ACCOUNT_PAGE"].absolute }
+						_onClick={ () => this.forceUpdate() }
+					/>
+					<DockBtn
+						title="Settings"
+						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["SETTINGS_PAGE"].absolute }
+						_to={ links["SETTINGS_PAGE"].absolute }
+						_onClick={ () => this.forceUpdate() }
+					/>
+					<DockBtn
+						title="Chat"
+						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["CHAT_PAGE"].absolute }
+						_to={ links["CHAT_PAGE"].absolute }
+						_onClick={ () => this.forceUpdate() }
+					/>
 				</div>
 			</div>
 		);

@@ -7,6 +7,7 @@
 	margin-top:7.5px;
 	display:flex;
 	align-items:stretch;
+	flex-shrink:0;
 }
 
 .rn-feed-mat-item-commentinput:before {

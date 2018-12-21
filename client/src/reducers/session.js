@@ -9,6 +9,9 @@ function reducer(state = {}, { type, payload }) {
 			a.globalErrorOnline = payload.status;
 			a.globalErrorText = payload.text || "";
 		break;
+		case 'TOGGLE_PHOTO_MODAL':
+			a.photoModalW = payload;
+		break;
 		default:break;
 	}
 

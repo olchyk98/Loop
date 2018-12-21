@@ -18,7 +18,18 @@ const client = new ApolloClient({
 		}),
 		createUploadLink({ uri: api.server })
 	),
-	cache: new InMemoryCache()
+	cache: new InMemoryCache(),
+	// disable cache
+	defaultOptions: {
+      watchQuery: {
+        fetchPolicy: 'network-only',
+        errorPolicy: 'ignore',
+      },
+      query: {
+        fetchPolicy: 'network-only',
+        errorPolicy: 'all',
+      },
+    }
 });
 
 export default client;

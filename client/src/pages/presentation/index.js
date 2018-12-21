@@ -499,7 +499,7 @@ class App extends Component {
 					/>
 					<ScreenInput
 						title="Name"
-						_placeholder="Oles Odynets"
+						_placeholder="Robin Irish"
 						_type="text"
 						_onChange={ value => this.setDataValue("register", "name", value) }
 						validatable={ false }

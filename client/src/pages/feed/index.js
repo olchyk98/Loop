@@ -8,8 +8,7 @@ import client from '../../apollo';
 import { cookieControl } from '../../utils';
 import api from '../../api';
 
-import PhotoModal from '../__forall__/photo.modal'
-import LoadingIcon from '../__forall__/loader.icon'
+import LoadingIcon from '../__forall__/loader.icon';
 import FeedItem from '../__forall__/post';
 import NewGridPhoto from '../__forall__/gridphoto';
 
@@ -117,8 +116,8 @@ class New extends Component {
 
 	deleteImage = id => {
 		/*	--- WARNING ---
-			This function can be called when an item doesn't exist in the photo array.
-			This means that you may not find an item in the main photo array,
+			This function can be called when the item doesn't exist in the photo array.
+			You may not find an item in the main photo array,
 			which can create some kind of problem.
 		*/
 
@@ -281,7 +280,7 @@ class App extends Component {
 	}
 
 	publishPost = (text, images) => {
-		if((!text || !text.replace(/ /g, "").length) && (!images || !images.length)) return;
+		if((!text || !text.replace(/\s|\n/g, "").length) && (!images || !images.length)) return;
 
 		let { id, authToken } = cookieControl.get("authdata"),
 			errorTxt = "We couldn't publish your post. Please, try later.";
@@ -347,58 +346,53 @@ class App extends Component {
 
 	render() {
 		return(
-			<Fragment>
-				<PhotoModal
-					active={ false }
+			<div className="rn rn-feed" ref={ ref => this.screenRef = ref }>
+				<New
+					uavatar={
+						((this.props.userdata &&
+							Object.keys(this.props.userdata).length &&
+							api.storage + this.props.userdata.avatar)
+						|| "")
+					}
+					onPublish={ this.publishPost }
 				/>
-				<div className="rn rn-feed" ref={ ref => this.screenRef = ref }>
-					<New
-						uavatar={
-							((this.props.userdata &&
-								Object.keys(this.props.userdata).length &&
-								api.storage + this.props.userdata.avatar)
-							|| "")
-						}
-						onPublish={ this.publishPost }
-					/>
-					{
-						(!this.state.isPosting) ? null : (
-							<LoadingIcon
-								style={{
-									marginTop: "0px",
-									marginBottom: "10px",
-									marginLeft: "inherit"
-								}}
+				{
+					(!this.state.isPosting) ? null : (
+						<LoadingIcon
+							style={{
+								marginTop: "0px",
+								marginBottom: "10px",
+								marginLeft: "inherit"
+							}}
+						/>
+					)
+				}
+				{
+					(this.state.posts !== false) ? (
+						this.state.posts.map(({ id, content, isLiked, creator, time, commentsInt, likesInt, images, comments }) => (
+							<FeedItem
+								key={ id }
+								id={ id }
+								content={ content }
+								creator={ creator }
+								time={ time }
+								likesInt={ likesInt }
+								isLiked={ isLiked }
+								commentsInt={ commentsInt }
+								images={ images }
+								comments={ comments }
+								parentScreen={ this.screenRef }
 							/>
-						)
-					}
-					{
-						(this.state.posts !== false) ? (
-							this.state.posts.map(({ id, content, isLiked, creator, time, commentsInt, likesInt, images, comments }) => (
-								<FeedItem
-									key={ id }
-									id={ id }
-									content={ content }
-									creator={ creator }
-									time={ time }
-									likesInt={ likesInt }
-									isLiked={ isLiked }
-									commentsInt={ commentsInt }
-									images={ images }
-									comments={ comments }
-									parentScreen={ this.screenRef }
-								/>
-							))
-						) : (
-							<LoadingIcon
-								style={{
-									marginLeft: "inherit"
-								}}
-							/>
-						)
-					}
-				</div>
-			</Fragment>
+						))
+					) : (
+						<LoadingIcon
+							style={{
+								marginLeft: "inherit"
+							}}
+						/>
+					)
+				}
+			</div>
 		);
 	}
 }
