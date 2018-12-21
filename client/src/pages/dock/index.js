@@ -20,6 +20,10 @@ class DockBtn extends Component {
 }
 
 class App extends Component {
+	componentDidMount() {
+		this.props.updateRefresher(() => this.forceUpdate());
+	}
+
 	render() {
 		return(
 			<div className={ `gl-dock${ (!this.props.showDock) ? "" : " show" }` }>
@@ -58,5 +62,11 @@ class App extends Component {
 export default connect(
 	({ session: { showDock } }) => ({
 		showDock
-	})
+	}),
+	{
+		updateRefresher: payload => ({
+			type: "SET_DOCK_REFRESHER",
+			payload
+		})
+	}
 )(App);

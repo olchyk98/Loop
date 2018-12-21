@@ -12,6 +12,9 @@ function reducer(state = {}, { type, payload }) {
 		case 'TOGGLE_PHOTO_MODAL':
 			a.photoModalW = payload;
 		break;
+		case 'SET_DOCK_REFRESHER':
+			a.dockRefresher = payload;
+		break;
 		default:break;
 	}
 

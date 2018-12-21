@@ -22,8 +22,12 @@
 	justify-content:space-between;
 }
 
+.rn-feed-mat-item-head-info {
+	text-decoration:none;
+}
+
 .rn-feed-mat-item-head-info-avatar {
-	--size:35px;
+	--size:37.5px;
 
 	height:var(--size);
 	width:var(--size);

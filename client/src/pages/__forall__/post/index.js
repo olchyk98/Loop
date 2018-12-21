@@ -8,9 +8,11 @@ import FeedItemCollage from './FeedItemCollage';
 
 import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
+import { Link } from 'react-router-dom';
 
 import client from '../../../apollo';
 import api from '../../../api';
+import links from '../../../links';
 import { cookieControl, convertTime } from '../../../utils';
 
 class FeedItemFeedbackButton extends Component {
@@ -161,7 +163,7 @@ class App extends Component {
 		return(
 			<div className="rn-feed-mat-item rn-feed-item">
 				<div className="rn-feed-mat-item-head">
-					<div className="rn-feed-mat-item-head-info">
+					<Link className="rn-feed-mat-item-head-info" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.refreshDock }>
 						<div className="rn-feed-mat-item-head-info-avatar">
 							<img src={ ((this.props.creator.avatar && api.storage + this.props.creator.avatar) || "") } alt="creator" title="Creator's avatar" />
 						</div>
@@ -171,7 +173,7 @@ class App extends Component {
 							</div>
 							<p className="rn-feed-mat-item-head-info-mat-date">{ convertTime(this.props.time, "ago") }</p>
 						</div>
-					</div>
+					</Link>
 				</div>
 				{
 					(this.props.content.replace(/\s|\n/g, "").length) ? (
@@ -272,8 +274,9 @@ class App extends Component {
 	}
 }
 
-const mapStateToProps = ({ user: { userdata } }) => ({
-	userdata
+const mapStateToProps = ({ user: { userdata }, session: { dockRefresher } }) => ({
+	userdata,
+	refreshDock: dockRefresher
 });
 
 const mapActionsToProps = {

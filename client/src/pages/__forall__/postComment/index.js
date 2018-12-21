@@ -3,10 +3,12 @@ import './main.css';
 
 import { gql } from 'apollo-boost';
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 import client from '../../../apollo';
 import api from '../../../api';
 import { cookieControl, convertTime } from '../../../utils';
+import links from '../../../links';
 
 class Hero extends Component {
 	constructor(props) {
@@ -64,6 +66,12 @@ class Hero extends Component {
 					<img src={ ((this.props.creator.avatar && api.storage + this.props.creator.avatar) || "") } alt="creator" title="Creator's avatar" />
 				</div>
 				<div className="rn-feed-mat-item-comments-comment-content">
+					<Link
+						className="rn-feed-mat-item-comments-comment-content-name"
+						to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` }
+						onClick={ this.props.refreshDock }>
+						{ this.props.creator.name }
+					</Link>
 					{
 						(!this.props.content) ? null : (
 							<div className="rn-feed-mat-item-comments-comment-content-mat">
@@ -91,12 +99,18 @@ class Hero extends Component {
 	}
 }
 
+const mapStateToProps = ({ session: { dockRefresher } }) => ({
+	refreshDock: dockRefresher
+});
+
+const mapActionsToProps = {
+	openPhoto: payload => ({
+		type: "TOGGLE_PHOTO_MODAL",
+		payload
+	})
+}
+
 export default connect(
-	() => ({}),
-	{
-		openPhoto: payload => ({
-			type: "TOGGLE_PHOTO_MODAL",
-			payload
-		})
-	}
+	mapStateToProps,
+	mapActionsToProps
 )(Hero);

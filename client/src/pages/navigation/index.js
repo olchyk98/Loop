@@ -3,6 +3,7 @@ import './main.css';
 
 import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
+import { Link } from 'react-router-dom';
 
 import { cookieControl } from '../../utils';
 import links from '../../links';
@@ -214,9 +215,9 @@ class App extends Component {
 								<NotificationsDockItem />
 							</div>
 						</button>
-						<div className="gl-nav-account-img">
+						<Link className="gl-nav-account-img" to={ links["ACCOUNT_PAGE"].absolute } onClick={ this.props.refreshDock }>
 							<img src={ ((this.props.user && this.props.user.avatar && api.storage + this.props.user.avatar) || "") } alt="" title="Your avatar" />
-						</div>
+						</Link>
 						<button onClick={ this.logout } className="gl-nav-account-spc definp">
 							<i className="fas fa-sign-out-alt" />
 						</button>
@@ -227,8 +228,9 @@ class App extends Component {
 	}
 }
 
-const mapStateToProps = ({ user: { userdata: user } }) => ({
-	user
+const mapStateToProps = ({ user: { userdata: user }, session: { dockRefresher } }) => ({
+	user,
+	refreshDock: dockRefresher
 });
 
 const mapActionsToProps = {

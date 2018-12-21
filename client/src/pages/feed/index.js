@@ -3,10 +3,12 @@ import './main.css';
 
 import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
+import { Link } from 'react-router-dom';
 
 import client from '../../apollo';
 import { cookieControl } from '../../utils';
 import api from '../../api';
+import links from '../../links';
 
 import LoadingIcon from '../__forall__/loader.icon';
 import FeedItem from '../__forall__/post';
@@ -172,9 +174,9 @@ class New extends Component {
 				</div>
 				<div className={ `rn-feed-new-main${ (!this.state.previewPhotos.length) ? "" : " ph-expand" }` }>
 					<div className="rn-feed-new-main-image">
-						<div className="rn-feed-new-main-image-overlay">
+						<Link className="rn-feed-new-main-image-overlay" to={ links["ACCOUNT_PAGE"].absolute } onClick={ this.props.onOpenAccount }>
 							<img alt="you" title="Your photo" src={ this.props.uavatar } />
-						</div>
+						</Link>
 					</div>
 					<div className="rn-feed-new-main-field_control">
 						<textarea
@@ -226,7 +228,7 @@ class App extends Component {
 	}
 
 	componentDidMount() {
-		// Fetch data from an API
+		// Fetch data from the API
 		let { id, authToken } = cookieControl.get("authdata"),
 			errorTxt = "Sorry, we couldn't load your feed. Please, restart the page.";
 
@@ -355,6 +357,7 @@ class App extends Component {
 						|| "")
 					}
 					onPublish={ this.publishPost }
+					onOpenAccount={ this.props.refreshDock }
 				/>
 				{
 					(!this.state.isPosting) ? null : (
@@ -397,8 +400,9 @@ class App extends Component {
 	}
 }
 
-const mapStateToProps = ({ user: { userdata } }) => ({
-	userdata
+const mapStateToProps = ({ user: { userdata }, session: { dockRefresher } }) => ({
+	userdata,
+	refreshDock: dockRefresher
 });
 
 const mapActionsToProps = {

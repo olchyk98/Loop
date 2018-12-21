@@ -190,7 +190,7 @@ class App extends Component {
 	}
 
 	likeImage = () => {
-		if(!this.state.isLiking) return;
+		if(this.state.isLiking) return;
 
 		this.setState(({ data, data: { isLiked: a, likesInt: b } }) => ({
 			data: {
@@ -240,7 +240,7 @@ class App extends Component {
 				<div className={ `gl-photomodal_bg${ (!this.state.isActive) ? "" : " active" }` } onClick={ this.closeModal } />
 				<div className={ `gl-photomodal${ (!this.state.isActive) ? "" : " active" }` }>
 					<section className="gl-photomodal-mg">
-						<div className="gl-photomodal-mg-mat">
+						<div className="gl-photomodal-mg-mat" onClick={ () => null }>
 							<img
 								onLoad={ () => this.setState({ targetLoading: false }) }
 								onError={ () => this.props.castError("We couldn't load this image. Please, try later.") }
@@ -268,17 +268,19 @@ class App extends Component {
 												)
 											}
 										</div>,
-										action: this.likeImage
+										action: () => (this.state.waitID) ? this.likeImage() : null
 									},
 									{
 										title: "Comment",
 										icon: <i className="far fa-comment-alt" />,
-										action: () => this.commentInputRef.focus()
+										action: () => (this.state.waitID) ? this.commentInputRef.focus() : null
 									},
 									{
 										title: "Download",
 										icon: <i className="far fa-arrow-alt-circle-down" />,
 										action: () => {
+											if(!this.state.waitID) return;
+
 											let a = document.createElement("a");
 											a.download = "Direct Image";
 											a.href = api.storage + this.state.data.url;

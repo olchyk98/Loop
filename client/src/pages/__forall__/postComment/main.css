@@ -1,3 +1,7 @@
+:root {
+	--glcomment_posteravatar_size:35px;
+}
+
 .rn-feed-mat-item-comments-comment {
 	--margin:10px;
 
@@ -9,10 +13,8 @@
 }
 
 .rn-feed-mat-item-comments-comment-avatar {
-	--size:35px;
-
-	width:var(--size);
-	height:var(--size);
+	width:var(--glcomment_posteravatar_size);
+	height:var(--glcomment_posteravatar_size);
 	border-radius:50%;
 	border:1px solid rgba(0, 0, 0, .1);
 	position:relative;
@@ -26,6 +28,17 @@
 	border-radius:50%;
 	object-fit:cover;
 	object-position:center;
+}
+
+.rn-feed-mat-item-comments-comment-content-name {
+	margin-top:calc(var(--glcomment_posteravatar_size) / 2);
+	transform:translateY(-50%);
+	position:relative;
+	top:1px;
+	font-size:1em;
+	color:rebeccapurple;
+	cursor:pointer;
+	text-decoration:none;
 }
 
 .rn-feed-mat-item-comments-comment-content {
