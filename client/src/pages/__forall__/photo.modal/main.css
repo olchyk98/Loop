@@ -1,0 +1,170 @@
+.gl-photomodal_bg {
+	height:100vh;
+	width:100vw;
+	position:fixed;
+	z-index:499;
+	top:0;
+	left:0;
+	background:rgba(0, 0, 0, .75);
+}
+
+.gl-photomodal {
+	max-height:calc(100vh - 15px);
+	max-width:calc(100vw - 15px);
+	height:600px;
+	width:1200px;
+	position:fixed;
+	z-index:500;
+	top:50%;
+	left:50%;
+	margin-right:50%;
+	transform:translate(-50%, -50%);
+	display:flex;
+	align-items:stretch;
+}
+
+.gl-photomodal,
+.gl-photomodal_bg {
+	--trans:.45s;
+
+	transition:all var(--trans), visibility var(--trans);
+	opacity:0;
+	visibility:hidden;
+}
+
+.gl-photomodal.active,
+.gl-photomodal_bg.active {
+	transition:all var(--trans), visibility 0s;
+	opacity:1;
+	visibility:visible;
+}
+
+.gl-photomodal > * {
+	--margin:5px;
+
+	position:relative;
+	margin-left:var(--margin);
+	margin-right:var(--margin);
+	border-radius:2.5px;
+}
+
+.gl-photomodal-mg {
+	width:100%;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	background:black;
+}
+
+.gl-photomodal-mg-mat > img {
+	max-width:100%;
+	min-width:100px;
+}
+
+.gl-photomodal-mg-controls {
+	--padding:10px;
+
+	display:flex;
+	justify-content:space-around;
+	position:absolute;
+	bottom:0;
+	left:0;
+	width:calc(100% - var(--padding) * 2);
+	padding-left:var(--padding);
+	padding-right:var(--padding);
+	height:45px;
+}
+
+.gl-photomodal-mg-controls-btn > * {
+	--margin:5px;
+
+	margin-left:var(--margin);
+	margin-right:var(--margin);
+	position:relative;
+	bottom:-1.5px;
+}
+
+.gl-photomodal-mg-controls-btn {
+	--padding:10px;
+
+	padding-left:var(--padding);
+	padding-right:var(--padding);
+	color:white;
+	font-family:"Gothic A1";
+	font-size:1em;
+	display:flex;
+	font-weight:400;
+	align-items:center;
+	height:35px;
+	transition:.25s;
+	border-radius:3px;
+	cursor:pointer;
+	color:rgba(255, 255, 255, .75);
+}
+
+.gl-photomodal-mg-controls-btn:hover {
+	background:rgba(255, 255, 255, .15);
+}
+
+.gl-photomodal-mg-controls-btn:active {
+	transition:.1s;
+	transform:scale(.95);
+}
+
+.gl-photomodal-infoc {
+	--padding:12.5px;
+
+	width:calc(400px - var(--padding) * 2);
+	height:calc(100% - var(--padding) * 2);
+	padding:var(--padding);
+	background:white;
+	flex-shrink:0;
+	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, .25);
+}
+
+.gl-photomodal-infoc-account {
+	display:flex;
+	align-items:center;
+}
+
+.gl-photomodal-infoc-account-img {
+	--size:40px;
+
+	height:var(--size);
+	width:var(--size);
+	cursor:pointer;
+	position:relative;
+	margin-right:7.5px;
+}
+
+.gl-photomodal-infoc-account-img > img {
+	height:100%;
+	width:100%;
+	object-fit:cover;
+	object-position:center;
+	border-radius:50%;
+}
+
+.gl-photomodal-infoc-account-info {
+	display:flex;
+	flex-direction:column;
+}
+
+.gl-photomodal-infoc-account-info > * {
+	--margin:1px;
+
+	margin-top:var(--margin);
+	margin-bottom:var(--margin);
+	position:relative;
+	top:-1px;
+}
+
+.gl-photomodal-infoc-account-info-name {
+	color:blue;
+	font-family:"Lato";
+}
+
+.gl-photomodal-infoc-account-info-date {
+	color:rgba(0, 0, 0, .45);
+	font-size:.85em;
+}

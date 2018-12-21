@@ -8,6 +8,7 @@ import client from '../../apollo';
 import { cookieControl } from '../../utils';
 import api from '../../api';
 
+import PhotoModal from '../__forall__/photo.modal'
 import LoadingIcon from '../__forall__/loader.icon'
 import FeedItem from '../__forall__/post';
 import NewGridPhoto from '../__forall__/gridphoto';
@@ -346,53 +347,58 @@ class App extends Component {
 
 	render() {
 		return(
-			<div className="rn rn-feed" ref={ ref => this.screenRef = ref }>
-				<New
-					uavatar={
-						((this.props.userdata &&
-							Object.keys(this.props.userdata).length &&
-							api.storage + this.props.userdata.avatar)
-						|| "")
-					}
-					onPublish={ this.publishPost }
+			<Fragment>
+				<PhotoModal
+					active={ false }
 				/>
-				{
-					(!this.state.isPosting) ? null : (
-						<LoadingIcon
-							style={{
-								marginTop: "0px",
-								marginBottom: "10px",
-								marginLeft: "inherit"
-							}}
-						/>
-					)
-				}
-				{
-					(this.state.posts !== false) ? (
-						this.state.posts.map(({ id, content, isLiked, creator, time, commentsInt, likesInt, images, comments }) => (
-							<FeedItem
-								key={ id }
-								id={ id }
-								content={ content }
-								creator={ creator }
-								time={ time }
-								likesInt={ likesInt }
-								isLiked={ isLiked }
-								commentsInt={ commentsInt }
-								images={ images }
-								comments={ comments }
-								parentScreen={ this.screenRef }
+				<div className="rn rn-feed" ref={ ref => this.screenRef = ref }>
+					<New
+						uavatar={
+							((this.props.userdata &&
+								Object.keys(this.props.userdata).length &&
+								api.storage + this.props.userdata.avatar)
+							|| "")
+						}
+						onPublish={ this.publishPost }
+					/>
+					{
+						(!this.state.isPosting) ? null : (
+							<LoadingIcon
+								style={{
+									marginTop: "0px",
+									marginBottom: "10px",
+									marginLeft: "inherit"
+								}}
 							/>
-						))
-					) : (
-						<LoadingIcon
-							style={{
-								marginLeft: "inherit"
-							}}
-						/>
-					)
-				}
-			</div>
+						)
+					}
+					{
+						(this.state.posts !== false) ? (
+							this.state.posts.map(({ id, content, isLiked, creator, time, commentsInt, likesInt, images, comments }) => (
+								<FeedItem
+									key={ id }
+									id={ id }
+									content={ content }
+									creator={ creator }
+									time={ time }
+									likesInt={ likesInt }
+									isLiked={ isLiked }
+									commentsInt={ commentsInt }
+									images={ images }
+									comments={ comments }
+									parentScreen={ this.screenRef }
+								/>
+							))
+						) : (
+							<LoadingIcon
+								style={{
+									marginLeft: "inherit"
+								}}
+							/>
+						)
+					}
+				</div>
+			</Fragment>
 		);
 	}
 }
