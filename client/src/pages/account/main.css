@@ -110,14 +110,45 @@
 	z-index:7;
 }
 
-.rn-account-thumb-nav-img > img {
+.rn-account-thumb-nav-img-mat {
 	height:var(--account_thumbnavavsize);
 	width:var(--account_thumbnavavsize);
-	border-radius:50%;
-	object-fit:cover;
-	object-position:center;
 	border:1px solid rgba(0, 0, 0, .1);
 	border-radius:50%;
+	overflow:hidden;
+	position:relative;
+}
+
+.rn-account-thumb-nav-img-mat > img {
+	border-radius:50%;
+	height:100%;
+	width:100%;
+	object-fit:cover;
+	object-position:center;
+}
+
+.rn-account-thumb-nav-img-replace {
+	height:100%;
+	width:100%;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	position:absolute;
+	top:0;
+	left:0;
+	opacity:0;
+	background:rgba(0, 0, 0, .25);
+	transition:.25s;
+}
+
+.rn-account-thumb-nav-img-replace > label {
+	color:rgba(255, 255, 255, .9);
+	font-size:2em;
+	cursor:pointer;
+}
+
+.rn-account-thumb-nav-img-mat:hover > .rn-account-thumb-nav-img-replace {
+	opacity:1;
 }
 
 .rn-account-thumb-nav-name {

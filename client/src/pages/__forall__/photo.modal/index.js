@@ -3,6 +3,7 @@ import './main.css';
 
 import { gql } from 'apollo-boost';
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 import Comment from '../postComment';
 import CommentInput from '../postCommentInput';
@@ -11,6 +12,7 @@ import Loadericon from '../loader.icon';
 import api from '../../../api';
 import client from '../../../apollo';
 import { convertTime, cookieControl } from '../../../utils';
+import links from '../../../links';
 
 class ControlsBtn extends Component {
 	render() {
@@ -299,7 +301,7 @@ class App extends Component {
 						</div>
 					</section>
 					<section className="gl-photomodal-infoc">
-						<div className="gl-photomodal-infoc-account">
+						<Link className="gl-photomodal-infoc-account" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.state.data && this.state.data.creator.id }` } onClick={ this.props.refreshDock } >
 							<div className="gl-photomodal-infoc-account-img">
 								<img src={ this.state.data && api.storage + this.state.data.creator.avatar } alt="profile user" />
 							</div>
@@ -307,7 +309,7 @@ class App extends Component {
 								<p className="gl-photomodal-infoc-account-info-name">{ this.state.data && this.state.data.creator.name }</p>
 								<p className="gl-photomodal-infoc-account-info-date">{ this.state.data && convertTime(this.state.data.time, "ago") }</p>
 							</div>
-						</div>
+						</Link>
 						<div className="gl-photomodal-infoc-controls">
 							{
 								[
@@ -381,7 +383,8 @@ const mapStateToProps = ({ user: { userdata } }) => ({
 });
 
 const mapActionsToProps = {
-	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } })
+	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } }),
+	refreshDock: () => ({ type: "REFRESH_DOCK", payload: null })
 }
 
 export default connect(

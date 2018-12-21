@@ -99,15 +99,14 @@ class Hero extends Component {
 	}
 }
 
-const mapStateToProps = ({ session: { dockRefresher } }) => ({
-	refreshDock: dockRefresher
-});
+const mapStateToProps = () => ({});
 
 const mapActionsToProps = {
 	openPhoto: payload => ({
 		type: "TOGGLE_PHOTO_MODAL",
 		payload
-	})
+	}),
+	refreshDock: () => ({ type: "REFRESH_DOCK", payload: null })
 }
 
 export default connect(

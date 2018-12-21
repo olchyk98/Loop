@@ -274,13 +274,13 @@ class App extends Component {
 	}
 }
 
-const mapStateToProps = ({ user: { userdata }, session: { dockRefresher } }) => ({
-	userdata,
-	refreshDock: dockRefresher
+const mapStateToProps = ({ user: { userdata } }) => ({
+	userdata
 });
 
 const mapActionsToProps = {
-	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } })
+	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } }),
+	refreshDock: () => ({ type: "REFRESH_DOCK", payload: null })
 }
 
 export default connect(

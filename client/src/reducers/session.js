@@ -15,6 +15,10 @@ function reducer(state = {}, { type, payload }) {
 		case 'SET_DOCK_REFRESHER':
 			a.dockRefresher = payload;
 		break;
+		case 'REFRESH_DOCK':
+			a.dockRefresher();
+			a.photoModalW = null;
+		break;
 		default:break;
 	}
 

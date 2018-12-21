@@ -561,6 +561,31 @@ const RootMutation = new GraphQLObjectType({
 
 				return b;
 			}
+		},
+		setUserAvatar: {
+			type: UserType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				avatar: { type: new GraphQLNonNull(GraphQLUpload) }
+			},
+			async resolve(_, { id, authToken, avatar }) {
+				// Receive image
+				let { stream, filename } = await avatar;
+
+				let link = `${ settings.files.images }/${ generateNoise(128) }.${ getExtension(filename) }`;
+				stream.pipe(fileSystem.createWriteStream('.' + link));
+
+				// Submit
+				return User.findOneAndUpdate({
+					_id: id,
+					authTokens: {
+						$in: [authToken]
+					}
+				}, {
+					avatar: link
+				}, (_, a) => a);
+			}
 		}
 	}
 });

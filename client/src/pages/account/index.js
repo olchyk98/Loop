@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import './main.css';
 
 import TimelineItem from '../__forall__/post';
@@ -197,6 +197,34 @@ class App extends Component {
 		}));
 	}
 
+	replaceAvatar = avatar => {
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "We couldn't upload an new avatar. Please, try later.";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $avatar: Upload!) {
+					setUserAvatar(id: $id, authToken: $authToken, avatar: $avatar) {
+						id,
+						avatar
+					}
+				}
+			`,
+			variables: {
+				id, authToken, avatar
+			}
+		}).then(({ data: { setUserAvatar: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			this.props.setUserData({
+				avatar: a.avatar
+			});
+
+			this.componentDidMount(); // Hmmmm... WTF IS THAT?
+
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
 	render() {
 		if(!this.state.user) return(
 			<div className="rn rn-account">
@@ -214,15 +242,35 @@ class App extends Component {
 							src={ api.storage + this.state.user.cover }
 							alt="Cover"
 						/>
-						<input type="file" className="hidden" id="rn-account-thumb-cover-edit" />
-						<label htmlFor="rn-account-thumb-cover-edit" className="rn-account-thumb-cover-edit definp">
-							<i className="fas fa-camera-retro" />
-							<span>Edit Cover</span>
-						</label>
+						{
+							(cookieControl.get("authdata").id === this.state.user.id) ? (
+								<Fragment>
+									<input type="file" className="hidden" id="rn-account-thumb-cover-edit" />
+									<label htmlFor="rn-account-thumb-cover-edit" className="rn-account-thumb-cover-edit definp">
+										<i className="fas fa-camera-retro" />
+										<span>Edit Cover</span>
+									</label>
+								</Fragment>
+							) : null
+						}
 					</div>
 					<div className="rn-account-thumb-nav">
 						<div className="rn-account-thumb-nav-img">
-							<img src={ api.storage + this.state.user.avatar } alt="User" title="User's avatar" />
+							<div className="rn-account-thumb-nav-img-mat">
+								<img src={ api.storage + this.state.user.avatar } alt="User" title="User's avatar" />
+								<input
+									className="hidden"
+									onChange={ ({ target: { files: [main] } }) => this.replaceAvatar(main) }
+									id="rn-account-thumb-nav-img-mat-newfile"
+									accept="image/*"
+									type="file"
+								/>
+								<div className="rn-account-thumb-nav-img-replace">
+									<label htmlFor="rn-account-thumb-nav-img-mat-newfile" className="definp">
+										<i className="fas fa-camera" />
+									</label>
+								</div>
+							</div>
 							<span className="rn-account-thumb-nav-name">{ this.state.user.name }</span>
 						</div>
 						<ThumbNavButton
@@ -364,7 +412,8 @@ const mapStateToProps = ({ user: { userdata } }) => ({
 
 const mapActionsToProps = {
 	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } }),
-	openPhoto: payload => ({ type: 'TOGGLE_PHOTO_MODAL', payload })
+	openPhoto: payload => ({ type: 'TOGGLE_PHOTO_MODAL', payload }),
+	setUserData: payload => ({ type: 'SET_USER_DATA', payload })
 }
 
 export default connect(
