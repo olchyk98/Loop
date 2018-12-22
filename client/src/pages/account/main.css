@@ -151,6 +151,7 @@
 	width:calc(100% - var(--padding) * 2);
 	display:flex;
 	align-items:center;
+	overflow:visible;
 /*	position:relative;*/
 	z-index:9;
 }
@@ -597,4 +598,54 @@
 	font-family:"Quicksand";
 	font-weight:400;
 	margin:0;
+}
+
+.rn-account-display-about {	
+	align-items:flex-start;
+}
+
+.rn-account-display-about-mat {
+	--fs:1em;
+
+	width:100%;
+	font-family:"Quicksand";
+	font-weight:500;
+	font-size:var(--fs);
+	position:relative;
+	margin-bottom:5px;
+}
+
+.rn-account-display-about-mat:empty {
+	height:var(--fs);
+}
+
+.rn-account-display-about-mat:before {
+	color:rgba(0, 0, 0, .25);
+	position:absolute;
+	opacity:0;
+}
+
+.rn-account-display-about-mat.mine:empty:before {
+	content:'Start typing...';
+}
+
+.rn-account-display-about-mat:not(.mine):empty:before {
+	content:"I didn't write something about myself yet.";
+}
+
+.rn-account-display-about-mat:not(.mine):empty:before,
+.rn-account-display-about-mat.mine:empty:before {
+	opacity:1;
+}
+
+.rn-account-display-about-editsw {
+	display:flex;
+	align-items:center;
+	margin-bottom:5px;
+}
+
+.rn-account-display-about-editsw > span {
+	margin-right:10px;
+	font-weight:400;
+	font-family:"Quicksand";
 }

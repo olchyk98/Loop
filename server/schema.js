@@ -980,6 +980,22 @@ const RootMutation = new GraphQLObjectType({
 				}
 				return a;
 			}
+		},
+		updateProfileDescription: {
+			type: UserType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				content: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			resolve: (_, { id, authToken, content }) => User.findOneAndUpdate({
+				_id: id,
+				authTokens: {
+					$in: [authToken]
+				}
+			}, {
+				description: content
+			})
 		}
 	}
 });

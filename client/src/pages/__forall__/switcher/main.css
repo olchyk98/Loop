@@ -1,0 +1,58 @@
+.gl-assets-switch-ii {
+	--margin:10px;
+
+	margin-top:var(--margin);
+	margin-bottom:var(--margin);
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	width:auto;
+	cursor:pointer;
+}
+
+.gl-assets-switch-ii > span {
+	font-weight:600;
+	font-family:"Gothic A1";
+	font-size:.95em;
+	color:rgba(0, 0, 0, .75);
+}
+
+.gl-assets-switch-ii > div,
+.gl-assets-switch-ii > div > div {
+	transition:.25s;
+}
+
+.gl-assets-switch-ii > div {
+	height:15px;
+	width:40px;
+	background:black;
+	position:relative;
+	border-radius:45px;
+	background:#EEF0F4;
+}
+
+.gl-assets-switch-ii > div > div {
+	--size:20px;
+	--ws:100%;
+
+	height:var(--size);
+	width:var(--size);
+	border-radius:50%;
+	background:white;
+	border:1px solid var(--defaultborder);
+	position:absolute;
+	top:50%;
+	transform:translateY(-50%);
+	left:calc(var(--size) / 6 * -1);
+}
+
+.gl-assets-switch-ii.active > div {
+	background:#AAD3FD;
+}
+
+.gl-assets-switch-ii.active > div > div {
+	transform:translate(calc(var(--ws) - 2px), -50%);
+	left:0;
+	background:#55A7FB;
+	border:1px solid transparent;
+}

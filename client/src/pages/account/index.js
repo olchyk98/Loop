@@ -4,6 +4,7 @@ import './main.css';
 import TimelineItem from '../__forall__/post';
 import Loadericon from '../__forall__/loader.icon';
 import placeholderGIF from '../__forall__/placeholder.gif';
+import Switch from '../__forall__/switcher';
 
 import FlipMove from 'react-flip-move';
 
@@ -131,15 +132,20 @@ class App extends Component {
 		super(props);
 
 		this.state = {
-			stage: "TIMELINE_STAGE", // TIMELINE_STAGE, FRIENDS_STAGE, GALLERY_STAGE
+			stage: "TIMELINE_STAGE", // TIMELINE_STAGE, FRIENDS_STAGE, GALLERY_STAGE, ABOUT_STAGE
 			friendsStage: "MAIN_STAGE",
 			user: null,
 			friendsDisplay: [],
 			friendsSearch: null,
 			friendsLoading: false,
 			friendProcessing: false,
-			isSubscribing: false
+			isSubscribing: false,
+			aboutMeEditing: false,
+			descriptionLoading: false,
+			descriptionStatus: null
 		}
+
+		this.descriptionNewRef = React.createRef();
 	}
 
 	componentDidMount() {
@@ -254,6 +260,39 @@ class App extends Component {
 					user: {
 						...a,
 						gallery: user.gallery
+					}
+				}));
+			}).catch(() => this.props.castError(errorTxt));
+		} else if(stage === "ABOUT_STAGE") {
+			const { id, authToken } = cookieControl.get("authdata"),
+				  errorTxt = "We couldn't load the user's about me section. Please, try again."
+
+			this.setState(() => ({
+				descriptionLoading: true
+			}));
+
+			client.query({
+				query: gql`
+					query($id: ID!, $authToken: String!) {
+						user(id: $id, authToken: $authToken) {
+							id,
+							description
+						}
+					}
+				`,
+				variables: {
+					id, authToken
+				}
+			}).then(({ data: { user } }) => {
+				this.setState(() => ({
+					descriptionLoading: false
+				}));
+				if(!user) return this.props.castError(errorTxt);
+
+				this.setState(({ user: a }) => ({
+					user: {
+						...a,
+						description: user.description,
 					}
 				}));
 			}).catch(() => this.props.castError(errorTxt));
@@ -649,15 +688,66 @@ class App extends Component {
 			this.setState(() => ({
 				friendsLoading: false
 			}));
-			console.log(searchFriends);
 			if(!searchFriends) return this.props.castError(errorTxt);
 
-			console.log(searchFriends);
 
 			this.setState(() => ({
 				friendsSearch: searchFriends
 			}));
 		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	updateAbout = () => {
+		let value = this.descriptionNewRef.textContent || "",
+			cll = a => a.replace(/\s|\n/g, "");
+
+		if(!cll(value).length) {
+			this.descriptionNewRef.innerHTML = ""
+		}
+
+		if(
+			this.state.user.id !== this.props.userdata.id ||
+			cll(this.state.user.description) === cll(value)
+		) return;
+
+		this.setState(({ user }) => ({
+			user: {
+				...user,
+				description: value
+			},
+			descriptionStatus: "Saving..."
+		}));
+
+		const { id, authToken } = cookieControl.get("authdata"),
+			castError = () => {
+			  	this.props.castError(
+			  		"We couldn't save the information about you. Please, try again."
+			  	);
+
+			  	this.setState(() => ({
+			  		descriptionStatus: "Error!"
+			  	}));
+			}
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $content: String!) {
+					updateProfileDescription(id: $id, authToken: $authToken, content: $content) {
+						id
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				content: value
+			}
+		}).then(({ data: { updateProfileDescription: a } }) => {
+			if(!a) return castError();
+
+			this.setState(() => ({
+		  		descriptionStatus: "Saved"
+		  	}));
+		}).catch(castError);
 	}
 
 	render() {
@@ -769,6 +859,13 @@ class App extends Component {
 							active={ this.state.stage === "GALLERY_STAGE" }
 							ei={ false }
 							_onClick={ () => this.setGlobalStage("GALLERY_STAGE") }
+						/>
+						<ThumbNavButton
+							title="About"
+							counter={ null }
+							active={ this.state.stage === "ABOUT_STAGE" }
+							ei={ false }
+							_onClick={ () => this.setGlobalStage("ABOUT_STAGE") }
 						/>
 					</div>
 				</div>
@@ -895,6 +992,42 @@ class App extends Component {
 								)
 							}
 						</FlipMove>
+					</div>
+					<div className={ `rn-account-display-item rn-account-display-about${ (this.state.stage !== "ABOUT_STAGE") ? "" : " visible" }` }>
+						{
+							(!this.state.descriptionLoading || [null, undefined].includes(this.state.user.description)) ? (
+								<Fragment>
+									{
+										(this.state.user.id !== this.props.userdata.id) ? null : (
+											<div className="rn-account-display-about-editsw">
+												<span>{ this.state.descriptionStatus || "Edit" }</span>
+												<Switch
+													_onChange={ value => {
+														if(!value) {
+															this.setState({ aboutMeEditing: value }, this.updateAbout);
+														} else {
+															this.setState({
+																aboutMeEditing: value,
+																descriptionStatus: null
+															});
+														}
+													} }
+												/>
+											</div>
+										)
+									}
+									<p
+										className={ `rn-account-display-about-mat definp${ (this.state.user.id !== this.props.userdata.id) ? "" : " mine" }` }
+										ref={ ref => this.descriptionNewRef = ref }
+										contentEditable={ (this.state.user.id === this.props.userdata.id && this.state.aboutMeEditing) }
+										suppressContentEditableWarning={ true }>
+										{ this.state.user.description }
+									</p>
+								</Fragment>
+							) : (
+								<Loadericon />
+							)
+						}
 					</div>
 				</div>
 			</div>

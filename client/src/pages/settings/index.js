@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import './main.css';
 
+import Switch from '../__forall__/switcher';
+
 class Input extends Component {
 	render() {
 		return(
@@ -14,29 +16,6 @@ class Input extends Component {
 						onChange={ ({ target: { value } }) => this.props._onChange(value) }
 					/>
 					<div></div>
-				</div>
-			</div>
-		);
-	}
-}
-
-class Switch extends Component {
-	constructor(props) {
-		super(props);
-
-		this.state = {
-			active: false
-		}
-	}
-
-	render() {
-		return(
-			<div
-				className={ `rn-settings-isl-switch${ (!this.state.active) ? "" : " active" }` }
-				onClick={ () => this.setState(({ active: a }) => ({ active: !a }), () => this.props._onChange(this.state.active)) }>
-				<span>{ this.props.title }</span>
-				<div>
-					<div />
 				</div>
 			</div>
 		);
@@ -73,8 +52,8 @@ class App extends Component {
 					<span className="rn-settings-isl-title">Design Settings</span>
 					<span className="rn-settings-isl-desc">Here you can customize the external site.</span>
 					<div className="rn-settings-isl-st">
+						<span>Dark Mode</span>
 						<Switch
-							title="Dark Mode"
 							_onChange={ value => null }
 						/>
 					</div>
