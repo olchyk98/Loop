@@ -399,6 +399,14 @@
 	flex-wrap:wrap;
 }
 
+.rn-account-display-friends-nav-grid-alertion {
+	color:rgba(0, 0, 0, .5);
+	font-family:"Arial";
+	font-weight:400;
+	text-align:center;
+	width:100%;
+}
+
 .rn-account-display-friends-nav-grid-user {
 	--padding:10px;
 	--margin:5px;

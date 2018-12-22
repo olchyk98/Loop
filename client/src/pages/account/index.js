@@ -92,6 +92,40 @@ class FriendsGridFriend extends Component {
 	}
 }
 
+class FriendsSearch extends Component {
+	constructor(props) {
+		super(props);
+
+
+		this.searchInt = null;
+		this.matRef = React.createRef();
+	}
+
+	submitValue = value => {
+		clearTimeout(this.searchInt);
+		this.searchInt = setTimeout(() => {
+			this.props.submitValue(value);
+		}, 400);
+	}
+
+	render() {
+		return(
+			<div className="rn-account-display-friends-nav-search">
+				<input
+					placeholder="Search..."
+					type="text"
+					className="rn-account-display-friends-nav-search-field definp"
+					ref={ ref => this.matRef = ref }
+					onChange={ ({ target: { value: a } }) => this.submitValue(a) }
+				/>
+				<div className="rn-account-display-friends-nav-search-icon">
+					<i className="fas fa-search" />
+				</div>
+			</div>
+		);
+	}
+}
+
 class App extends Component {
 	constructor(props) {
 		super(props);
@@ -101,6 +135,7 @@ class App extends Component {
 			friendsStage: "MAIN_STAGE",
 			user: null,
 			friendsDisplay: [],
+			friendsSearch: null,
 			friendsLoading: false,
 			friendProcessing: false,
 			isSubscribing: false
@@ -571,11 +606,58 @@ class App extends Component {
 							}
 						}));
 					}
-				}).catch((err) => console.log(err) || this.props.castError(errorTxt));
+				}).catch(() => this.props.castError(errorTxt));
 			}
 			break;
 			default:break;
 		}
+	}
+
+	searchFriends = value => {
+		if(!value.replace(/\s|\n/g, "").length) {
+			return this.setState(() => ({
+				friendsSearch: null
+			}));
+		}
+
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "Something went wrong. Please, restart the page.";
+
+		this.setState(() => ({
+			friendsLoading: true
+		}));
+
+		client.query({
+			query: gql`
+				query($id: ID!, $authToken: String!, $match: String!, $section: String!) {
+					searchFriends(id: $id, authToken: $authToken, match: $match, section: $section) {
+						id,
+						avatar,
+						name
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				match: value,
+				section: {
+					"MAIN_STAGE": 'FRIENDS',
+					"REQUESTS_STAGE": 'REQUESTS'
+				}[this.state.friendsStage]
+			}
+		}).then(({ data: { searchFriends } }) => {
+			this.setState(() => ({
+				friendsLoading: false
+			}));
+			console.log(searchFriends);
+			if(!searchFriends) return this.props.castError(errorTxt);
+
+			console.log(searchFriends);
+
+			this.setState(() => ({
+				friendsSearch: searchFriends
+			}));
+		}).catch(() => this.props.castError(errorTxt));
 	}
 
 	render() {
@@ -740,22 +822,15 @@ class App extends Component {
 								}
 							</div>
 							<div className="rn-account-display-friends-nav-ss">
-								<div className="rn-account-display-friends-nav-search">
-									<input
-										placeholder="Search..."
-										type="text"
-										className="rn-account-display-friends-nav-search-field definp"
-									/>
-									<div className="rn-account-display-friends-nav-search-icon">
-										<i className="fas fa-search" />
-									</div>
-								</div>
+								<FriendsSearch
+									submitValue={ this.searchFriends }
+								/>
 							</div>
 						</div>
 						<div className="rn-account-display-friends-nav-grid">
 							{
 								(!this.state.friendsLoading) ? (
-									this.state.friendsDisplay.map(({ name, avatar, id, mutualFriendsInt: a }) => (
+									(this.state.friendsSearch || this.state.friendsDisplay).map(({ name, avatar, id, mutualFriendsInt: a }) => (
 										<FriendsGridFriend
 											key={ id }
 											id={ id }
@@ -774,6 +849,11 @@ class App extends Component {
 									))
 								) : (
 									<Loadericon />
+								)
+							}
+							{
+								(!this.state.friendsSearch || this.state.friendsSearch.length) ? null : (
+									<p className="rn-account-display-friends-nav-grid-alertion">Nothing here...</p>
 								)
 							}
 						</div>

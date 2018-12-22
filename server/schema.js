@@ -419,6 +419,48 @@ const RootQuery = new GraphQLObjectType({
 					]
 				}).sort({ time: -1 });
 			}
+		},
+		searchFriends: {
+			type: new GraphQLList(UserType),
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				match: { type: new GraphQLNonNull(GraphQLString) },
+				section: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			async resolve(_, { id, authToken, match, section }) {
+				// Validate requester
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = new RegExp(match, "i"), // Create match regex
+					c = { // section -> field // convert section to userschema field
+						"FRIENDS": "friends",
+						"REQUESTS": "waitingFriends"
+					}[section];
+ 
+				let d = await User.find({ // select more friends
+					[c]: {
+						$in: [str(id)]
+					}
+				}).select("_id");
+
+				a[c] = [ // set all friends into the one array
+					...a[c],
+					...d
+				]
+
+				// Submit response
+				return User.find({
+					_id: {
+						$in: a[c]
+					},
+					$or: [
+						{ name: b },
+						{ description: b }
+					]
+				});
+			}
 		}
 	}
 });
