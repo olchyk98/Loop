@@ -1,7 +1,7 @@
 :root {
 	--account_width:650px;
 	--account_thumbnavheight:50px;
-	--account_thumbnavavsize:150px;
+	--account_thumbnavavsize:125px;
 	--account_thumbnavpadd:10px;
 	--account_dispitempadd:15px;
 }
@@ -20,7 +20,7 @@
 	height:400px;
 	background:white;
 	border:1px solid var(--defaultborder);
-	margin-top:35px;
+	/*margin-top:35px;*/
 	position:relative;
 	border-radius:5px;
 	overflow:hidden;
@@ -52,6 +52,18 @@
 	object-position:center;
 }
 
+.rn-account-thumb-cover-addonplace {
+	color:rgba(255, 255, 255, .85);
+	font-weight:400;
+	font-family:"Quicksand";
+	position:absolute;
+	right:15px;
+	bottom:15px;
+	z-index:6;
+	display:flex;
+	align-items:center;
+}
+
 .rn-account-thumb-cover-edit {
 	--padding:7.5px;
 
@@ -60,25 +72,60 @@
 	padding-right:var(--padding);
 	border-radius:5px;
 	background:rgba(0, 0, 0, .55);
-	color:rgba(255, 255, 255, .85);
-	font-weight:400;
-	font-family:"Quicksand";
-	position:absolute;
 	font-size:.9em;
-	right:15px;
-	bottom:15px;
 	cursor:pointer;
-	z-index:6;
-	display:flex;
-	align-items:center;
 	justify-content:center;
 }
 
-.rn-account-thumb-cover-edit > * {
+.rn-account-thumb-cover-edit > *,
+.rn-account-thumb-cover-subfr > * {
 	--margin:5px;
 
 	margin-left:var(--margin);
 	margin-right:var(--margin);
+}
+
+.rn-account-thumb-cover-subfr-btn {
+	--padding:15px;
+	--height:35px;
+
+	padding-left:var(--padding);
+	padding-right:var(--padding);
+	border-radius:2.5px;
+	background:#065FD4;
+	color:"Quicksand";
+	font-weight:300;
+	text-transform:uppercase;
+	color:white;
+	box-shadow:0px 0px 15px -5px rgba(0, 0, 0, .5);
+	height:var(--height);
+	line-height:var(--height);
+	opacity:.9;
+	cursor:pointer;
+	font-size:.95em;
+	transition:.15s;
+}
+
+.rn-account-thumb-cover-subfr-btn.blocked {
+	background:#4f4240;
+}
+
+.rn-account-thumb-cover-subfr-btn.active {
+	background:#ED462F;
+}
+
+
+.rn-account-thumb-cover-subfr-btn.active.blocked {
+	background:#494848;
+}
+
+.rn-account-thumb-cover-subfr-btn:not(.blocked):hover {
+	opacity:1;
+}
+
+.rn-account-thumb-cover-subfr-btn:not(.blocked):active {
+	transition:.1s;
+	transform:scale(.95);
 }
 
 .rn-account-thumb-nav {
@@ -156,7 +203,7 @@
 	top:calc(var(--account_thumbnavavsize) / 100 * 25 * -1 - 7.5px);
 	right:0;
 	transform:translateX(calc(100% + 7.5px));
-	color:rgba(255, 255, 255, .75);
+	color:white;
 	font-weight:600;
 	font-family:"Quicksand";
 	-webkit-font-smoothing:antialiased;
@@ -378,6 +425,8 @@
 .rn-account-display-friends-nav-grid-user-info {
 	display:flex;
 	flex-direction:column;
+	text-decoration:none;
+	color:currentColor;
 }
 
 .rn-account-display-friends-nav-grid-user-info > * {
@@ -505,6 +554,7 @@
 	grid-auto-rows:1fr;
 	grid-gap:15px;
 	margin-top:15px;
+	margin-bottom:15px;
 	border-radius:5px;
 	overflow:hidden;
 	background:transparent;

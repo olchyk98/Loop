@@ -174,7 +174,7 @@ class New extends Component {
 				</div>
 				<div className={ `rn-feed-new-main${ (!this.state.previewPhotos.length) ? "" : " ph-expand" }` }>
 					<div className="rn-feed-new-main-image">
-						<Link className="rn-feed-new-main-image-overlay" to={ links["ACCOUNT_PAGE"].absolute } onClick={ this.props.onOpenAccount }>
+						<Link className="rn-feed-new-main-image-overlay" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.userID }` } onClick={ this.props.onOpenAccount }>
 							<img alt="you" title="Your photo" src={ this.props.uavatar } />
 						</Link>
 					</div>
@@ -358,6 +358,7 @@ class App extends Component {
 					}
 					onPublish={ this.publishPost }
 					onOpenAccount={ this.props.refreshDock }
+					userID={ (this.props.userdata && this.props.userdata.id) || undefined }
 				/>
 				{
 					(!this.state.isPosting) ? null : (

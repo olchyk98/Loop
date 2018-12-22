@@ -215,7 +215,7 @@ class App extends Component {
 								<NotificationsDockItem />
 							</div>
 						</button>
-						<Link className="gl-nav-account-img" to={ links["ACCOUNT_PAGE"].absolute } onClick={ this.props.refreshDock }>
+						<Link className="gl-nav-account-img" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.user && this.props.user.id }` } onClick={ this.props.refreshDock }>
 							<img src={ ((this.props.user && this.props.user.avatar && api.storage + this.props.user.avatar) || "") } alt="" title="Your avatar" />
 						</Link>
 						<button onClick={ this.logout } className="gl-nav-account-spc definp">

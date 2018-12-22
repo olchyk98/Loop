@@ -63,7 +63,7 @@ const UserType = new GraphQLObjectType({
 				targetType: {
 					$ne: "COMMENT_TYPE"
 				}
-			})
+			}).sort({ time: -1 })
 		},
 		galleryImages: {
 			type: GraphQLInt,
@@ -82,21 +82,82 @@ const UserType = new GraphQLObjectType({
 			type: GraphQLInt,
 			resolve: ({ id }) => Post.countDocuments({ creatorID: id }).sort({ time: -1 })
 		},
-		waitingFriends: {
+		waitingFriends: { // USERS that are WAITING for this USER
 			type: new GraphQLList(UserType),
 			resolve: ({ waitingFriends }) => User.find({
 				_id: {
 					$in: waitingFriends
 				}
 			})
-		}, // USERS that are WAITING for this USER
+		},
 		friends: {
 			type: new GraphQLList(UserType),
-			resolve: ({ friends }) => User.find({
-				_id: {
-					$in: friends
-				}
+			resolve: ({ id, friends }) => User.find({
+				$or: [
+					{
+						_id: {
+							$in: friends
+						},
+					},
+					{
+
+						friends: {
+							$in: [id]
+						}
+					}
+				]
 			})
+		},
+		mutualFriends: {
+			type: new GraphQLList(UserType),
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			resolve({ id }, { id: _id }) {
+				if(str(id) === str(_id)) return [];
+
+				return User.find({
+					$and: [
+						{
+							friends: {
+								$in: [id]
+							}
+						},
+						{
+							friends: {
+								$in: [_id]
+							}
+						}
+					]
+					
+				});
+			}
+		},
+		mutualFriendsInt: {
+			type: GraphQLInt,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve({ id }, { id: _id }) {
+				if(str(id) === str(_id)) return 0;
+
+				let a = await User.countDocuments({
+					$and: [
+						{
+							friends: {
+								$in: [id]
+							}
+						},
+						{
+							friends: {
+								$in: [_id]
+							}
+						}
+					]
+				});
+
+				return (Number.isInteger(a)) ? a : 0;
+			}
 		},
 		authTokens: { type: new GraphQLList(GraphQLString) },
 		subscribers: {
@@ -268,7 +329,7 @@ const RootQuery = new GraphQLObjectType({
 		},
 		images: {
 			type: new GraphQLList(ImageType),
-			resolve: () => Image.find({})
+			resolve: () => Image.find({}).sort({ time: -1 })
 		},
 		getFeed: {
 			type: new GraphQLList(PostType),
@@ -481,7 +542,7 @@ const RootMutation = new GraphQLObjectType({
 				if(!a || !targetID) return null;
 
 				let b = await Post.findById(targetID);
-				if(!b) return;
+				if(!b) return null;
 
 				let c = !b.likes.includes(id);
 
@@ -512,7 +573,7 @@ const RootMutation = new GraphQLObjectType({
 				if(!a || !targetID) return null;
 
 				let b = await Comment.findById(targetID);
-				if(!b) return;
+				if(!b) return null;
 
 				let c = !b.likes.includes(id);
 
@@ -540,10 +601,10 @@ const RootMutation = new GraphQLObjectType({
 			},
 			async resolve(_, { id, authToken, targetID }) {
 				let a = await validateAccount(id, authToken);
-				if(!a) return;
+				if(!a) return null;
 
 				let b = await Image.findById(targetID);
-				if(!b) return;
+				if(!b) return null;
 
 				let c = !b.likes.includes(id);
 
@@ -585,6 +646,118 @@ const RootMutation = new GraphQLObjectType({
 				}, {
 					avatar: link
 				}, (_, a) => a);
+			}
+		},
+		setUserCover: {
+			type: UserType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				cover: { type: new GraphQLNonNull(GraphQLUpload) }
+			},
+			async resolve(_, { id, authToken, cover }) {
+				// Receive image
+				let { stream, filename } = await cover;
+
+				let link = `${ settings.files.images }/${ generateNoise(128) }.${ getExtension(filename) }`;
+				stream.pipe(fileSystem.createWriteStream('.' + link));
+
+				// Submit
+				return User.findOneAndUpdate({
+					_id: id,
+					authTokens: {
+						$in: [authToken]
+					}
+				}, {
+					cover: link
+				}, (_, a) => a);
+			}
+		},
+		uploadImage: {
+			type: ImageType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				avatar: { type: new GraphQLNonNull(GraphQLUpload) }
+			},
+			async resolve(_, { id, authToken, avatar }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let { stream, filename } = await avatar;
+				let link = `${ settings.files.images }/${ generateNoise(128) }.${ getExtension(filename) }`;
+				stream.pipe(fileSystem.createWriteStream('.' + link));
+
+				let b = (
+					new Image({
+						creatorID: a._id,
+						postID: null,
+						url: link,
+						time: new Date,
+						likes: [],
+						targetType: "VOID_TYPE"
+					})
+				).save();
+
+				return b;
+			}
+		},
+		sendFriendRequest: {
+			type: UserType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, targetID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await User.findById(targetID);
+				if(!b) return null;
+
+				if(a.friends.includes(str(targetID)) || b.friends.includes(str(id))) return null;
+
+				await b.updateOne({
+					$addToSet: {
+						waitingFriends: str(id)
+					}
+				});
+
+				if(!b.waitingFriends.includes(id)) {
+					b.waitingFriends.push(str(id));
+				}
+
+				return b;
+			}
+		},
+		acceptFriendRequest: {
+			type: UserType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, targetID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a || !a.waitingFriends.includes(str(targetID))) return;
+
+				await a.updateOne({
+					$pull: {
+						waitingFriends: str(targetID)
+					},
+					$addToSet: {
+						friends: str(targetID)
+					}
+				});
+
+				let b = a.waitingFriends;
+				b.splice(b.findIndex(io => str(io) === str(targetID)), 1);
+				if(!b.includes(str(targetID))) {
+					b.push(str(targetID));
+				}
+
+				return a;
 			}
 		}
 	}

@@ -4,12 +4,16 @@ import './main.css';
 import TimelineItem from '../__forall__/post';
 import Loadericon from '../__forall__/loader.icon';
 
+import FlipMove from 'react-flip-move';
+
 import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
+import { Link } from 'react-router-dom';
 
 import api from '../../api';
 import client from '../../apollo';
 import { cookieControl } from '../../utils';
+import links from '../../links';
 
 const image = 'https://d2v9y0dukr6mq2.cloudfront.net/video/thumbnail/VnxYrY1ux/young-blonde-beautiful-girl-fashion-looks-at-blue-neon-light-portrait-at-night_sujtbljwx_thumbnail-full03.png';
 
@@ -53,13 +57,17 @@ class FriendsGridFriend extends Component {
 	render() {
 		return(
 			<div className="rn-account-display-friends-nav-grid-user">
-				<div className="rn-account-display-friends-nav-grid-user-avatar">
-					<img src={ image } alt="User" title="User's avatar" />
-				</div>
-				<div className="rn-account-display-friends-nav-grid-user-info">
-					<span className="rn-account-display-friends-nav-grid-user-info-name">Oles Odynets</span>
-					<span className="rn-account-display-friends-nav-grid-user-info-info">15 mutual friends</span>
-				</div>
+				<Link to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.id }` } className="rn-account-display-friends-nav-grid-user-avatar">
+					<img src={ this.props.avatar && api.storage + this.props.avatar } alt="User" title="User's avatar" />
+				</Link>
+				<Link to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.id }` } className="rn-account-display-friends-nav-grid-user-info">
+					<span className="rn-account-display-friends-nav-grid-user-info-name">{ this.props.name }</span>
+					{
+						(this.props.mutualFriends === null) ? null : (
+							<span className="rn-account-display-friends-nav-grid-user-info-info">{ this.props.mutualFriends } mutual friends</span>
+						)
+					}
+				</Link>
 				<div
 					className="rn-account-display-friends-nav-grid-user-set definp"
 					onClick={ () => this.setState(({ settingsVisible: a }) => ({ settingsVisible: !a })) }>
@@ -87,13 +95,15 @@ class App extends Component {
 		this.state = {
 			stage: "TIMELINE_STAGE", // TIMELINE_STAGE, FRIENDS_STAGE, GALLERY_STAGE
 			friendsStage: "MAIN_STAGE",
-			user: null
+			user: null,
+			friendsDisplay: [],
+			friendsLoading: false
 		}
 	}
 
 	componentDidMount() {
 		const { id, authToken } = cookieControl.get("authdata"),
-			  errorTxt = "We couldn't load the profile. Please, try later.";
+			  errorTxt = "Ehm... Looks like the account is not exists :(";
 
 		client.query({
 			query: gql`
@@ -145,16 +155,26 @@ class App extends Component {
 				targetID: this.props.match.params.id || ""
 			}
 		}).then(({ data: { user } }) => {
-			if(!user) return this.props.castError(errorTxt);
+			if(!user) {
+				this.props.history.push(links["HOME_PAGE"].absolute);
+				this.props.refreshDock();
+				return this.props.castError(errorTxt);
+			}
 
 			this.setState(() => ({
 				user
 			}));
-		}).catch(() => this.props.castError(errorTxt));
+		}).catch(() => {
+			this.props.history.push(links["HOME_PAGE"].absolute);
+			this.props.refreshDock();
+			this.props.castError(errorTxt);
+		});
 	}
 
 	setGlobalStage = stage => {
-		if(stage === "GALLERY_STAGE") {
+		if(stage === "FRIENDS_STAGE") {
+			this.setFriendsStage("MAIN_STAGE");
+		} else if(stage === "GALLERY_STAGE") {
 			this.setState(({ user }) => ({
 				user: {
 					...user,
@@ -190,6 +210,13 @@ class App extends Component {
 					}
 				}));
 			}).catch(() => this.props.castError(errorTxt));
+		} else {
+			this.setState(({ user }) => ({
+				user: {
+					...user,
+					gallery: null
+				}
+			}));
 		}
 
 		this.setState(() => ({
@@ -225,6 +252,157 @@ class App extends Component {
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
+	uploadImage = file => {
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "We couldn't update your image. Please try again."
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $avatar: Upload!) {
+					uploadImage(id: $id, authToken: $authToken, avatar: $avatar) {
+						id,
+						url
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				avatar: file
+			}
+		}).then(({ data: { uploadImage } }) => {
+			if(!uploadImage) return this.props.castError(errorTxt);
+
+			this.setState(({ user, user: { gallery } }) => ({
+				user: {
+					...user,
+					gallery: [
+						uploadImage,
+						...gallery
+					]
+				}
+			}));
+
+		}).catch(() => this.props.castError(errorTxt))
+	}
+
+	replaceCover = file => {
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "We couldn't upload a new cover image. Please, try again.";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $cover: Upload!) {
+					setUserCover(id: $id, authToken: $authToken, cover: $cover) {
+						id,
+						cover
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				cover: file
+			}
+		}).then(({ data: { setUserCover } }) => {
+			if(!setUserCover) return this.props.castError(errorTxt);
+
+			this.setState(({ user }) => ({
+				user: {
+					...user,
+					cover: setUserCover.cover
+				}
+			}));
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	setFriendsStage = stage => {
+		switch(stage) {
+			case 'MAIN_STAGE': {
+				const { id, authToken } = cookieControl.get("authdata"),
+					  errorTxt = "";
+
+				this.setState(() => ({
+					friendsLoading: true
+				}));
+
+				client.query({
+					query: gql`
+						query($id: ID!, $authToken: String!) {
+						  user(
+						    id: $id,
+						    authToken: $authToken
+						  ) {
+						    id,
+						    friends {
+						      id,
+						      avatar,
+						      name
+						    }
+						  }
+						}
+					`,
+					variables: {
+						id,
+						authToken
+					}
+				}).then(({ data: { user } }) => {
+					this.setState(() => ({
+						friendsLoading: false
+					}));
+					if(!user) return this.props.castError(errorTxt);
+
+					this.setState(() => ({
+						friendsDisplay: user.friends
+					}));
+				}).catch(() => this.props.castError(errorTxt));
+			}
+			break;
+			case 'REQUESTS_STAGE':
+				const { id, authToken } = cookieControl.get("authdata"),
+					  errorTxt = "We couldn't load friend requests list. Sorry about that :(";
+
+				this.setState(() => ({
+					friendsLoading: true
+				}));
+
+				client.query({
+					query: gql`
+						query($id: ID!, $authToken: String!) {
+						  user(
+						    id: $id,
+						    authToken: $authToken
+						  ) {
+						    id,
+						    waitingFriends {
+						      id,
+						      avatar,
+						      name,
+						      mutualFriendsInt(id: $id)
+						    }
+						  }
+						}
+					`,
+					variables: {
+						id, authToken
+					}
+				}).then(({ data: { user } }) => {
+					this.setState(() => ({
+						friendsLoading: false
+					}));
+					if(!user) return this.props.castError(errorTxt);
+
+					this.setState(() => ({
+						friendsDisplay: user.waitingFriends
+					}));
+				}).catch(() => this.props.castError(errorTxt));
+			break;
+			default:break;
+		}
+
+		this.setState(() => ({
+			friendsStage: stage
+		}));
+	}
+
 	render() {
 		if(!this.state.user) return(
 			<div className="rn rn-account">
@@ -245,13 +423,44 @@ class App extends Component {
 						{
 							(cookieControl.get("authdata").id === this.state.user.id) ? (
 								<Fragment>
-									<input type="file" className="hidden" id="rn-account-thumb-cover-edit" />
-									<label htmlFor="rn-account-thumb-cover-edit" className="rn-account-thumb-cover-edit definp">
+									<input
+										type="file"
+										className="hidden"
+										id="rn-account-thumb-cover-edit"
+										onChange={ ({ target: { files: [file] } }) => this.replaceCover(file) }
+									/>
+									<label htmlFor="rn-account-thumb-cover-edit" className="rn-account-thumb-cover-addonplace rn-account-thumb-cover-edit definp">
 										<i className="fas fa-camera-retro" />
 										<span>Edit Cover</span>
 									</label>
 								</Fragment>
-							) : null
+							) : (
+								<div className="rn-account-thumb-cover-addonplace rn-account-thumb-cover-subfr">
+									{
+										[
+											{
+												title: "Subscribe",
+												active: true,
+												blocked: false,
+												action: () => null
+											},
+											{
+												title: "Add friend",
+												active: false,
+												blocked: false,
+												action: () => null
+											}
+										].map(({ title, active, action, blocked }, index) => (
+											<button
+												key={ index }
+												onClick={ action }
+												className={ `rn-account-thumb-cover-subfr-btn definp${ (!active) ? "" : " active" }${ (!blocked) ? "" : " blocked" }` }>
+												{ title }
+											</button>
+										))
+									}
+								</div>
+							)
 						}
 					</div>
 					<div className="rn-account-thumb-nav">
@@ -265,11 +474,15 @@ class App extends Component {
 									accept="image/*"
 									type="file"
 								/>
-								<div className="rn-account-thumb-nav-img-replace">
-									<label htmlFor="rn-account-thumb-nav-img-mat-newfile" className="definp">
-										<i className="fas fa-camera" />
-									</label>
-								</div>
+								{
+									(this.props.userdata.id === this.state.user.id) ? (
+										<div className="rn-account-thumb-nav-img-replace">
+											<label htmlFor="rn-account-thumb-nav-img-mat-newfile" className="definp">
+												<i className="fas fa-camera" />
+											</label>
+										</div>
+									) : null
+								}
 							</div>
 							<span className="rn-account-thumb-nav-name">{ this.state.user.name }</span>
 						</div>
@@ -331,16 +544,16 @@ class App extends Component {
 									counter="238"
 									active={ this.state.friendsStage === "MAIN_STAGE" }
 									ei={ true }
-									_onClick={ () => this.setState({ friendsStage: "MAIN_STAGE" }) }
+									_onClick={ () => this.setFriendsStage("MAIN_STAGE") }
 								/>
 								{
-									(!cookieControl.get("authdata")) ? null : (
+									(this.state.user.id !== this.props.userdata.id) ? null : (
 										<ThumbNavButton
 											title="Friend Requests"
 											counter="2"
 											active={ this.state.friendsStage === "REQUESTS_STAGE" }
 											ei={ true }
-											_onClick={ () => this.setState({ friendsStage: "REQUESTS_STAGE" }) }
+											_onClick={ () => this.setFriendsStage("REQUESTS_STAGE") }
 										/>
 									)
 								}
@@ -359,8 +572,21 @@ class App extends Component {
 							</div>
 						</div>
 						<div className="rn-account-display-friends-nav-grid">
-							<FriendsGridFriend />
-							<FriendsGridFriend />
+							{
+								(!this.state.friendsLoading) ? (
+									this.state.friendsDisplay.map(({ name, avatar, id, mutualFriendsInt: a }) => (
+										<FriendsGridFriend
+											key={ id }
+											id={ id }
+											name={ name }
+											avatar={ avatar }
+											mutualFriends={ (Number.isInteger(a)) ? a : null }
+										/>
+									))
+								) : (
+									<Loadericon />
+								)
+							}
 						</div>
 					</div>
 					<div className={ `rn-account-display-item rn-account-display-gallery iostyle${ (this.state.stage !== "GALLERY_STAGE") ? "" : " visible" }` }>
@@ -371,7 +597,8 @@ class App extends Component {
 										type="file"
 										id="rn-account-display-gallery-new-mat"
 										className="hidden"
-										onChange={ ({ target: { files } }) => null }
+										accept="image/*"
+										onChange={ ({ target: { files: [file] } }) => this.uploadImage(file) }
 									/>
 									<label htmlFor="rn-account-display-gallery-new-mat" className="rn-account-display-gallery-new-mat definp">
 										<i className="fas fa-plus" />
@@ -379,7 +606,7 @@ class App extends Component {
 								</div>
 							)
 						}
-						<div className="rn-account-display-gallery-grid">
+						<FlipMove className="rn-account-display-gallery-grid">
 							{
 								(!this.state.user.gallery) ? (
 									<Loadericon />
@@ -398,7 +625,7 @@ class App extends Component {
 									)
 								)
 							}
-						</div>
+						</FlipMove>
 					</div>
 				</div>
 			</div>
@@ -413,7 +640,8 @@ const mapStateToProps = ({ user: { userdata } }) => ({
 const mapActionsToProps = {
 	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } }),
 	openPhoto: payload => ({ type: 'TOGGLE_PHOTO_MODAL', payload }),
-	setUserData: payload => ({ type: 'SET_USER_DATA', payload })
+	setUserData: payload => ({ type: 'SET_USER_DATA', payload }),
+	refreshDock: () => ({ type: "REFRESH_DOCK", payload: null })
 }
 
 export default connect(

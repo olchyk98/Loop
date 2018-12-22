@@ -38,7 +38,7 @@ class App extends Component {
 					<DockBtn
 						title="Profile"
 						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["ACCOUNT_PAGE"].absolute }
-						_to={ links["ACCOUNT_PAGE"].absolute }
+						_to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.userID }` }
 						_onClick={ () => this.forceUpdate() }
 					/>
 					<DockBtn
@@ -59,14 +59,19 @@ class App extends Component {
 	}
 }
 
+const mapStateToProps = ({ user: { userdata }, session: { showDock } }) => ({
+	showDock,
+	userID: (userdata && userdata.id) || undefined
+});
+
+const mapActionsToProps = {
+	updateRefresher: payload => ({
+		type: "SET_DOCK_REFRESHER",
+		payload
+	})
+}
+
 export default connect(
-	({ session: { showDock } }) => ({
-		showDock
-	}),
-	{
-		updateRefresher: payload => ({
-			type: "SET_DOCK_REFRESHER",
-			payload
-		})
-	}
+	mapStateToProps,
+	mapActionsToProps
 )(App);
