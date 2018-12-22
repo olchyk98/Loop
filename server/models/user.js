@@ -10,7 +10,8 @@ const UserSchema = new mongoose.Schema({
 	url: String,
 	waitingFriends: Array,
 	friends: Array,
-	authTokens: Array
+	authTokens: Array,
+	subscribedTo: Array
 });
 
 module.exports = mongoose.model("User", UserSchema);

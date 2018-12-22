@@ -90,6 +90,10 @@ const UserType = new GraphQLObjectType({
 				}
 			})
 		},
+		waitingFriendsInt: {
+			type: GraphQLInt,
+			resolve: ({ waitingFriends }) => waitingFriends.length
+		},
 		friends: {
 			type: new GraphQLList(UserType),
 			resolve: ({ id, friends }) => User.find({
@@ -107,6 +111,18 @@ const UserType = new GraphQLObjectType({
 					}
 				]
 			})
+		},
+		friendsInt: {
+			type: GraphQLInt,
+			async resolve({ id, friends }) {
+				let a = await User.countDocuments({
+					friends: {
+						$in: [id]
+					}
+				});
+
+				return a + friends.length;
+			}
 		},
 		mutualFriends: {
 			type: new GraphQLList(UserType),
@@ -156,17 +172,68 @@ const UserType = new GraphQLObjectType({
 					]
 				});
 
-				return (Number.isInteger(a)) ? a : 0;
+				return a || 0;
 			}
 		},
 		authTokens: { type: new GraphQLList(GraphQLString) },
-		subscribers: {
+		subscribedTo: {
 			type: new GraphQLList(UserType),
-			resolve: ({ subscribers }) => User.find({
+			resolve: ({ subscribedTo }) => User.find({
 				_id: {
-					$in: subscribers
+					$in: subscribedTo
 				}
 			})
+		},
+		isSubscribed: {
+			type: GraphQLBoolean,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve({ id: _id }, { id }) {
+				let a = await User.findById(id);
+				return a.subscribedTo.includes(str(_id));
+			}
+		},
+		isFriend: {
+			type: GraphQLBoolean,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve({ id: _id }, { id }) {
+				let a = await User.findOne({
+					_id: {
+						$in: [_id, id]
+					},
+					friends: {
+						$in: [_id, id]
+					}
+				});
+
+				return !!a;
+			}
+		},
+		isWaitingFriend: { // user is waiting
+			type: GraphQLBoolean,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve({ id: _id }, { id }) {
+				let a = await User.countDocuments({
+					_id: id,
+					waitingFriends: {
+						$in: [_id]
+					}
+				});
+
+				return a || 0;
+			}
+		},
+		isTrialFriend: { // we're waiting
+			type: GraphQLBoolean,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			resolve: ({ waitingFriends }, { id }) => waitingFriends.includes(str(id))
 		},
 		lastAuthToken: {
 			type: GraphQLString,
@@ -345,7 +412,7 @@ const RootQuery = new GraphQLObjectType({
 					$or: [
 						{
 							creatorID: {
-								$in: a.subscribers
+								$in: a.subscribedTo
 							}
 						},
 						{ creatorID: id }
@@ -702,7 +769,8 @@ const RootMutation = new GraphQLObjectType({
 				return b;
 			}
 		},
-		sendFriendRequest: {
+		processFriendRequest: {
+			// send request, cancel request, accept request, remove from friends
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
@@ -716,47 +784,158 @@ const RootMutation = new GraphQLObjectType({
 				let b = await User.findById(targetID);
 				if(!b) return null;
 
-				if(a.friends.includes(str(targetID)) || b.friends.includes(str(id))) return null;
+				if( // Send request
+					(
+						!a.friends.includes(str(targetID)) &&
+						!a.waitingFriends.includes(str(targetID))
+					) && (
+						!b.friends.includes(str(id)) &&
+						!b.waitingFriends.includes(str(id))
+					)
+				) {
+					await b.updateOne({
+						$addToSet: {
+							waitingFriends: str(id)
+						}
+					});
 
-				await b.updateOne({
-					$addToSet: {
-						waitingFriends: str(id)
-					}
-				});
-
-				if(!b.waitingFriends.includes(id)) {
 					b.waitingFriends.push(str(id));
+				} else if( // Cancel request
+					(
+						!a.friends.includes(str(targetID)) &&
+						!a.waitingFriends.includes(str(targetID))
+					) && (
+						!b.friends.includes(str(id)) &&
+						b.waitingFriends.includes(str(id))
+					)
+				) {
+					await b.updateOne({
+						$pull: {
+							waitingFriends: str(id)
+						}
+					});
+
+					b.waitingFriends.splice(b.waitingFriends.findIndex(io => str(io) === str(targetID)), 1);
+				} else if( // Accept friend
+					(
+						!a.friends.includes(str(targetID)) &&
+						a.waitingFriends.includes(str(targetID))
+					) && (
+						!b.friends.includes(str(id)) &&
+						!b.waitingFriends.includes(str(id))
+					)
+				) {
+					await a.updateOne({
+						$pull: {
+							waitingFriends: str(targetID)
+						},
+						$addToSet: {
+							friends: str(targetID)
+						}
+					});
+
+					b.waitingFriends.splice(b.waitingFriends.findIndex(io => str(io) === str(targetID)), 1);
+					b.friends.push(str(targetID));
+				} else if( // Remove friend
+					(
+						!a.waitingFriends.includes(str(targetID)) &&
+						!b.waitingFriends.includes(str(id))
+					) && (
+						a.friends.includes(str(targetID)) ||
+						b.friends.includes(str(id))
+					)
+				) {
+					await a.updateOne({
+						$pull: {
+							friends: str(targetID)
+						}
+					});
+
+					await b.updateOne({
+						$pull: {
+							friends: str(id)
+						}
+					});
 				}
 
 				return b;
+
 			}
 		},
-		acceptFriendRequest: {
+		subscribeUser: {
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
 				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) } 
 			},
 			async resolve(_, { id, authToken, targetID }) {
 				let a = await validateAccount(id, authToken);
-				if(!a || !a.waitingFriends.includes(str(targetID))) return;
+				if(!a) return null;
+
+				let b = await User.findById(targetID);
+				if(!b) return null;
+
+				let c = a.subscribedTo;
+				let d = c.includes(str(targetID));
 
 				await a.updateOne({
-					$pull: {
-						waitingFriends: str(targetID)
-					},
-					$addToSet: {
-						friends: str(targetID)
+					[ (!d) ? "$addToSet" : "$pull" ]: {
+						subscribedTo: str(targetID)
 					}
 				});
 
-				let b = a.waitingFriends;
-				b.splice(b.findIndex(io => str(io) === str(targetID)), 1);
-				if(!b.includes(str(targetID))) {
-					b.push(str(targetID));
-				}
+				if(!d) c.push(str(targetID));
+				else c.splice(c.findIndex(io => str(io) === str(targetID)), 1);
 
+				return b;
+			}
+		},
+		declareFriendRequestStatus: {
+			type: UserType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
+				status: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			async resolve(_, { id, authToken, targetID, status }) {
+				let a = await validateAccount(id, authToken);
+				switch(status) {
+					case 'ACCEPT_ACTION':
+						await a.updateOne({
+							$pull: {
+								waitingFriends: targetID
+							},
+							$addToSet: {
+								friends: targetID
+							}
+						});
+					break;
+					case 'DECLINE_ACTION':
+						await a.updateOne({
+							$pull: {
+								waitingFriends: targetID
+							}
+						});
+					break;
+					case 'REMOVE_ACTION':
+						await a.updateOne({
+							$pull: {
+								friends: str(targetID)
+							}
+						});
+
+						await User.findOneAndUpdate({
+							_id: targetID
+						}, {
+							$pull: {
+								friends: str(id)
+							}
+						});
+					break;
+					default:break;
+				}
 				return a;
 			}
 		}

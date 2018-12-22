@@ -3,6 +3,7 @@ import './main.css';
 
 import TimelineItem from '../__forall__/post';
 import Loadericon from '../__forall__/loader.icon';
+import placeholderGIF from '../__forall__/placeholder.gif';
 
 import FlipMove from 'react-flip-move';
 
@@ -14,8 +15,6 @@ import api from '../../api';
 import client from '../../apollo';
 import { cookieControl } from '../../utils';
 import links from '../../links';
-
-const image = 'https://d2v9y0dukr6mq2.cloudfront.net/video/thumbnail/VnxYrY1ux/young-blonde-beautiful-girl-fashion-looks-at-blue-neon-light-portrait-at-night_sujtbljwx_thumbnail-full03.png';
 
 class ThumbNavButton extends Component {
 	render() {
@@ -47,11 +46,8 @@ class FriendsGridFriend extends Component {
 		super(props);
 
 		this.state = {
-			settingsVisible: false,
-			settingsMoreINCV: false
+			settingsVisible: false
 		}
-
-		this.settingsRef = React.createRef();
 	}
 
 	render() {
@@ -70,17 +66,25 @@ class FriendsGridFriend extends Component {
 				</Link>
 				<div
 					className="rn-account-display-friends-nav-grid-user-set definp"
-					onClick={ () => this.setState(({ settingsVisible: a }) => ({ settingsVisible: !a })) }>
+					onClick={ () => this.setState(({ settingsVisible: a }) => ({
+							settingsVisible: !a
+					})) }>
 					<i className="fas fa-ellipsis-h" />
 					<div
-						className={ `rn-account-display-friends-nav-grid-user-set-list${ (this.state.settingsMoreINCV) ? "" : " hidgrad" }${ (!this.state.settingsVisible) ? "" : " visible" }` }
-						ref={ ref => this.settingsRef = ref }
-						onScroll={ () => this.setState({ settingsMoreINCV: this.settingsRef.scrollTop > 0 }) }>
-						<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp">Something</button>
-						<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp">Something</button>
-						<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp">Something</button>
-						<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp">Something</button>
-						<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp">Something</button>
+						className={ `rn-account-display-friends-nav-grid-user-set-list${ (!this.state.settingsVisible) ? "" : " visible" }` }>
+						{
+							(this.props.currentStage === "MAIN_STAGE") ? (
+								<Fragment>
+									<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp" onClick={ () => this.props.submitAction("REMOVE_ACTION") }>Remove friend</button>
+									<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp" onClick={ () => this.props.submitAction("OPEN_PROFILE") }>Open profile</button>
+								</Fragment>
+							) : (
+								<Fragment>
+									<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp" onClick={ () => this.props.submitAction("ACCEPT_ACTION") }>Accept request</button>
+									<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp" onClick={ () => this.props.submitAction("DECLINE_ACTION") }>Decline request</button>
+								</Fragment>
+							)
+						}
 					</div>
 				</div>
 			</div>
@@ -97,7 +101,9 @@ class App extends Component {
 			friendsStage: "MAIN_STAGE",
 			user: null,
 			friendsDisplay: [],
-			friendsLoading: false
+			friendsLoading: false,
+			friendProcessing: false,
+			isSubscribing: false
 		}
 	}
 
@@ -114,7 +120,13 @@ class App extends Component {
 						cover,
 						name,
 						postsInt,
+						friendsInt,
 						galleryImages,
+						waitingFriendsInt,
+						isFriend(id: $id),
+						isWaitingFriend(id: $id),
+						isTrialFriend(id: $id),
+						isSubscribed(id: $id),
 						posts {
 							id,
 							content,
@@ -403,6 +415,169 @@ class App extends Component {
 		}));
 	}
 
+	toggleFriend = () => {
+		if(this.state.friendProcessing) return;
+		const { id, authToken } = cookieControl.get("authdata");
+
+		this.setState(() => ({
+			friendProcessing: true
+		}));
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $targetID: ID!) {
+					processFriendRequest(id: $id, authToken: $authToken, targetID: $targetID) {
+						id,
+						isFriend(id: $id),
+						isWaitingFriend(id: $id),
+						isTrialFriend(id: $id)
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				targetID: this.state.user.id
+			}
+		}).then(({ data: { processFriendRequest } }) => {
+			this.setState(() => ({
+				friendProcessing: false
+			}));
+			if(!processFriendRequest) return this.props.castError(
+				"Something wrong. Please, restart the website."
+			);
+
+			delete processFriendRequest.id;
+			this.setState(({ user }) => ({
+				user: {
+					...user,
+					...processFriendRequest
+				}
+			}));
+		}).catch(() => this.props.castError(
+			"We couldn't connect to the server. Please, check your internet connection."
+		));
+	}
+
+	toggleSubscription = () => {
+		if(this.state.isSubscribing) return;
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "Sorry, we couldn't submit your subscription status. Please, try later.";
+
+		this.setState(({ user, user: { isSubscribed } }) => ({
+			isSubscribing: true,
+			user: {
+				...user,
+				isSubscribed: !isSubscribed
+			}
+		}));
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $targetID: ID!) {
+					subscribeUser(id: $id, authToken: $authToken, targetID: $targetID) {
+						id,
+						isSubscribed(id: $id)
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				targetID: this.state.user.id
+			}
+		}).then(({ data: { subscribeUser } }) => {
+			this.setState(() => ({
+				isSubscribing: false
+			}));
+			if(!subscribeUser) return this.props.castError(errorTxt);
+
+			this.setState(({ user }) => ({
+				user: {
+					...user,
+					isSubscribed: subscribeUser.isSubscribed
+				}
+			}));
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	addFriendManual = (tid, status) => {
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "Something went wrong. Please, try again.";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $targetID: ID!, $status: String!) {
+					declareFriendRequestStatus(id: $id, authToken: $authToken, targetID: $targetID, status: $status) {
+						id
+					}
+				}
+			`,
+			variables: {
+				id, authToken, status,
+				targetID: tid
+			}
+		}).then(({ data: { declareFriendRequestStatus: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			if(this.state.friendsStage === "REQUESTS_STAGE" && this.state.friendsDisplay) {
+				let b = Array.from(this.state.friendsDisplay);
+				b.splice(b.findIndex(io => io.id.toString() === a.id), 1);
+
+				this.setState(({ friendsDisplay, user, user: { waitingFriendsInt: c } }) => ({
+					friendsDisplay: b,
+					user: {
+						...user,
+						friendsInt: user.friendsInt + 1,
+						waitingFriendsInt: (c - 1 >= 0) ? c - 1 : 0
+					}
+				}));
+			}
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	executeFriend = (tid, action) => {
+		switch(action) {
+			case 'OPEN_PROFILE':
+				this.props.history.push(`${ links["ACCOUNT_PAGE"].absolute }/${ tid }`);
+			break;
+			case 'REMOVE_ACTION': {
+				const { id, authToken } = cookieControl.get("authdata"),
+					  errorTxt = "Something went wrong. Please, try again.";
+
+				client.mutate({
+					mutation: gql`
+						mutation($id: ID!, $authToken: String!, $targetID: ID!, $status: String!) {
+							declareFriendRequestStatus(id: $id, authToken: $authToken, targetID: $targetID, status: $status) {
+								id
+							}
+						}
+					`,
+					variables: {
+						id, authToken,
+						status: action,
+						targetID: tid
+					}
+				}).then(({ data: { declareFriendRequestStatus: a } }) => {
+					if(!a) return this.props.castError(errorTxt);
+
+					if(this.state.friendsStage === "MAIN_STAGE" && this.state.friendsDisplay) {
+						let b = Array.from(this.state.friendsDisplay);
+						b.splice(b.findIndex(io => io.id.toString() === a.id), 1);
+
+						this.setState(({ friendsDisplay, user, user: { friendsInt: c } }) => ({
+							friendsDisplay: b,
+							user: {
+								...user,
+								friendsInt: (c - 1 >= 0) ? c - 1 : 0
+							}
+						}));
+					}
+				}).catch((err) => console.log(err) || this.props.castError(errorTxt));
+			}
+			break;
+			default:break;
+		}
+	}
+
 	render() {
 		if(!this.state.user) return(
 			<div className="rn rn-account">
@@ -439,22 +614,28 @@ class App extends Component {
 									{
 										[
 											{
-												title: "Subscribe",
-												active: true,
+												title: (!this.state.user.isSubscribed) ? "Subscribe" : "Subscribed",
+												active: this.state.user.isSubscribed,
 												blocked: false,
-												action: () => null
+												action: this.toggleSubscription
 											},
 											{
-												title: "Add friend",
-												active: false,
+												title: (this.state.user.isFriend) ? "Friend" : (this.state.user.isWaitingFriend) ? (
+													"Accept request"
+												) : (this.state.user.isTrialFriend) ? "Cancel request" : "Add friend",
+												active: this.state.user.isFriend || this.state.user.isTrialFriend,
 												blocked: false,
-												action: () => null
+												loading: this.state.friendProcessing,
+												action: this.toggleFriend
 											}
-										].map(({ title, active, action, blocked }, index) => (
+										].map(({ title, active, action, blocked, loading }, index) => (
 											<button
 												key={ index }
 												onClick={ action }
-												className={ `rn-account-thumb-cover-subfr-btn definp${ (!active) ? "" : " active" }${ (!blocked) ? "" : " blocked" }` }>
+												className={ `rn-account-thumb-cover-subfr-btn definp${ (!active) ? "" : " active" }${ (!blocked) ? "" : " blocked" }${ (!loading) ? "" : " loading" }` }>
+												{ (!loading) ? null : (
+													<img src={ placeholderGIF } alt="placeholder" className="rn-account-thumb-cover-subfr-btn-loader" />
+												) }
 												{ title }
 											</button>
 										))
@@ -495,7 +676,7 @@ class App extends Component {
 						/>
 						<ThumbNavButton
 							title="Friends"
-							counter="0"
+							counter={ this.state.user.friendsInt || 0 }
 							active={ this.state.stage === "FRIENDS_STAGE" }
 							ei={ false }
 							_onClick={ () => this.setGlobalStage("FRIENDS_STAGE") }
@@ -541,7 +722,7 @@ class App extends Component {
 							<div className="rn-account-display-friends-nav-mat">
 								<ThumbNavButton
 									title="All Friends"
-									counter="238"
+									counter={ this.state.user.friendsInt }
 									active={ this.state.friendsStage === "MAIN_STAGE" }
 									ei={ true }
 									_onClick={ () => this.setFriendsStage("MAIN_STAGE") }
@@ -550,7 +731,7 @@ class App extends Component {
 									(this.state.user.id !== this.props.userdata.id) ? null : (
 										<ThumbNavButton
 											title="Friend Requests"
-											counter="2"
+											counter={ this.state.user.waitingFriendsInt }
 											active={ this.state.friendsStage === "REQUESTS_STAGE" }
 											ei={ true }
 											_onClick={ () => this.setFriendsStage("REQUESTS_STAGE") }
@@ -581,6 +762,14 @@ class App extends Component {
 											name={ name }
 											avatar={ avatar }
 											mutualFriends={ (Number.isInteger(a)) ? a : null }
+											submitAction={ action => (this.state.friendsStage === "MAIN_STAGE") ? (
+												this.executeFriend(id, action)
+											) : (
+												(this.state.friendsStage === "REQUESTS_STAGE") ? (
+													this.addFriendManual(id, action)
+												) : null
+											) }
+											currentStage={ this.state.friendsStage }
 										/>
 									))
 								) : (

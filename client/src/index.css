@@ -60,8 +60,11 @@ html, body {
 
 	position:fixed;
 	bottom:calc(var(--height) * -1);
-	line-height:var(--height);
-	height:var(--height);
+	/*line-height:var(--height);*/
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	min-height:var(--height);
 	width:100vw;
 	left:0;
 	z-index:99999999999999999;
@@ -185,6 +188,16 @@ html, body {
 		justify-content:center!important;
 	}
 
+	.rn-account-thumb-cover-subfr {
+		position:absolute!important;
+		bottom:15px!important;
+		left:50%!important;
+		margin-right:50%!important;
+		transform:translateX(-50%)!important;
+		width:100%!important;
+		justify-content:center!important;
+	}
+
 /*	.rn-feed-mat-item {
 		width:calc(100% - 15px)!important;
 	}*/
@@ -200,8 +213,9 @@ html, body {
 	.rn-account-thumb-nav-name {
 		position:relative!important;
 		top:inherit!important;
-		left:50%!important;
+		left:inherit!important;
 		transform:inherit!important;
+		margin-right:auto!important;
 	}
 
 	.rn-account-thumb-nav-btn,
