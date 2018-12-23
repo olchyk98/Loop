@@ -996,6 +996,31 @@ const RootMutation = new GraphQLObjectType({
 			}, {
 				description: content
 			})
+		},
+		settingProfile: {
+			type: UserType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				name: { type: GraphQLString },
+				login: { type: GraphQLString },
+				password: { type: GraphQLString }
+			},
+			resolve(_, { id, authToken, name, login, password }) {
+				let a = {};
+
+				if(name) a.name = name;
+				if(login) a.login = login;
+				if(password) a.password = password;
+				if(!Object.values(a).length) return null;
+				
+				return User.findOneAndUpdate({
+					_id: id,
+					authTokens: {
+						$in: [authToken]
+					}
+				}, a, (_, a) => a);
+			}
 		}
 	}
 });
