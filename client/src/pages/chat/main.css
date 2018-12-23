@@ -878,11 +878,32 @@
 	left:50%;
 	margin-right:50%;
 	z-index:24;
-	min-width:400px;
 	display:flex;
 	align-items:center;
 	justify-content:center;
 	transform:translate(-50%, -50%);
 	border-radius:5px;
 	padding:0;
+}
+
+.rn-chat-mm-modal.stickers {
+	min-height:80px;
+	max-height:250px;
+	width:250px;
+	background:white;
+	box-shadow:0px 0px 15px -7.5px rgba(0, 0, 0, .25);
+	display:flex;
+	flex-wrap:wrap;
+	justify-content:center;
+	overflow:scroll;
+}
+
+.rn-chat-mm-modal-sticker {
+	margin:5px;
+	flex-shrink:0;
+	cursor:pointer;
+}
+
+.rn-chat-mm-modal-sticker > img {
+	width:25px;
 }

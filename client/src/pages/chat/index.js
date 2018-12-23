@@ -284,7 +284,7 @@ class PortableModal extends Component {
 		if(this.props.stage === "STOPWATCH_STAGE") {
 			return(
 				<Fragment>
-					<div className="rn-chat-mm-modalbg"></div>
+					<div className="rn-chat-mm-modalbg" onClick={ this.props.onClose } />
 					<div className="rn-chat-mm-modal">
 						<DisplayMessageTimer
 							isProduction={ false }
@@ -293,12 +293,26 @@ class PortableModal extends Component {
 					</div>
 				</Fragment>
 			);
-		} else if(this.props.stage === "SMILE_STAGE") {
+		} else if(this.props.stage === "STICKERS_STAGE") {
 			return(
 				<Fragment>
-					<div className="rn-chat-mm-modalbg"></div>
-					<div className="rn-chat-mm-modal">
-
+					<div className="rn-chat-mm-modalbg" onClick={ this.props.onClose } />
+					<div className="rn-chat-mm-modal stickers">
+						{
+							[
+								{
+									icon: imsticker,
+									label: ""
+								}
+							].map(({ icon, label }, index) => (
+								<div
+									key={ index }
+									onClick={ () => this.props._onSubmit("STICKER_SUBMIT", label) }
+									className="rn-chat-mm-modal-sticker">
+									<img alt="sticker item" src={ icon } />
+								</div>
+							))
+						}
 					</div>
 				</Fragment>
 			);
@@ -316,7 +330,7 @@ class App extends Component {
 			stage: "CHAT_STAGE", // LIST_STAGE, CHAT_STAGE
 			chatStage: "CONVERSATION_STAGE", // CONVERSATION_STAGE, SETTINGS_STAGE, CONTRIBUTORS_STAGE
 			contributorsStage: "MAIN_STAGE", // MAIN_STAGE, INVITATIONS_STAGE
-			pModalStage: null
+			pModalStage: null // STOPWATCH_STAGE, STICKERS_STAGE
 		}
 	}
 
@@ -424,7 +438,7 @@ class App extends Component {
 												<button title="Attach file" className="definp">
 													<i className="fas fa-paperclip" />
 												</button>
-												<button title="Select smile" className="definp" onClick={ () => this.setState({ pModalStage: "SMILE_STAGE" }) }>
+												<button title="Select smile" className="definp" onClick={ () => this.setState({ pModalStage: "STICKERS_STAGE" }) }>
 													<i className="far fa-smile-wink" />
 												</button>
 												<button title="Set timer" className="definp" onClick={ () => this.setState({ pModalStage: "STOPWATCH_STAGE" }) }>
@@ -443,6 +457,7 @@ class App extends Component {
 										<PortableModal
 											stage={ this.state.pModalStage }
 											_onSubmit={ console.log }
+											onClose={ () => this.setState({ pModalStage: null }) }
 										/>
 									</Fragment>
 								) : (this.state.chatStage === "SETTINGS_STAGE") ? (
