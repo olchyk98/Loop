@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Gothic+A1|Lato|Quicksand|Roboto');
+@import url('https://fonts.googleapis.com/css?family=Gothic+A1|Lato|Quicksand|Roboto|Exo');
 
 :root {
 	--defaultborder:rgba(0, 0, 0, .05);
@@ -176,6 +176,18 @@ html, body {
 }
 
 @media only screen and (max-width:475px) {
+	.rn-chat-conversations {
+		--width:calc(100% - var(--chat_convitempadd) * 2 - 5px);
+
+		width:var(--width)!important;
+		max-width:var(--width)!important;
+	}
+
+	.rn-chat-conversations-item {
+		width:var(--width)!important;
+		max-width:var(--width)!important;
+	}
+
 	.rn-account-thumb-nav-img {
 		align-items:center!important;
 		position:absolute!important;

@@ -8,6 +8,7 @@ import { cookieControl } from '../../utils';
 import client from '../../apollo';
 
 import Switch from '../__forall__/switcher';
+import AccountCard from '../__forall__/accountCard';
 
 class Input extends Component {
 	render() {
@@ -44,6 +45,7 @@ class App extends Component {
 
 		this.state = {
 			isSubmiting: false,
+			userID: "",
 			userLogin: "",
 			userLoginAllowed: null,
 			userName: "",
@@ -79,6 +81,7 @@ class App extends Component {
 			if(!user) return this.props.castError(errorTxt);
 
 			this.setState(() => ({
+				userID: user.id,
 				userLogin: user.login,
 				userName: user.name
 			}));
@@ -100,9 +103,9 @@ class App extends Component {
 			xs.userLoginAllowed === false ||
 			xs.isSubmiting ||
 			xs.accountSubmited ||
-			xs.userLogin === xs.data.login ||
-			xs.userName === xs.data.name ||
-			!xs.data.password.length
+			(xs.userLogin === xs.data.login &&
+			xs.userName === xs.data.name &&
+			!xs.data.password.length)
 		) return;
 
 		this.setState(() => ({
@@ -141,6 +144,7 @@ class App extends Component {
 
 					this.setState(() => ({
 						accountSubmited: true,
+						userID: a.id,
 						userLogin: a.login,
 						userName: a.name,
 						data: {
@@ -191,11 +195,13 @@ class App extends Component {
 	render() {
 		return(
 			<div className="rn rn-settings">
-				<div className={ `rn-settings-account${ (!this.state.accountSubmited) ? "" : " active" }` }>
-					<span className="rn-settings-account-title">Your account:</span>
-					<span className="rn-settings-account-name">{ this.state.userName }</span>
-					<span className="rn-settings-account-login">{ this.state.userLogin }</span>
-				</div>
+				<AccountCard
+					active={ this.state.accountSubmited }
+					name={ this.state.userName }
+					login={ this.state.userLogin }
+					userID={ this.state.userID }
+					label="Your account"
+				/>
 				<form className="rn-settings-isl rn-settings-preferences" onSubmit={ e => e.preventDefault() || this.submitSettings("MAIN_BLOCK") }>
 					<span className="rn-settings-isl-title">Preferences</span>
 					<span className="rn-settings-isl-desc">Here you can change login and password for your account.</span>

@@ -33,25 +33,25 @@ class App extends Component {
 						title="Home"
 						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["HOME_PAGE"].absolute }
 						_to={ links["HOME_PAGE"].absolute }
-						_onClick={ () => this.forceUpdate() }
+						_onClick={ () => { this.forceUpdate(); this.props.toggleDock() } }
 					/>
 					<DockBtn
 						title="Profile"
 						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["ACCOUNT_PAGE"].absolute }
 						_to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.userID }` }
-						_onClick={ () => this.forceUpdate() }
+						_onClick={ () => { this.forceUpdate(); this.props.toggleDock() } }
 					/>
 					<DockBtn
 						title="Settings"
 						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["SETTINGS_PAGE"].absolute }
 						_to={ links["SETTINGS_PAGE"].absolute }
-						_onClick={ () => this.forceUpdate() }
+						_onClick={ () => { this.forceUpdate(); this.props.toggleDock() } }
 					/>
 					<DockBtn
 						title="Chat"
 						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["CHAT_PAGE"].absolute }
 						_to={ links["CHAT_PAGE"].absolute }
-						_onClick={ () => this.forceUpdate() }
+						_onClick={ () => { this.forceUpdate(); this.props.toggleDock() } }
 					/>
 				</div>
 			</div>
@@ -68,6 +68,10 @@ const mapActionsToProps = {
 	updateRefresher: payload => ({
 		type: "SET_DOCK_REFRESHER",
 		payload
+	}),
+	toggleDock: () => ({
+		type: "TOGGLE_SMALL_DOCK",
+		payload: null
 	})
 }
 

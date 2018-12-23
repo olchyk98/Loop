@@ -1,5 +1,3 @@
-/* WARNING: dock's bg 's' changing in navigation/main.css file */
-
 .gl-dock {
 	--paddingt:20px;
 
@@ -8,6 +6,7 @@
 	width:var(--navwidth);
 	background:white;
 	border-right:1px solid var(--defaultborder);
+	flex-shrink:0;
 }
 
 .gl-dock-title {
