@@ -6,6 +6,110 @@ import AccountCard from '../__forall__/accountCard';
 const image = "https://lolstatic-a.akamaihd.net/frontpage/apps/prod/LolGameInfo-Harbinger/en_US/8588e206d560a23f4d6dd0faab1663e13e84e21d/assets/assets/images/gi-landing-top.jpg";
 const imsticker = "https://image.flaticon.com/icons/svg/262/262837.svg";
 
+const stickers = [
+	{
+		icon: require('../__forall__/mg_stickers/alarm-clock.svg'),
+		label: "CLOCK_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/american-football.svg'),
+		label: "FOOTBALL_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/backpack.svg'),
+		label: "BACKPACK_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/bell.svg'),
+		label: "BELL_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/blackboard-1.svg'),
+		label: "BLACKBOARD_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/blackboard.svg'),
+		label: "BLACKBOARD_SQUARE_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/books-1.svg'),
+		label: "BOOKS_STAND_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/compass.svg'),
+		label: "COMPASS_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/computer-mouse.svg'),
+		label: "COMPUTER_MOUSE_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/diploma-1.svg'),
+		label: "DIPLOMA_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/diploma.svg'),
+		label: "DIPLOMA_CLOSED_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/earth-globe.svg'),
+		label: "GLOBE_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/flask.svg'),
+		label: "CYMA_FLASK_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/glasses.svg'),
+		label: "GLASSES_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/light-bulb.svg'),
+		label: "LAMP_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/medal.svg'),
+		label: "MEDAL_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/notebook.svg'),
+		label: "NOTEBOOK_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/owl.svg'),
+		label: "OWL_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/paint-brush.svg'),
+		label: "BRUSH_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/palette.svg'),
+		label: "PALETTE_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/physics.svg'),
+		label: "PHYSICS_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/school.svg'),
+		label: "SCHOOL_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/scissors.svg'),
+		label: "SAX_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/test-tubes.svg'),
+		label: "TUBES_LABEL"
+	},
+	{
+		icon: require('../__forall__/mg_stickers/test.svg'),
+		label: "PROV_LABEL"
+	},
+
+]
+
 class ConversationMember extends Component {
 	static defaultProps = {
 		isMoreTrack: false,
@@ -101,6 +205,10 @@ class DisplayMessageTimerNumber extends Component {
 						onKeyPress={ e => {
 							if(e.target.textContent.length >= 10 || !e.key.match(/\d/)) e.preventDefault();
 							let a = e.target.textContent;
+
+							if(a === "0") { // match(/0\d$/)
+								e.target.textContent = a.replace("0", "");
+							}
 
 							this.props._onChange(parseInt(a));
 						} }>{ this.props.value }</p>
@@ -288,7 +396,7 @@ class PortableModal extends Component {
 					<div className="rn-chat-mm-modal">
 						<DisplayMessageTimer
 							isProduction={ false }
-							submit={ value => this.props._onSubmit("TIMER_SUBMIT", value) }
+							submit={ value => { this.props._onSubmit("TIMER_SUBMIT", value); this.props.onClose() } }
 						/>
 					</div>
 				</Fragment>
@@ -299,15 +407,10 @@ class PortableModal extends Component {
 					<div className="rn-chat-mm-modalbg" onClick={ this.props.onClose } />
 					<div className="rn-chat-mm-modal stickers">
 						{
-							[
-								{
-									icon: imsticker,
-									label: ""
-								}
-							].map(({ icon, label }, index) => (
+							stickers.map(({ icon, label }, index) => (
 								<div
 									key={ index }
-									onClick={ () => this.props._onSubmit("STICKER_SUBMIT", label) }
+									onClick={ () => { this.props._onSubmit("STICKER_SUBMIT", label); this.props.onClose() } }
 									className="rn-chat-mm-modal-sticker">
 									<img alt="sticker item" src={ icon } />
 								</div>
@@ -322,13 +425,24 @@ class PortableModal extends Component {
 	}
 }
 
+class ChatDisplaySettingsPaleteColor extends Component {
+	render() {
+		return(
+			<div
+				className={ `rn-chat-display-settings-palete-color${ (!this.props.isActive) ? "" : " active" } ${ (this.props.color) }` }
+				onClick={ () => this.props._onClick(this.props.color) }
+			/>
+		);
+	}
+}
+
 class App extends Component {
 	constructor(props) {
 		super(props);
 
 		this.state = {
 			stage: "CHAT_STAGE", // LIST_STAGE, CHAT_STAGE
-			chatStage: "CONVERSATION_STAGE", // CONVERSATION_STAGE, SETTINGS_STAGE, CONTRIBUTORS_STAGE
+			chatStage: "SETTINGS_STAGE", // CONVERSATION_STAGE, SETTINGS_STAGE, CONTRIBUTORS_STAGE
 			contributorsStage: "MAIN_STAGE", // MAIN_STAGE, INVITATIONS_STAGE
 			pModalStage: null // STOPWATCH_STAGE, STICKERS_STAGE
 		}
@@ -432,6 +546,7 @@ class App extends Component {
 											<DisplayMessage
 												type="TIMER_TYPE"
 											/>
+											<p className="rn-chat-display-mat-sysi"><strong>Oles Odynets</strong> has stopped the timer. (32:14:00)</p>
 										</section>
 										<section className="rn-chat-display-header-input">
 											<div className="rn-chat-display-header-input-media">
@@ -461,7 +576,43 @@ class App extends Component {
 										/>
 									</Fragment>
 								) : (this.state.chatStage === "SETTINGS_STAGE") ? (
-									null
+									<div className="rn-chat-display-settings">
+										<div className="rn-chat-display-settings-name">
+											<input type="text" className="definp" placeholder="Name" />
+										</div>
+										<div className="rn-chat-display-settings-palete">
+											<ChatDisplaySettingsPaleteColor
+												color="purple"
+												isActive={ true }
+												_onClick={ console.log }
+											/>
+											<ChatDisplaySettingsPaleteColor
+												color="red"
+												isActive={ false }
+												_onClick={ console.log }
+											/>
+											<ChatDisplaySettingsPaleteColor
+												color="pink"
+												isActive={ false }
+												_onClick={ console.log }
+											/>
+											<ChatDisplaySettingsPaleteColor
+												color="sea"
+												isActive={ false }
+												_onClick={ console.log }
+											/>
+											<ChatDisplaySettingsPaleteColor
+												color="clouds"
+												isActive={ false }
+												_onClick={ console.log }
+											/>
+											<ChatDisplaySettingsPaleteColor
+												color="orange"
+												isActive={ false }
+												_onClick={ console.log }
+											/>
+										</div>
+									</div>
 								) : (
 									<Fragment>
 										<nav className="rn-chat-display-contnav">
@@ -527,6 +678,18 @@ class App extends Component {
 													</Fragment>
 												) : (
 													<Fragment>
+														<div className="rn-chat-display-contdisplay-search">
+															<input
+																className="definp"
+																placeholder="Search"
+																onChange={ ({ target }) => {
+																	clearTimeout(target.sendInt);
+																	target.sendInt = setTimeout(() => {
+																		console.log(target.value);
+																	}, 400)
+																} }
+															/>
+														</div>
 														<ContUser />
 														<ContUser />
 														<ContUser />
