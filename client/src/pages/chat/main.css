@@ -423,7 +423,7 @@
 	align-items:stretch;
 }
 
-.rn-chat-display-mat-item.contibutor {
+.rn-chat-display-mat-item.client {
 	align-self:flex-end;
 	flex-direction:row-reverse;
 }
@@ -440,7 +440,7 @@
 	margin-right:var(--margin);
 }
 
-.rn-chat-display-mat-item.contibutor > .rn-chat-display-mat-item-avatar {
+.rn-chat-display-mat-item.client > .rn-chat-display-mat-item-avatar {
 	margin-left:var(--margin);
 	margin-right:0;
 }
@@ -468,6 +468,17 @@
 .rn-chat-display-mat-item-content {
 	width:100%;
 	position:relative;
+	display:flex;
+	flex-direction:column;
+	align-items:flex-start;
+}
+
+.rn-chat-display-mat-item.client .rn-chat-display-mat-item-content {
+	align-items:flex-end;
+}
+
+.rn-chat-display-mat-item-content > * {
+	flex-shrink:0;
 }
 
 .rn-chat-display-mat-item-content-info {
@@ -480,7 +491,7 @@
 	margin-top:5px;
 }
 
-.rn-chat-display-mat-item.contibutor .rn-chat-display-mat-item-content-info {
+.rn-chat-display-mat-item.client .rn-chat-display-mat-item-content-info {
 	justify-content:flex-end;
 }
 
@@ -494,15 +505,16 @@
 
 .rn-chat-display-mat-item-content-mat {
 	--br:10px;
-	--color:#F1F0FB;
+	--color:#7641AD;
 
 	border-radius:0 var(--br) var(--br) var(--br);
-	padding:15px;
+	padding:12.5px;
+	position:relative;
 	background:var(--color);
 }
 
-.rn-chat-display-mat-item.contibutor .rn-chat-display-mat-item-content-mat {
-	--color:#7641AD; /* depends of the conversation's focus color */
+.rn-chat-display-mat-item.client .rn-chat-display-mat-item-content-mat {
+	--color:#F1F0FB; /* depends of the conversation's focus color */
 
 	border-radius:var(--br) 0 var(--br) var(--br);
 }
@@ -519,7 +531,7 @@
 	border-radius:3px;
 }
 
-.rn-chat-display-mat-item.contibutor .rn-chat-display-mat-item-content-mat:before {
+.rn-chat-display-mat-item.client .rn-chat-display-mat-item-content-mat:before {
 	left:inherit;
 	right:calc(var(--size) / 2 * -1);
 }
@@ -530,7 +542,7 @@
 	flex-wrap:wrap;
 }
 
-.rn-chat-display-mat-item.contibutor .rn-chat-display-mat-item-content-mat-imgblock {
+.rn-chat-display-mat-item.client .rn-chat-display-mat-item-content-mat-imgblock {
 	flex-direction:row-reverse;
 }
 
@@ -538,10 +550,12 @@
 	font-family:"Quicksand";
 	font-weight:300;
 	font-size:1em;
+	word-break:break-word;
+	color:white;
 }
 
-.rn-chat-display-mat-item.contibutor .rn-chat-display-mat-item-content-mat-text {
-	color:white;
+.rn-chat-display-mat-item.client .rn-chat-display-mat-item-content-mat-text {
+	color:black;
 }
 
 .rn-chat-display-mat-item-content-mat-image {

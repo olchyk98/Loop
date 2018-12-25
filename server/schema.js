@@ -369,7 +369,26 @@ const ConversationType = new GraphQLObjectType({
 	name: "Conversation",
 	fields: () => ({
 		id: { type: GraphQLID },
-		name: { type: GraphQLString },
+		name: {
+			type: GraphQLString,
+			args: {
+				id: { type: GraphQLID }
+			},
+			async resolve({ name, contributors }, { id }) {
+				if(name || contributors.length > 2) return name;
+
+				let a = await User.findById(
+					(id) ? (
+						contributors.filter(io => str(io) !== str(id))[0]
+					) : (
+						contributors[0]
+					)
+				);
+
+				return a && a.name;
+				
+			}
+		},
 		color: { type: GraphQLString },
 		contributors: {
 			type: new GraphQLList(UserType),
@@ -426,7 +445,15 @@ const MessageType = new GraphQLObjectType({
 		type: { type: GraphQLString },
 		time: { type: GraphQLString },
 		creatorID: { type: GraphQLID },
-		conversationID: { type: GraphQLID},
+		conversationID: { type: GraphQLID },
+		isSeen: { type: GraphQLBoolean },
+		images: {
+			type: new GraphQLList(ImageType),
+			resolve: ({ id }) => Image.find({
+				type: "MESSAGE_TYPE",
+				postID: id
+			})
+		},
 		creator: {
 			type: UserType,
 			resolve: ({ creatorID }) => User.findById(creatorID)
@@ -539,6 +566,27 @@ const RootQuery = new GraphQLObjectType({
 						{ description: b }
 					]
 				});
+			}
+		},
+		conversation: {
+			type: ConversationType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, targetID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await Conversation.findOne({
+					_id: targetID,
+					contributors: {
+						$in: [str(id)]
+					}
+				});
+
+				return b; // null or object
 			}
 		}
 	}
@@ -1139,7 +1187,7 @@ const RootMutation = new GraphQLObjectType({
 				// Create a new conversation
 				let d = await (
 					new Conversation({
-						name: `${ a.name || a.login }, ${ b.name || b.login }`,
+						name: "",
 						avatar: "",
 						contributors: [
 							str(id),
@@ -1161,13 +1209,13 @@ const RootMutation = new GraphQLObjectType({
 				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				content: { type: new GraphQLNonNull(GraphQLString) },
 				type: { type: new GraphQLNonNull(GraphQLString) },
-				conversationID: { type: new GraphQLNonNull(GraphQLString) }
+				conversationID: { type: new GraphQLNonNull(GraphQLID) }
 			},
 			async resolve(_, { id, authToken, content, type, conversationID }) {
 				let a = await validateAccount(id, authToken);
 				if(!a) return null;
 
-				let b = Conversation.findOne({
+				let b = await Conversation.findOne({
 					contributors: {
 						$in: [str(id)]
 					},
@@ -1181,7 +1229,8 @@ const RootMutation = new GraphQLObjectType({
 						content,
 						type,
 						creatorID: str(id),
-						conversationID
+						conversationID,
+						isSeen: false
 					})
 				).save();
 

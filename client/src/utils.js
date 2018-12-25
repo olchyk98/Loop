@@ -77,10 +77,12 @@ function convertTime(time, addon = "", complete = true, refill = false) { // clf
 			return "";
 		}
 	} else {
+		let d = d => (d.toString().length === 1) ? "0" + d : d;
+
 		// If less than day Then show hours:minutes Else show fulldate
 		if(c(86400)) {
 			let e = new Date(time * 1000);
-			return `${ e.getHours() }:${ e.getMinutes() }`;
+			return `${ d(e.getHours()) }:${ d(e.getMinutes()) }`;
 		} else {
 			return comp();
 		}
