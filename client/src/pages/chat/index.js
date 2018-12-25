@@ -3,6 +3,13 @@ import './main.css';
 
 import AccountCard from '../__forall__/accountCard';
 
+import { gql } from 'apollo-boost';
+import { connect } from 'react-redux';
+
+import api from '../../api';
+import client from '../../apollo';
+import { cookieControl, convertTime } from '../../utils';
+
 const image = "https://lolstatic-a.akamaihd.net/frontpage/apps/prod/LolGameInfo-Harbinger/en_US/8588e206d560a23f4d6dd0faab1663e13e84e21d/assets/assets/images/gi-landing-top.jpg";
 const imsticker = "https://image.flaticon.com/icons/svg/262/262837.svg";
 
@@ -123,7 +130,7 @@ class ConversationMember extends Component {
 					(!this.props.isMoreTrack) ? (
 						<img
 							className="rn-chat-conversations-item-content-members-item-mg"
-							src={ image }
+							src={ api.storage + this.props.avatar }
 							alt="member"
 							title="Conversation member"
 						/>
@@ -146,16 +153,16 @@ class Conversation extends Component {
 			<div className={ `rn-chat-conversations-item ${ this.props.color || "white" }` }>
 				<div className="rn-chat-conversations-item-previewimg">
 					<div className="rn-chat-conversations-item-previewimg-image">
-					<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ image } title="Conversation member" />
+					<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ api.storage + this.props.avatar } title="Conversation member" />
 						<div className="rn-chat-conversations-item-previewimg-not" />
 					</div>
 				</div>
 				<div className="rn-chat-conversations-item-content">
 					<div className="rn-chat-conversations-item-content-title">
 						<div>
-							<span className="rn-chat-conversations-item-content-title-name">Oles Odynets</span>
+							<span className="rn-chat-conversations-item-content-title-name">{ this.props.name }</span>
 							<span className="rn-chat-conversations-item-content-title-placeholder">•</span>
-							<span className="rn-chat-conversations-item-content-title-time">13:24</span>
+							<span className="rn-chat-conversations-item-content-title-time">{ (this.props.preview && convertTime(this.props.preview.time, "ago", true, true)) || "" }</span>
 						</div>
 						<div className="rn-chat-conversations-item-content-controls">
 							<button className="rn-chat-conversations-item-content-controls-btn definp">
@@ -163,20 +170,21 @@ class Conversation extends Component {
 							</button>
 						</div>
 					</div>
-					<div className="rn-chat-conversations-item-content-last"> {/* className: lastinrow */}
-						<span className="rn-chat-conversations-item-content-last-name">Oles Odynets</span>
+					<div className="rn-chat-conversations-item-content-last" onClick={ () => null }> {/* className: lastinrow */}
+						<span className="rn-chat-conversations-item-content-last-name">{ this.props.preview && this.props.preview.creator.name }</span>
 						<span className="rn-chat-conversations-item-content-last-content">
-							{ this.props.content }
+							{ this.props.preview && this.props.preview.content }
 						</span>
 					</div>
 					<div className="rn-chat-conversations-item-content-members">
-						<ConversationMember
-							isMoreTrack={ true }
-							moreInt={ 2 }
-						/>
-						<ConversationMember
-							
-						/>
+						{
+							(parseInt(this.props.contInt) > 0) ? (
+								<ConversationMember
+									isMoreTrack={ true }
+									moreInt={ this.props.contInt }
+								/>
+							) : null
+						}
 					</div>
 				</div>
 			</div>
@@ -441,11 +449,50 @@ class App extends Component {
 		super(props);
 
 		this.state = {
-			stage: "CHAT_STAGE", // LIST_STAGE, CHAT_STAGE
-			chatStage: "SETTINGS_STAGE", // CONVERSATION_STAGE, SETTINGS_STAGE, CONTRIBUTORS_STAGE
+			stage: "LIST_STAGE", // LIST_STAGE, CHAT_STAGE
+			chatStage: "CONVERSATION_STAGE", // CONVERSATION_STAGE, SETTINGS_STAGE, CONTRIBUTORS_STAGE
 			contributorsStage: "MAIN_STAGE", // MAIN_STAGE, INVITATIONS_STAGE
-			pModalStage: null // STOPWATCH_STAGE, STICKERS_STAGE
+			pModalStage: null, // STOPWATCH_STAGE, STICKERS_STAGE
+			conversations: []
 		}
+	}
+
+	componentDidMount() {
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "We couldn't load your conversations. Please, try again."
+
+		client.query({
+			query: gql`
+				query($id: ID!, $authToken: String!) {
+					user(id: $id, authToken: $authToken) {
+						id,
+						conversations {
+							id,
+							avatar,
+							contributorsInt,
+							color,
+							name,
+							lastMessage {
+								time,
+								content,
+								creator {
+									name
+								}
+							}
+						}
+					}
+				}
+			`,
+			variables: {
+				id, authToken
+			}
+		}).then(({ data: { user } }) => {
+			if(!user) return this.props.castError(errorTxt);
+
+			this.setState(() => ({
+				conversations: user.conversations
+			}));
+		}).catch(() => this.props.castError(errorTxt));
 	}
 
 	render() {
@@ -463,38 +510,21 @@ class App extends Component {
 								/>
 							</div>
 							<div className="rn-chat-conversations">
-								<Conversation
-									content="Hello, World!"
-									color="red"
-								/>
-								<Conversation
-									content="Hello, World!  Hello, World!"
-									color="blue"
-								/>
-								<Conversation
-									content="Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World!"
-									color="purple"
-								/>
-								<Conversation
-									content="Hello, World!  Hello, World!"
-									color="clouds"
-								/>
-								<Conversation
-									content="Hello, World!  Hello, World!"
-									color="sea"
-								/>
-								<Conversation
-									content="Hello, World!"
-									color="red"
-								/>
-								<Conversation
-									content="Hello, World!"
-									color="pink"
-								/>
-								<Conversation
-									content="Hello, World!"
-									color="orange"
-								/>
+								{
+									(this.state.conversations).map(({ id, avatar, lastMessage, color, name, contributorsInt }) => (
+										<Conversation
+											key={ id }
+											id={ id }
+											avatar={ avatar }
+											name={ name }
+											color={ color }
+											contInt={ contributorsInt - 1 }
+											preview={ lastMessage }
+											clientAvatar={ (this.props.userdata && this.props.userdata.avatar) || "" }
+											_onClick={ () => null }
+										/>
+									))
+								}
 								<Conversation
 									content="Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World! Hello, World!"
 									color="red"
@@ -709,4 +739,15 @@ class App extends Component {
 	}
 }
 
-export default App;
+const mapStateToProps = ({ user }) => ({
+	userdata: user && user.userdata
+});
+
+const mapActionsToProps = {
+	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } })
+}
+
+export default connect(
+	mapStateToProps,
+	mapActionsToProps
+)(App);

@@ -18,7 +18,9 @@ const {
 	User,
 	Post,
 	Image,
-	Comment
+	Comment,
+	Conversation,
+	Message
 } = require('./models');
 
 const settings = require('./settings');
@@ -238,6 +240,14 @@ const UserType = new GraphQLObjectType({
 		lastAuthToken: {
 			type: GraphQLString,
 			resolve: ({ authTokens }) => (authTokens.slice(-1) && authTokens.slice(-1)[0]) || ""
+		},
+		conversations: {
+			type: new GraphQLList(ConversationType),
+			resolve: ({ id }) => Conversation.find({
+				contributors: {
+					$in: [id]
+				}
+			})
 		}
 	})
 });
@@ -354,6 +364,75 @@ const CommentType = new GraphQLObjectType({
 		}
 	})
 });
+
+const ConversationType = new GraphQLObjectType({
+	name: "Conversation",
+	fields: () => ({
+		id: { type: GraphQLID },
+		name: { type: GraphQLString },
+		color: { type: GraphQLString },
+		contributors: {
+			type: new GraphQLList(UserType),
+			resolve: ({ contributors }) => User.find({
+				_id: {
+					$in: contributors
+				}
+			})
+		},
+		contributorsInt: {
+			type: GraphQLInt,
+			resolve: ({ contributors }) => contributors.length
+		},
+		avatar: {
+			type: GraphQLString,
+			args: {
+				id: { type: GraphQLID }
+			},
+			async resolve({ avatar, contributors }, { id }) {
+				if(!avatar) {
+					let a = await User.findById(
+						(id) ? (
+							contributors.filter(io => str(io) !== str(id))[0]
+						) : (
+							contributors[0]
+						)
+					);
+
+					return a && a.avatar;
+				} else {
+					return avatar;
+				}
+			}
+		},
+		lastMessage: {
+			type: MessageType,
+			resolve: async ({ id }) => {
+				let a = await Message.find({ conversationID: id }).sort({ time: -1 }).limit(1);
+				return a[0];
+			}
+		},
+		messages: {
+			type: new GraphQLList(MessageType),
+			resolve: ({ id }) => Message.find({ conversationID: id })
+		}
+	})
+});
+
+const MessageType = new GraphQLObjectType({
+	name: "Message",
+	fields: () => ({
+		id: { type: GraphQLID },
+		content: { type: GraphQLString },
+		type: { type: GraphQLString },
+		time: { type: GraphQLString },
+		creatorID: { type: GraphQLID },
+		conversationID: { type: GraphQLID},
+		creator: {
+			type: UserType,
+			resolve: ({ creatorID }) => User.findById(creatorID)
+		}
+	})
+})
 
 const RootQuery = new GraphQLObjectType({
 	name: "RootQuery",
@@ -1020,6 +1099,93 @@ const RootMutation = new GraphQLObjectType({
 						$in: [authToken]
 					}
 				}, a, (_, a) => a);
+			}
+		},
+		createConversation: {
+			type: ConversationType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, targetID }) {
+				// Validate init contributors
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await User.findById(targetID);
+				if(!b) return null;
+
+				// Validate if the conversation exists
+				let c = Conversation.findOne({
+					$or: [ // XXX
+						{
+							contributors: [
+								str(id),
+								str(targetID)
+							]
+						},
+						{
+							contributors: [
+								str(targetID),
+								str(id)
+							]
+						}
+					]
+				});
+
+				if(c) return c;
+
+				// Create a new conversation
+				let d = await (
+					new Conversation({
+						name: `${ a.name || a.login }, ${ b.name || b.login }`,
+						avatar: "",
+						contributors: [
+							str(id),
+							str(targetID)
+						],
+						creatorID: str(id),
+						color: "white"
+					})
+				).save();
+
+				// Send the new conversation's data
+				return d;
+			}
+		},
+		sendMessage: {
+			type: MessageType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				content: { type: new GraphQLNonNull(GraphQLString) },
+				type: { type: new GraphQLNonNull(GraphQLString) },
+				conversationID: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			async resolve(_, { id, authToken, content, type, conversationID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = Conversation.findOne({
+					contributors: {
+						$in: [str(id)]
+					},
+					_id: conversationID
+				});
+				if(!b) return null;
+
+				let c = await (
+					new Message({
+						time: new Date,
+						content,
+						type,
+						creatorID: str(id),
+						conversationID
+					})
+				).save();
+
+				return c;a
 			}
 		}
 	}

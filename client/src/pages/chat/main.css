@@ -195,6 +195,7 @@
 	white-space:nowrap;
 	overflow:hidden;
 	text-overflow:ellipsis;
+	max-width:130px;
 }
 
 .rn-chat-conversations-item-content-title-placeholder {
@@ -232,6 +233,8 @@
 	height:100%;
 	display:flex;
 	flex-direction:column;
+	text-decoration:none;
+	cursor:pointer;
 	justify-content:center;
 	align-items:flex-start;
 	min-width:0;
@@ -283,7 +286,7 @@
 	width:var(--size);
 	background:red;
 	position:relative;
-	cursor:pointer;
+	cursor:default;
 	margin-right:7.5px;
 }
 
