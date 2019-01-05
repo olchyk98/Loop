@@ -29,7 +29,7 @@ const cookieControl = {
 function convertTime(time, addon = "", complete = true, refill = false) { // clf
 	if(!time) return "";
 
-	time = parseInt(time);
+	time = +time;
 	time /= 1000;
 	
 	let a = (new Date()).getTime() / 1000,

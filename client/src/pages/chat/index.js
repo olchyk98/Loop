@@ -1,15 +1,16 @@
 import React, { Component, Fragment } from 'react';
 import './main.css';
 
-import AccountCard from '../__forall__/accountCard';
 import Loadericon from '../__forall__/loader.icon';
 
 import { gql } from 'apollo-boost';
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 import api from '../../api';
 import client from '../../apollo';
 import { cookieControl, convertTime } from '../../utils';
+import links from '../../links';
 
 import placeholderGIF from '../__forall__/placeholder.gif';
 
@@ -42,6 +43,38 @@ const stickers = {
 	"TUBES_LABEL": require('../__forall__/mg_stickers/test-tubes.svg'),
 	"PROV_LABEL": require('../__forall__/mg_stickers/test.svg')
 }
+
+const fileTypes = {
+	"default": require('../__forall__/mg_filetypes/default.svg'),
+	"ai":      require('../__forall__/mg_filetypes/ai.svg'),
+	"avi":     require('../__forall__/mg_filetypes/avi.svg'),
+	"css":     require('../__forall__/mg_filetypes/css.svg'),
+	"csv":     require('../__forall__/mg_filetypes/csv.svg'),
+	"dbf":     require('../__forall__/mg_filetypes/dbf.svg'),
+	"doc":     require('../__forall__/mg_filetypes/doc.svg'),
+	"dwg":     require('../__forall__/mg_filetypes/dwg.svg'),
+	"exe":     require('../__forall__/mg_filetypes/exe.svg'),
+	"fla":     require('../__forall__/mg_filetypes/fla.svg'),
+	"html":    require('../__forall__/mg_filetypes/html.svg'),
+	"iso":     require('../__forall__/mg_filetypes/iso.svg'),
+	"jpg":     require('../__forall__/mg_filetypes/jpg.svg'),
+	"js":      require('../__forall__/mg_filetypes/js.svg'),
+	"json":    require('../__forall__/mg_filetypes/json.svg'),
+	"mp3":     require('../__forall__/mg_filetypes/mp3.svg'),
+	"mp4":     require('../__forall__/mg_filetypes/mp4.svg'),
+	"pdf":     require('../__forall__/mg_filetypes/pdf.svg'),
+	"png":     require('../__forall__/mg_filetypes/png.svg'),
+	"ppt":     require('../__forall__/mg_filetypes/ppt.svg'),
+	"psd":     require('../__forall__/mg_filetypes/psd.svg'),
+	"rtf":     require('../__forall__/mg_filetypes/rtf.svg'),
+	"svg":     require('../__forall__/mg_filetypes/svg.svg'),
+	"txt":     require('../__forall__/mg_filetypes/txt.svg'),
+	"xls":     require('../__forall__/mg_filetypes/xls.svg'),
+	"xml":     require('../__forall__/mg_filetypes/xml.svg'),
+	"zip":     require('../__forall__/mg_filetypes/zip.svg')
+}
+
+// TODO: Conversation, small device -> on scroll top hide input bar.
 
 class ConversationMember extends Component {
 	static defaultProps = {
@@ -79,7 +112,7 @@ class Conversation extends Component {
 			<div className={ `rn-chat-conversations-item ${ this.props.color || "white" }` } onClick={ () => this.props._onClick(this.props.id) }>
 				<div className="rn-chat-conversations-item-previewimg">
 					<div className="rn-chat-conversations-item-previewimg-image">
-					<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ api.storage + this.props.avatar } title="Conversation member" />
+					<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ (this.props.avatar && api.storage + this.props.avatar) || placeholderGIF } title="Conversation member" />
 						<div className="rn-chat-conversations-item-previewimg-not" />
 					</div>
 				</div>
@@ -96,25 +129,27 @@ class Conversation extends Component {
 							</button>
 						</div>
 					</div>
-					<div className="rn-chat-conversations-item-content-last" onClick={ () => null }> {/* className: lastinrow */}
+					<div className={ `rn-chat-conversations-item-content-last${ (+this.props.contInt > 1) ? "" : " lastinrow" }` } onClick={ () => null }>
 						<span className="rn-chat-conversations-item-content-last-name">{ this.props.preview && this.props.preview.creator.name }</span>
 						<span className="rn-chat-conversations-item-content-last-content">
 							{ this.props.preview && this.props.preview.content }
 						</span>
 					</div>
-					<div className="rn-chat-conversations-item-content-members">
-						{
-							(parseInt(this.props.contInt) > 0) ? (
+					{
+						(+this.props.contInt <= 1) ? null : (
+							<div className="rn-chat-conversations-item-content-members">
+								{
+									<ConversationMember
+										isMoreTrack={ true }
+										moreInt={ this.props.contInt }
+									/>
+								}
 								<ConversationMember
-									isMoreTrack={ true }
-									moreInt={ this.props.contInt }
+									avatar={ this.props.clientAvatar }
 								/>
-							) : null
-						}
-						<ConversationMember
-							avatar={ this.props.clientAvatar }
-						/>
-					</div>
+							</div>
+						)
+					}
 				</div>
 			</div>
 		);
@@ -145,7 +180,7 @@ class DisplayMessageTimerNumber extends Component {
 								target.textContent = a.replace("0", "");
 							}
 
-							this.props._onChange(parseInt(a));
+							this.props._onChange(+a);
 						} }
 						onKeyPress={ e => {
 							if(e.target.textContent.length >= 10 || !e.key.match(/\d/)) e.preventDefault();
@@ -193,7 +228,7 @@ class DisplayMessageTimer extends Component {
 					f = f => {
 						let ff = Math.floor(f);
 
-						return (ff.toString().length === 1) ? "0" + ff : ff;
+						return ((ff.toString().length === 1) ? "0" + ff : ff);
 					},
 					b = f(a / 60), // m
 					c = a % 60,
@@ -201,14 +236,19 @@ class DisplayMessageTimer extends Component {
 					e = f(c % 60000); // s
 
 				this.setState(() => ({
-					currentSeconds: (e > 0) ? e : 0,
-					currentMinutes: (b > 0) ? b : 0,
-					currentHours: (d > 0) ? d : 0
+					currentSeconds: (e > 0) ? e : "00",
+					currentMinutes: (b > 0) ? b : "00",
+					currentHours: (d > 0) ? d : "00"
 				}));
+
+				return (b <= 0 && d <= 0 && e <= 0);
 			}
 
-			set();
-			this.timerInt = setInterval(set, 1000);
+			if(!set()) {
+				this.timerInt = setInterval(set, 1000);
+			} else {
+				clearInterval(this.timerInt);			
+			}
 		}
 	}
 
@@ -291,9 +331,9 @@ class DisplayMessage extends Component {
 			return(
 				<article className={ `rn-chat-display-mat-item ${ (!this.props.isClients) ? "contributor" : "client" }` }>
 					<div className="rn-chat-display-mat-item-avatar">
-						<div className="rn-chat-display-mat-item-avatar-mat">
+						<Link onClick={ this.props.refreshDock } className="rn-chat-display-mat-item-avatar-mat" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator && this.props.creator.id }` }>
 							<img src={ (this.props.creator && api.storage + this.props.creator.avatar) || placeholderGIF } alt="contributor's avatar" />
-						</div>
+						</Link>
 					</div>
 					<div className="rn-chat-display-mat-item-content">
 						<div><img className="rn-chat-display-mat-item-stickermg" alt="sticker" src={ stickers[this.props.content] } /></div>
@@ -309,9 +349,9 @@ class DisplayMessage extends Component {
 			return(
 				<article className={ `rn-chat-display-mat-item ${ (this.props.isClients) ? "client" : "contibutor" }` }>
 					<div className="rn-chat-display-mat-item-avatar">
-						<div className="rn-chat-display-mat-item-avatar-mat">
+						<Link onClick={ this.props.refreshDock } className="rn-chat-display-mat-item-avatar-mat" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator && this.props.creator.id }` }>
 							<img src={ (this.props.creator && api.storage + this.props.creator.avatar) || placeholderGIF } alt="contributor's avatar" />
-						</div>
+						</Link>
 					</div>
 					<div className="rn-chat-display-mat-item-content">
 						<DisplayMessageTimer
@@ -326,13 +366,45 @@ class DisplayMessage extends Component {
 					</div>
 				</article>
 			);
+		} else if(this.props.type === "FILE_TYPE") {
+			return(
+				<article className={ `rn-chat-display-mat-item file ${ (!this.props.isClients) ? "contributor" : "client" }` }>
+					<div className="rn-chat-display-mat-item-avatar">
+						<Link onClick={ this.props.refreshDock } className="rn-chat-display-mat-item-avatar-mat" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator && this.props.creator.id }` }>
+							<img src={ (this.props.creator && api.storage + this.props.creator.avatar) || placeholderGIF } alt="contributor's avatar" />
+						</Link>
+					</div>
+					<div className="rn-chat-display-mat-item-content">
+						<div className="rn-chat-display-mat-item-content-mat" onClick={() => { // download image
+							let a = document.createElement("a");
+							a.download = "File";
+							a.target = "_blank";
+							a.href = api.storage + this.props.content;
+							a.click();
+						}}>
+							<div className="rn-chat-display-mat-item-content-fileflash-img">
+								<img alt="type" src={(() => {
+									let a = this.props.content.match(/[^\\]*\.(\w+)$/),
+										b = fileTypes;
+									return (a) ? b[a[1]] : b.default;
+								})()} />
+							</div>
+						</div>
+						<div className="rn-chat-display-mat-item-content-info">
+							<span>{ this.props.creator && this.props.creator.name }</span>
+							<span className="space">•</span>
+							<span>{ convertTime(this.props.time) }</span>
+						</div>
+					</div>
+				</article>
+			);
 		} else {
 			return(
 				<article className={ `rn-chat-display-mat-item ${ (this.props.isClients) ? "client" : "contibutor" }` }>
 					<div className="rn-chat-display-mat-item-avatar">
-						<div className="rn-chat-display-mat-item-avatar-mat">
+						<Link onClick={ this.props.refreshDock } className="rn-chat-display-mat-item-avatar-mat" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator && this.props.creator.id }` }>
 							<img src={ (this.props.creator && api.storage + this.props.creator.avatar) || placeholderGIF } alt="contributor's avatar" />
-						</div>
+						</Link>
 					</div>
 					<div className="rn-chat-display-mat-item-content">
 						<div className="rn-chat-display-mat-item-content-mat">
@@ -342,7 +414,7 @@ class DisplayMessage extends Component {
 							<div className="rn-chat-display-mat-item-content-mat-imgblock">
 								{
 									this.props.images.map(({ id, url }) => (
-										<div className="rn-chat-display-mat-item-content-mat-image" key={ id }>
+										<div className="rn-chat-display-mat-item-content-mat-image" key={ id } onClick={ () => this.props.openPhoto(id) }>
 											<img alt="attachment" src={ (url && api.storage + url) || placeholderGIF } />
 										</div>
 									))
@@ -365,16 +437,30 @@ class ContUser extends Component {
 	render() {
 		return(
 			<article className="rn-chat-display-contuser">
-				<div>
+				<Link to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.id }` } onClick={ this.props.refreshDock }>
 					<div className="rn-chat-display-contuser-avatar">
-						<img src={ image } alt="contributor's avatar" />
+						<img src={ api.storage + this.props.avatar } alt="contributor's avatar" />
 					</div>
-					<span className="rn-chat-display-contuser-name">Oles Odynets</span>
-				</div>
+					<span className="rn-chat-display-contuser-name">{ this.props.name }</span>
+				</Link>
 				<div>
-					<button className="rn-chat-display-contuser-btn definp">
-						<i className="fas fa-plus" />
-					</button>
+					{
+						(this.props.control) ? (
+							(!this.props.isAdding) ? (
+								(this.props.isAdd) ? (
+									<button className="rn-chat-display-contuser-btn green definp" onClick={ this.props.onAction }>
+										<i className="fas fa-plus" />
+									</button>
+								) : (
+									<button className="rn-chat-display-contuser-btn red definp" onClick={ this.props.onAction }>
+										<i className="fas fa-trash" />
+									</button>
+								)
+							) : (
+								<div className="rn-chat-display-contuser-statusload" />
+							)
+						) : null
+					}
 				</div>
 			</article>
 		);
@@ -467,6 +553,105 @@ class ChatDisplayDialogInput extends Component {
 	}
 }
 
+class PhotoGridImage extends Component {
+	render() {
+		return(
+			<div className={ `rn-chat__in__-photogrid-mat-img${ (!this.props.isActive) ? "" : " selected" }` } onClick={ this.props._onClick }>
+				<div className="rn-chat__in__-photogrid-mat-img-check">
+					<div>
+						<i className="fas fa-check" />
+					</div>
+				</div>
+				<img className="rn-chat__in__-photogrid-mat-img-mat" alt="item" src={ api.storage + this.props.url } />
+			</div>
+		);
+	}
+}
+
+class PhotoGrid extends Component {
+	constructor(props) {
+		super(props);
+
+		this.state = {
+			images: false,
+			selectedID: []
+		}
+	}
+
+	componentDidMount() {
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "We couldn't fetch your images. Please, try again."
+
+		client.query({
+			query: gql`
+				query($id: ID!, $authToken: String!) {
+				  user(id: $id, authToken: $authToken) {
+				    id,
+				    gallery {
+				      id,
+				      url
+				    }
+				  }
+				}
+			`,
+			variables: {
+				id, authToken
+			}
+		}).then(({ data: { user: { gallery: a } } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			this.setState(() => ({
+				images: a
+			}))
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	toggleSelected = id => {
+		let a = Array.from(this.state.selectedID);
+
+		if(!a.includes(id)) a.push(id);
+		else a.splice(a.findIndex(io => io === id), 1);
+
+		this.setState(() => ({
+			selectedID: a
+		}));
+	}
+
+	render() {
+		return(
+			<div className="rn-chat__in__-photogrid">
+				<div className="rn-chat__in__-photogrid-title">
+					<h3>Choose image(s)</h3>
+				</div>
+				<div className="rn-chat__in__-photogrid-placeholder">
+					{
+						(this.state.images) ? (
+							<div className="rn-chat__in__-photogrid-mat">
+								{
+									this.state.images.map(({ id, url }) => ( // dev
+		 								<PhotoGridImage
+		 									key={ id }
+		 									url={ url }
+		 									isActive={ this.state.selectedID.includes(id) }
+		 									_onClick={ () => this.toggleSelected(id) }
+		 								/>
+									))
+								}
+							</div>
+						) : (
+							<Loadericon />
+						)
+					}
+				</div>
+				<div className="rn-chat__in__-photogrid-submit">
+					<button className="rn-chat__in__-photogrid-submit-mat definp cancel" onClick={ this.props.onClose }>Cancel</button>
+					<button className="rn-chat__in__-photogrid-submit-mat definp submit" onClick={ () => this.props._onSubmit(this.state.selectedID) }>Send</button>
+				</div>
+			</div>
+		);
+	}
+}
+
 class App extends Component {
 	constructor(props) {
 		super(props);
@@ -478,6 +663,7 @@ class App extends Component {
 			pModalStage: null, // STOPWATCH_STAGE, STICKERS_STAGE
 			conversations: null,
 			dialog: null,
+			photoGrid: false
 		}
 
 		this.dialogDisplayRef = React.createRef();
@@ -540,8 +726,8 @@ class App extends Component {
 				query($id: ID!, $authToken: String!, $targetID: ID!) {
 					conversation(id: $id, authToken: $authToken, targetID: $targetID) {
 						id,
-						name,
-						avatar,
+						name(id: $id),
+						avatar(id: $id),
 						messages {
 							id,
 							content,
@@ -575,7 +761,7 @@ class App extends Component {
 	}
 
 	sendDialogMessage = (type, value) => {
-		if(!this.state.dialog) return;
+		if(!this.state.dialog || !value) return;
 
 		const { id, authToken } = cookieControl.get("authdata"),
 			  errorTxt = "An error occured while we tried to send your message. Please, try again."
@@ -588,7 +774,7 @@ class App extends Component {
 					...messages,
 					{
 						id: a,
-						content: value,
+						content: (type !== "FILE_TYPE") ? value : "...Uploading file...",
 						time: +new Date(),
 						type,
 						images: [],
@@ -605,7 +791,7 @@ class App extends Component {
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $content: String!, $type: String!, $conversationID: ID!) {
+				mutation($id: ID!, $authToken: String!, $content: Upload!, $type: String!, $conversationID: ID!) {
 				  sendMessage(
 				    id: $id,
 				    authToken: $authToken,
@@ -642,7 +828,7 @@ class App extends Component {
 			let aa = Array.from(this.state.dialog.messages),
 				ab = aa.findIndex( io => io.id.toString() === a.toString() );
 
-			if(ab) {
+			if(ab !== -1) {
 				aa[ab] = message;
 			} else {
 				this.setState(({ dialog, dialog: { messages } }) => ({
@@ -660,6 +846,50 @@ class App extends Component {
 
 	scrollEndDialog = () => {
 		this.dialogDisplayRef.scrollTop = this.dialogDisplayRef.scrollHeight;
+	}
+
+	inviteToConversation = (targetID, name) => {
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = `An error occured while we tried to invite ${ name } to the conversation. Please, try again.`;
+
+		let a = Array.from(this.state.dialog.inviteSuggestions);
+		a.find(io => io.id === targetID).isAdding = true;
+		this.setState(({ dialog }) => ({
+			dialog: {
+				...dialog,
+				inviteSuggestions: a
+			}
+		}));
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $conversationID: ID!, $targetID: ID!) {
+					addUserToConversation(id: $id, authToken: $authToken, conversationID: $conversationID, targetID: $targetID) {
+						id,
+						name,
+						avatar
+					}
+				}
+			`,
+			variables: {
+				id, authToken, targetID,
+				conversationID: this.state.dialog.id
+			}
+		}).then(({ data: { addUserToConversation: b } }) => {
+			if(!b) return this.props.castError(errorTxt);
+
+			a.splice(a.findIndex(io => io.id === targetID), 1); // remove from suggestions
+			this.setState(({ dialog, dialog: { contributors } }) => ({ // add to contributors
+				dialog: {
+					...dialog,
+					contributors: [
+						...contributors,
+						b
+					]
+				}
+			}));
+
+		}).catch(() => this.props.castError(errorTxt));
 	}
 
 	render() {
@@ -708,213 +938,313 @@ class App extends Component {
 							</div>
 						</Fragment>
 					) : (
-						<div className="rn-chat-display">
-							<section className="rn-chat-display-header">
-								<div>
-									<div className="rn-chat-display-header-image">
-										<img src={ (this.state.dialog && api.storage + this.state.dialog.avatar) || placeholderGIF } alt="conversation preview" />
-									</div>
-									<span className="rn-chat-display-header-title">{ this.state.dialog && this.state.dialog.name }</span>
-								</div>
-								<div>
-									{
-										(this.state.chatStage === "CONVERSATION_STAGE") ? null : (
-											<button
-												className="rn-chat-display-header-control rn-chat-display-header-adduser definp"
-												onClick={ () => this.setState({ chatStage: "CONVERSATION_STAGE" }) }>
-												<i className="fas fa-envelope" />
-											</button>
-										)
-									}
-									<button
-										className="rn-chat-display-header-control rn-chat-display-header-adduser definp"
-										onClick={ () => this.setState({ chatStage: "CONTRIBUTORS_STAGE" }) }>
-										<i className="fas fa-user-alt" />
-									</button>
-									<button
-										className="rn-chat-display-header-control rn-chat-display-header-adduser definp"
-										onClick={ () => this.setState({ chatStage: "SETTINGS_STAGE" }) }>
-										<i className="fas fa-cog" />
-									</button>
-								</div>
-							</section>
-							{
-								(this.state.chatStage === "CONVERSATION_STAGE") ? (
-									<Fragment>
-										<section className="rn-chat-display-mat" ref={ ref => this.dialogDisplayRef = ref }>
-											{
-												((this.state.dialog && this.state.dialog.messages) || []).map(({ id, content, time, images, creatorID, creator, type }) => (
-													(creatorID !== "SYSTEM_ID") ? (
-														<DisplayMessage
-															key={ id }
-															id={ id }
-															type={ type }
-															content={ content }
-															time={ time }
-															images={ images }
-															creator={ creator }
-															isClients={ creatorID === this.props.userdata.id }
-														/>
-													) : (
-														<p
-															key={ id }
-															id={ id }
-															className="rn-chat-display-mat-sysi">
-															{ content }
-														</p>
-													)
-												))
-											}
-										</section>
-										<section className="rn-chat-display-header-input">
-											<div className="rn-chat-display-header-input-media">
-												<button title="Attach file" className="definp">
-													<i className="fas fa-paperclip" />
-												</button>
-												<button title="Select smile" className="definp" onClick={ () => this.setState({ pModalStage: "STICKERS_STAGE" }) }>
-													<i className="far fa-smile-wink" />
-												</button>
-												<button title="Set timer" className="definp" onClick={ () => this.setState({ pModalStage: "STOPWATCH_STAGE" }) }>
-													<i className="fas fa-stopwatch" />
-												</button>
-											</div>
-											<ChatDisplayDialogInput
-												_onSubmit={ value => this.sendDialogMessage("MESSAGE_TYPE", value) }
-											/>
-										</section>
-										<PortableModal
-											stage={ this.state.pModalStage }
-											_onSubmit={ this.sendDialogMessage }
-											onClose={ () => this.setState({ pModalStage: null }) }
-										/>
-									</Fragment>
-								) : (this.state.chatStage === "SETTINGS_STAGE") ? (
-									<div className="rn-chat-display-settings">
-										<div className="rn-chat-display-settings-name">
-											<input type="text" className="definp" placeholder="Name" />
+						(!this.state.photoGrid) ? (
+							<div className="rn-chat-display">
+								<section className="rn-chat-display-header">
+									<div>
+										<div className="rn-chat-display-header-image">
+											<img src={ (this.state.dialog && this.state.dialog.avatar && api.storage + this.state.dialog.avatar) || placeholderGIF } alt="conversation preview" />
 										</div>
-										<div className="rn-chat-display-settings-palete">
-											<ChatDisplaySettingsPaleteColor
-												color="purple"
-												isActive={ true }
-												_onClick={ () => null }
-											/>
-											<ChatDisplaySettingsPaleteColor
-												color="red"
-												isActive={ false }
-												_onClick={ () => null }
-											/>
-											<ChatDisplaySettingsPaleteColor
-												color="pink"
-												isActive={ false }
-												_onClick={ () => null }
-											/>
-											<ChatDisplaySettingsPaleteColor
-												color="sea"
-												isActive={ false }
-												_onClick={ () => null }
-											/>
-											<ChatDisplaySettingsPaleteColor
-												color="clouds"
-												isActive={ false }
-												_onClick={ () => null }
-											/>
-											<ChatDisplaySettingsPaleteColor
-												color="orange"
-												isActive={ false }
-												_onClick={ () => null }
-											/>
-										</div>
+										<span className="rn-chat-display-header-title">{ this.state.dialog && this.state.dialog.name }</span>
 									</div>
-								) : (
-									<Fragment>
-										<nav className="rn-chat-display-contnav">
-											{
-												[
-													{
-														name: "Contributors",
-														stage: "MAIN_STAGE"
-													},
-													{
-														name: "Invite",
-														stage: "INVITATIONS_STAGE"
+									<div>
+										{
+											(this.state.chatStage === "CONVERSATION_STAGE") ? null : (
+												<button
+													className="rn-chat-display-header-control rn-chat-display-header-adduser definp"
+													onClick={ () => this.setState({ chatStage: "CONVERSATION_STAGE" }) }>
+													<i className="fas fa-envelope" />
+												</button>
+											)
+										}
+										<button
+											className="rn-chat-display-header-control rn-chat-display-header-adduser definp"
+											onClick={ () => {
+												if(!this.state.dialog) return;
+
+												this.setState({ chatStage: "CONTRIBUTORS_STAGE" });
+
+												const { id, authToken } = cookieControl.get("authdata"),
+													  errorTxt = "We couldn't load this list."
+
+												client.query({
+													query: gql`
+														query($id: ID!, $authToken: String!, $targetID: ID!) {
+															conversation(id: $id, authToken: $authToken, targetID: $targetID) {
+																id,
+																contributors {
+																	id,
+																	avatar,
+																	name
+																},
+																inviteSuggestions(id: $id, authToken: $authToken) {
+																	id,
+																	name,
+																	avatar
+																}
+															}
+														}
+													`,
+													variables: {
+														id, authToken,
+														targetID: this.state.dialog.id
 													}
-												].map(({ name, stage }, index) => (
-													<button
-														key={ index }
-														className={ `rn-chat-display-contnav-btn definp${ (this.state.contributorsStage !== stage) ? "" : " active" }` }
-														onClick={ () => this.setState({ contributorsStage: stage }) }>
-														{ name }
-													</button>
-												))
-											}
-										</nav>
-										<div className="rn-chat-display-contdisplay">
-											{
-												(this.state.contributorsStage === "MAIN_STAGE") ? (
-													<Fragment>
-														<AccountCard
-															active={ false }
-															name="Oles Odynets"
-															login="oles"
-															userID=""
-															label="Contributor"
-														/>
-														<AccountCard
-															active={ false }
-															name="Oles Odynets"
-															login="oles"
-															userID=""
-															label="Contributor"
-														/>
-														<AccountCard
-															active={ false }
-															name="Oles Odynets"
-															login="oles"
-															userID=""
-															label="Contributor"
-														/>
-														<AccountCard
-															active={ false }
-															name="Oles Odynets"
-															login="oles"
-															userID=""
-															label="Contributor"
-														/>
-														<AccountCard
-															active={ false }
-															name="Oles Odynets"
-															login="oles"
-															userID=""
-															label="Contributor"
-														/>
-													</Fragment>
-												) : (
-													<Fragment>
-														<div className="rn-chat-display-contdisplay-search">
-															<input
-																className="definp"
-																placeholder="Search"
-																onChange={ ({ target }) => {
-																	clearTimeout(target.sendInt);
-																	target.sendInt = setTimeout(() => {
-																		// console.log(target.value);
-																	}, 400)
-																} }
+												}).then(({ data: { conversation: a } }) => {
+													if(!a) return this.props.castError(errorTxt);
+
+													this.setState(({ dialog }) => ({
+														dialog: {
+															...dialog,
+															contributors: a.contributors,
+															inviteSuggestions: a.inviteSuggestions
+														}
+													}));
+												}).catch(() => this.props.castError(errorTxt));
+											} }>
+											<i className="fas fa-user-alt" />
+										</button>
+										<button
+											className="rn-chat-display-header-control rn-chat-display-header-adduser definp"
+											onClick={ () => this.setState({ chatStage: "SETTINGS_STAGE" }) }>
+											<i className="fas fa-cog" />
+										</button>
+									</div>
+								</section>
+								{
+									(this.state.chatStage === "CONVERSATION_STAGE") ? (
+										<Fragment>
+											<section className="rn-chat-display-mat" ref={ ref => this.dialogDisplayRef = ref }>
+												{
+													((this.state.dialog && this.state.dialog.messages) || []).map(({ id, content, time, images, creatorID, creator, type }) => (
+														(creatorID !== "SYSTEM_ID") ? (
+															<DisplayMessage
+																key={ id }
+																id={ id }
+																type={ type }
+																content={ content }
+																time={ time }
+																images={ images }
+																creator={ creator }
+																openPhoto={ this.props.openPhotoModal }
+																isClients={ creatorID === this.props.userdata.id }
+																refreshDock={ this.props.refreshDock }
 															/>
-														</div>
-														<ContUser />
-														<ContUser />
-														<ContUser />
-														<ContUser />
-													</Fragment>
-												)
-											}
+														) : (
+															<p
+																key={ id }
+																id={ id }
+																className="rn-chat-display-mat-sysi">
+																{ content }
+															</p>
+														)
+													))
+												}
+											</section>
+											<section className="rn-chat-display-header-input">
+												<div className="rn-chat-display-header-input-media">
+													<input
+														type="file"
+														accept="*"
+														id="rn-chat-display-header-input-media-file"
+														className="hidden"
+														onChange={ ({ target: { files: [file] } }) => (file) ? this.sendDialogMessage("FILE_TYPE", file) : null }
+													/>
+													{/* open modal with user's image, user can choose images to post, in the modal there is blue submit button */}
+													<button title="Select smile" className="definp" onClick={ () => this.setState({ photoGrid: true }) }>
+														<i className="far fa-image" />
+													</button>
+													<label htmlFor="rn-chat-display-header-input-media-file" title="Attach file" className="definp">
+														<i className="fas fa-paperclip" />
+													</label>
+													<button title="Select smile" className="definp" onClick={ () => this.setState({ pModalStage: "STICKERS_STAGE" }) }>
+														<i className="far fa-smile-wink" />
+													</button>
+													<button title="Set timer" className="definp" onClick={ () => this.setState({ pModalStage: "STOPWATCH_STAGE" }) }>
+														<i className="fas fa-stopwatch" />
+													</button>
+												</div>
+												<ChatDisplayDialogInput
+													_onSubmit={ value => this.sendDialogMessage("MESSAGE_TYPE", value) }
+												/>
+											</section>
+											<PortableModal
+												stage={ this.state.pModalStage }
+												_onSubmit={ this.sendDialogMessage }
+												onClose={ () => this.setState({ pModalStage: null }) }
+											/>
+										</Fragment>
+									) : (this.state.chatStage === "SETTINGS_STAGE") ? (
+										<div className="rn-chat-display-settings">
+											<div className="rn-chat-display-settings-name">
+												<input type="text" className="definp" placeholder="Name" />
+											</div>
+											<div className="rn-chat-display-settings-palete">
+												<ChatDisplaySettingsPaleteColor
+													color="purple"
+													isActive={ true }
+													_onClick={ () => null }
+												/>
+												<ChatDisplaySettingsPaleteColor
+													color="red"
+													isActive={ false }
+													_onClick={ () => null }
+												/>
+												<ChatDisplaySettingsPaleteColor
+													color="pink"
+													isActive={ false }
+													_onClick={ () => null }
+												/>
+												<ChatDisplaySettingsPaleteColor
+													color="sea"
+													isActive={ false }
+													_onClick={ () => null }
+												/>
+												<ChatDisplaySettingsPaleteColor
+													color="clouds"
+													isActive={ false }
+													_onClick={ () => null }
+												/>
+												<ChatDisplaySettingsPaleteColor
+													color="orange"
+													isActive={ false }
+													_onClick={ () => null }
+												/>
+											</div>
 										</div>
-									</Fragment>
-								) // see contributors / add friend
-							}
-						</div>
+									) : (
+										<Fragment>
+											<nav className="rn-chat-display-contnav">
+												{
+													[
+														{
+															name: "Contributors",
+															stage: "MAIN_STAGE"
+														},
+														{
+															name: "Invite",
+															stage: "INVITATIONS_STAGE"
+														}
+													].map(({ name, stage }, index) => (
+														<button
+															key={ index }
+															className={ `rn-chat-display-contnav-btn definp${ (this.state.contributorsStage !== stage) ? "" : " active" }` }
+															onClick={ () => this.setState({ contributorsStage: stage }) }>
+															{ name }
+														</button>
+													))
+												}
+											</nav>
+											<div className="rn-chat-display-contdisplay">
+												{
+													(this.state.contributorsStage === "MAIN_STAGE") ? (
+														<Fragment>
+															{
+																(this.state.dialog.contributors) ? (
+																	this.state.dialog.contributors.map(({ id, avatar, name }) => (
+																		<ContUser
+																			key={ id }
+																			id={ id }
+																			name={ name }
+																			avatar={ avatar }
+																			isAdd={ false }
+																			control={ this.state.dialog.contributorsInt > 2 }
+																			refreshDock={ this.props.refreshDock }
+																			onAction={ () => console.log("DELETE USER") }
+																		/>
+																	))
+																) : (
+																	<Loadericon
+																		style={{
+																			marginRight: "auto"
+																		}}
+																	/>
+																)
+															}
+														</Fragment>
+													) : (
+														<Fragment>
+															<div className="rn-chat-display-contdisplay-search">
+																<input
+																	className="definp"
+																	placeholder="Search"
+																	onChange={ ({ target }) => {
+																		clearTimeout(target.sendInt);
+																		target.sendInt = setTimeout(() => {
+																			const { id, authToken } = cookieControl.get("authdata"),
+																				  errorTxt = "Something wrong. Please try restart the page.";
+
+																			client.query({
+																				query: gql`
+																					query($id: ID!, $authToken: String!, $conversationID: ID!, $query: String!) {
+																						searchInConversationInviteSuggestions(id: $id, authToken: $authToken, conversationID: $conversationID, query: $query) {
+																							id,
+																							name,
+																							avatar
+																						}
+																					}
+																				`,
+																				variables: {
+																					id, authToken,
+																					conversationID: this.state.dialog.id,
+																					query: target.value
+																				}
+																			}).then(({ data: { searchInConversationInviteSuggestions: a } }) => {
+																				if(!a) return this.props.castError(errorTxt);
+
+																				this.setState(({ dialog }) => ({
+																					dialog: {
+																						...dialog,
+																						inviteSuggestions: a
+																					}
+																				}));
+																			}).catch(() => this.props.castError(errorTxt));
+																		}, 400)
+																	} }
+																/>
+															</div>
+															{
+																(this.state.dialog.inviteSuggestions) ? (
+																	this.state.dialog.inviteSuggestions.map(({ id, avatar, name, isAdding }) => (
+																		<ContUser
+																			key={ id }
+																			id={ id }
+																			name={ name }
+																			avatar={ avatar }
+																			isAdd={ true }
+																			control={ true }
+																			refreshDock={ this.props.refreshDock }
+																			isAdding={ Boolean(isAdding) }
+																			onAction={ () => this.inviteToConversation(id, name) }
+																		/>
+																	))
+																) : (
+																	<Loadericon
+																		style={{
+																			marginRight: "auto"
+																		}}
+																	/>
+																)
+															}
+														</Fragment>
+													)
+												}
+											</div>
+										</Fragment>
+									) // see contributors / add friend
+								}
+							</div>
+						) : (
+							<PhotoGrid
+								castError={ this.props.castError }
+								_onSubmit={ images => {
+									this.sendDialogMessage("IMAGES_TYPE", images);
+									this.setState(() => ({
+										photoGrid: false
+									}));
+								} }
+								onClose={ () => this.setState({ photoGrid: false }) }
+							/>
+						)
 					)
 				}
 			</div>
@@ -922,12 +1252,17 @@ class App extends Component {
 	}
 }
 
-const mapStateToProps = ({ user }) => ({
-	userdata: user && user.userdata
+const mapStateToProps = ({ user, session: { dockRefresher } }) => ({
+	userdata: user && user.userdata,
+	refreshDock: dockRefresher
 });
 
 const mapActionsToProps = {
-	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } })
+	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } }),
+	openPhotoModal: payload => ({
+		type: "TOGGLE_PHOTO_MODAL",
+		payload
+	})
 }
 
 export default connect(

@@ -109,12 +109,16 @@ class FeedItemCollage extends Component {
 	}
 }
 
+const mapStateToProps = () => ({});
+
+const mapActionsToProps = {
+	openPhoto: payload => ({
+		type: "TOGGLE_PHOTO_MODAL",
+		payload
+	})
+}
+
 export default connect(
-	() => ({}),
-	{
-		openPhoto: payload => ({
-			type: "TOGGLE_PHOTO_MODAL",
-			payload
-		})
-	}
+	mapStateToProps,
+	mapActionsToProps
 )(FeedItemCollage);

@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css?family=Gothic+A1|Lato|Quicksand|Roboto|Exo');
 
 :root {
-	--defaultborder:rgba(0, 0, 0, .05);
+	--defaultborder:rgba(0, 0, 0, .1);
 	--navheight:60px;
 	--navwidth:250px;
 }
@@ -269,5 +269,17 @@ html, body {
 
 	.rn-account-display-friends-nav-ss {
 		margin-bottom:10px!important;
+	}
+
+	.rn-settings-isl {
+		--padd:5px;
+		--mrgn:10px;
+
+		align-items:center!important;
+		text-align:center!important;
+		padding-left:var(--padd)!important;
+		padding-right:var(--padd)!important;
+		margin-top:var(--mrgn)!important;
+		margin-bottom:var(--mrgn)!important;
 	}
 }

@@ -6,8 +6,6 @@ import Loadericon from '../__forall__/loader.icon';
 import placeholderGIF from '../__forall__/placeholder.gif';
 import Switch from '../__forall__/switcher';
 
-import FlipMove from 'react-flip-move';
-
 import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
 import { Link } from 'react-router-dom';
@@ -972,7 +970,7 @@ class App extends Component {
 								</div>
 							)
 						}
-						<FlipMove className="rn-account-display-gallery-grid">
+						<div className="rn-account-display-gallery-grid">
 							{
 								(!this.state.user.gallery) ? (
 									<Loadericon />
@@ -991,7 +989,7 @@ class App extends Component {
 									)
 								)
 							}
-						</FlipMove>
+						</div>
 					</div>
 					<div className={ `rn-account-display-item rn-account-display-about${ (this.state.stage !== "ABOUT_STAGE") ? "" : " visible" }` }>
 						{

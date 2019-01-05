@@ -1,7 +1,8 @@
 const settings = {
 	files: {
 		avatars: '/files/avatars',
-		images: '/files/images'
+		images: '/files/images',
+		files: '/files/files'
 	},
 	default: {
 		avatar: '/files/default/placeholderavatar.jpg',

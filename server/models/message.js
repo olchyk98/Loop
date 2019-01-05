@@ -7,7 +7,8 @@ const MessageSchema = new Schema({
 	type: String,
 	creatorID: String,
 	conversationID: String,
-	isSeen: false
+	isSeen: false,
+	images: Array
 });
 
 module.exports = mongoose.model("Message", MessageSchema);

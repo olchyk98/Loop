@@ -375,7 +375,7 @@ const ConversationType = new GraphQLObjectType({
 				id: { type: GraphQLID }
 			},
 			async resolve({ name, contributors }, { id }) {
-				if(name || contributors.length > 2) return name;
+				if(name || contributors.length > 2) return name || "Group";
 
 				let a = await User.findById(
 					(id) ? (
@@ -433,6 +433,38 @@ const ConversationType = new GraphQLObjectType({
 		messages: {
 			type: new GraphQLList(MessageType),
 			resolve: ({ id }) => Message.find({ conversationID: id })
+		},
+		inviteSuggestions: {
+			type: new GraphQLList(UserType),
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			async resolve({ contributors }, { id, authToken }) {
+				if(!contributors.includes(id)) return null;
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await User.find({
+					friends: {
+						$in: [str(id)]
+					}
+				}).select("_id");
+
+				let c = await User.find({
+					_id: {
+						$in: [ // all friends
+							...a.friends,
+							...(b.map(io => io._id))
+						]
+					},
+					_id: { // but not contributors
+						$nin: contributors
+					}
+				});
+
+				return c;
+			}
 		}
 	})
 });
@@ -449,9 +481,10 @@ const MessageType = new GraphQLObjectType({
 		isSeen: { type: GraphQLBoolean },
 		images: {
 			type: new GraphQLList(ImageType),
-			resolve: ({ id }) => Image.find({
-				type: "MESSAGE_TYPE",
-				postID: id
+			resolve: ({ images }) => Image.find({
+				_id: {
+					$in: images
+				}
 			})
 		},
 		creator: {
@@ -586,7 +619,47 @@ const RootQuery = new GraphQLObjectType({
 					}
 				});
 
-				return b; // null or object
+				return b;
+			}
+		},
+		searchInConversationInviteSuggestions: {
+			type: new GraphQLList(UserType),
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				conversationID: { type: new GraphQLNonNull(GraphQLID) },
+				query: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			async resolve(_, { id, authToken, conversationID, query }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await Conversation.findOne({
+					_id: conversationID,
+					contributors: {
+						$in: [str(id)]
+					}
+				});
+				if(!b) return null;
+
+				let c = await User.find({
+					friends: {
+						$in: [str(id)]
+					}
+				}).select("_id");
+
+				return User.find({
+					name: new RegExp(query, "i"),
+					_id: {
+						$in: [
+							...a.friends,
+							...(c.map(io => io._id))
+						]
+					},
+					_id: {
+						$nin: b.contributors
+					}
+				});
 			}
 		}
 	}
@@ -616,7 +689,7 @@ const RootMutation = new GraphQLObjectType({
 					let { filename, stream } = await avatar;
 					var avatarPath = `${ settings.files.avatars }/${ generateNoise(128) }.${ getExtension(filename) }`
 
-					stream.pipe(fileSystem.createWriteStream('.' + settings));
+					stream.pipe(fileSystem.createWriteStream('.' + avatarPath));
 				}
 
 				let user = await (new User({
@@ -1207,7 +1280,7 @@ const RootMutation = new GraphQLObjectType({
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
 				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				content: { type: new GraphQLNonNull(GraphQLString) },
+				content: { type: GraphQLUpload }, // takes any type of data (string, object)
 				type: { type: new GraphQLNonNull(GraphQLString) },
 				conversationID: { type: new GraphQLNonNull(GraphQLID) }
 			},
@@ -1223,6 +1296,17 @@ const RootMutation = new GraphQLObjectType({
 				});
 				if(!b) return null;
 
+				let images = [];
+				if(type === "FILE_TYPE") { // Download file and return url as value
+					let { filename, stream } = await content;
+					content = `${ settings.files.files }/${ generateNoise(128) }.${ getExtension(filename) }`
+
+					stream.pipe(fileSystem.createWriteStream('.' + content));
+				} else if(type === "IMAGES_TYPE") {
+					images = Array.from(content);
+					content = "";
+				}
+
 				let c = await (
 					new Message({
 						time: new Date,
@@ -1230,11 +1314,53 @@ const RootMutation = new GraphQLObjectType({
 						type,
 						creatorID: str(id),
 						conversationID,
-						isSeen: false
+						isSeen: false,
+						images
 					})
 				).save();
 
-				return c;a
+				return c;
+			}
+		},
+		addUserToConversation: {
+			type: UserType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				conversationID: { type: new GraphQLNonNull(GraphQLID) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, conversationID, targetID }) {
+				// validate user (+)
+				// validate if conversation exists (+)
+				// validate if user is in conversation
+				// validate if target exists (+)
+				// validate if target is friend for user (+)
+				// add target to the conversation |addToSet!| (+)
+				// send system message in conversation
+
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await Conversation.findById(conversationID);
+				if(!b) return null;
+
+				let c = await User.findById(targetID);
+				if(
+					!c ||
+					(
+						!c.friends.includes(str(id)) &&
+						!a.friends.includes(str(targetID))
+					)
+				) return null;
+
+				await b.updateOne({
+					$addToSet: {
+						contributors: str(targetID)
+					}
+				});
+
+				return c;
 			}
 		}
 	}
