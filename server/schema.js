@@ -426,7 +426,12 @@ const ConversationType = new GraphQLObjectType({
 		lastMessage: {
 			type: MessageType,
 			resolve: async ({ id }) => {
-				let a = await Message.find({ conversationID: id }).sort({ time: -1 }).limit(1);
+				let a = await Message.find({
+					conversationID: id,
+					type: {
+						$ne: "SYSTEM_MESSAGE"
+					}
+				}).sort({ time: -1 }).limit(1);
 				return a[0];
 			}
 		},
@@ -1359,6 +1364,65 @@ const RootMutation = new GraphQLObjectType({
 						contributors: str(targetID)
 					}
 				});
+
+				await (
+					new Message({
+						time: new Date,
+						content: `${ a.name } invited ${ c.name } to the conversation`,
+						type: "SYSTEM_MESSAGE",
+						creatorID: "-1",
+						conversationID: str(b._id),
+						isSeen: true,
+						images: []
+					})
+				).save();
+
+				return c;
+			}
+		},
+		settingConversation: {
+			type: ConversationType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				conversationID: { type: new GraphQLNonNull(GraphQLID) },
+				avatar: { type: new GraphQLNonNull(GraphQLUpload) },
+				name: { type: new GraphQLNonNull(GraphQLString) },
+				color: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			async resolve(_, { id, authToken, conversationID, avatar, name, color }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = {};
+
+				if(avatar) {
+					let { filename, stream } = await avatar;
+					b.avatar = `${ settings.files.avatars }/${ generateNoise(128) }.${ getExtension(filename) }`
+
+					stream.pipe(fileSystem.createWriteStream('.' + b.avatar));
+				}
+				if(name) b.name = name;
+				if(color) b.color = color;
+
+				let c = await Conversation.findOneAndUpdate({
+					_id: conversationID,
+					contributors: {
+						$in: [id]
+					}
+				}, b, (__, a) => a);
+
+				await (
+					new Message({
+						time: new Date,
+						content: `${ a.name } updated conversation.`,
+						type: "SYSTEM_MESSAGE",
+						creatorID: "-1",
+						conversationID: str(c._id),
+						isSeen: true,
+						images: []
+					})
+				).save();
 
 				return c;
 			}

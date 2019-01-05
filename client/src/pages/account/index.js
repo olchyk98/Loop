@@ -148,7 +148,7 @@ class App extends Component {
 
 	componentDidMount() {
 		const { id, authToken } = cookieControl.get("authdata"),
-			  errorTxt = "Ehm... Looks like the account is not exists :(";
+			  errorTxt = "We couldn't find a user with that id in our library. Please, try again.";
 
 		client.query({
 			query: gql`

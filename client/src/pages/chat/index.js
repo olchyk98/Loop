@@ -14,8 +14,6 @@ import links from '../../links';
 
 import placeholderGIF from '../__forall__/placeholder.gif';
 
-const image = "https://lolstatic-a.akamaihd.net/frontpage/apps/prod/LolGameInfo-Harbinger/en_US/8588e206d560a23f4d6dd0faab1663e13e84e21d/assets/assets/images/gi-landing-top.jpg";
-
 const stickers = {
 	"CLOCK_LABEL": require('../__forall__/mg_stickers/alarm-clock.svg'),
 	"FOOTBALL_LABEL": require('../__forall__/mg_stickers/american-football.svg'),
@@ -398,6 +396,12 @@ class DisplayMessage extends Component {
 					</div>
 				</article>
 			);
+		} else if(this.props.type === "SYSTEM_MESSAGE") {
+			return(
+				<article className="rn-chat-display-mat-item sys">
+					<strong>{ this.props.content }</strong>
+				</article>
+			);
 		} else {
 			return(
 				<article className={ `rn-chat-display-mat-item ${ (this.props.isClients) ? "client" : "contibutor" }` }>
@@ -652,6 +656,87 @@ class PhotoGrid extends Component {
 	}
 }
 
+class ConversationSettings extends Component {
+	constructor(props) {
+		super(props);
+
+		this.state = {
+			image: null,
+			name: null,
+			color: null
+		}
+	}
+
+	setValue = (field, value) => {
+		this.setState(() => ({
+			[field]: value
+		}));
+	}
+
+	render() {
+		return(
+			<div className="rn-chat-display-settings">
+				<input
+					type="file"
+					className="hidden"
+					accept="image/*"
+					id="rn-chat-display-settings-avatar"
+					onChange={ ({ target, target: { files: [file] } }) => {
+						if(!file) return;
+
+						this.setValue("image", file);
+						target.value = "";
+					} }
+				/>
+				<label htmlFor="rn-chat-display-settings-avatar" className="rn-chat-display-settings-avatar definp">Change image</label>
+				<div className="rn-chat-display-settings-name">
+					<input
+						type="text"
+						className="definp"
+						placeholder="Name"
+						onChange={ ({ target: { value } }) => this.setValue("name", value) }
+					/>
+				</div>
+				<div className="rn-chat-display-settings-palete">
+					{
+						[
+							{
+								color: "purple"
+							},
+							{
+								color: "red"
+							},
+							{
+								color: "pink"
+							},
+							{
+								color: "sea"
+							},
+							{
+								color: "clouds"
+							},
+							{
+								color: "orange"
+							},
+							{
+								color: "white"
+							}
+						].map((session, index) => (
+							<ChatDisplaySettingsPaleteColor
+								key={ index }
+								color={ session.color }
+								isActive={ (this.state.color || this.props.color) === session.color }
+								_onClick={ () => this.setValue("color", session.color) }
+							/>
+						))
+					}
+				</div>
+				<button className="rn-chat-display-settings-submit definp" onClick={ () => this.props._onSubmit(this.state.image, this.state.name, this.state.color) }>Submit</button>
+			</div>
+		);
+	}
+}
+
 class App extends Component {
 	constructor(props) {
 		super(props);
@@ -728,6 +813,7 @@ class App extends Component {
 						id,
 						name(id: $id),
 						avatar(id: $id),
+						color,
 						messages {
 							id,
 							content,
@@ -889,6 +975,41 @@ class App extends Component {
 				}
 			}));
 
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	settingConversation = (avatar, name, color) => {
+		if(!this.state.dialog || (!avatar && !name && !color)) return;
+
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "Something went wrong. Please, try later.";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $conversationID: ID!, $avatar: Upload!, $name: String!, $color: String!) {
+					settingConversation(id: $id, authToken: $authToken, conversationID: $conversationID, avatar: $avatar, name: $name, color: $color) {
+						id,
+						avatar(id: $id),
+						name(id: $id)
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				conversationID: this.state.dialog.id,
+				avatar: avatar || "",
+				name: name || "", // String(name)? -- bad for performance
+				color: color || ""
+			}
+		}).then(({ data: { settingConversation: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			this.setState(({ dialog }) => ({
+				dialog: {
+					...dialog,
+					...a
+				}
+			}));
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
@@ -1074,43 +1195,10 @@ class App extends Component {
 											/>
 										</Fragment>
 									) : (this.state.chatStage === "SETTINGS_STAGE") ? (
-										<div className="rn-chat-display-settings">
-											<div className="rn-chat-display-settings-name">
-												<input type="text" className="definp" placeholder="Name" />
-											</div>
-											<div className="rn-chat-display-settings-palete">
-												<ChatDisplaySettingsPaleteColor
-													color="purple"
-													isActive={ true }
-													_onClick={ () => null }
-												/>
-												<ChatDisplaySettingsPaleteColor
-													color="red"
-													isActive={ false }
-													_onClick={ () => null }
-												/>
-												<ChatDisplaySettingsPaleteColor
-													color="pink"
-													isActive={ false }
-													_onClick={ () => null }
-												/>
-												<ChatDisplaySettingsPaleteColor
-													color="sea"
-													isActive={ false }
-													_onClick={ () => null }
-												/>
-												<ChatDisplaySettingsPaleteColor
-													color="clouds"
-													isActive={ false }
-													_onClick={ () => null }
-												/>
-												<ChatDisplaySettingsPaleteColor
-													color="orange"
-													isActive={ false }
-													_onClick={ () => null }
-												/>
-											</div>
-										</div>
+										<ConversationSettings
+											color={ this.state.dialog && this.state.dialog.color }
+											_onSubmit={ (image, name, color) => this.settingConversation(image, name, color) }
+										/>
 									) : (
 										<Fragment>
 											<nav className="rn-chat-display-contnav">
