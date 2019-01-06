@@ -530,7 +530,7 @@ const RootQuery = new GraphQLObjectType({
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
 				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: GraphQLString }
+				targetID: { type: GraphQLID }
 			},
 			async resolve(_, { id, authToken, targetID }) {
 				let a = await validateAccount(id, authToken);
@@ -697,6 +697,27 @@ const RootQuery = new GraphQLObjectType({
 						$nin: b.contributors
 					}
 				});
+			}
+		},
+		searchConversations: {
+			type: new GraphQLList(ConversationType),
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				query: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			async resolve(_, { id, authToken, query }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await Conversation.find({
+					contributors: {
+						$in: [str(id)]
+					},
+					name: new RegExp(query, "i")
+				});
+
+				return b;
 			}
 		}
 	}

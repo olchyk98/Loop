@@ -388,13 +388,28 @@ class DisplayMessage extends Component {
 								<img alt="type" src={(() => {
 									let a = this.props.content.match(/[^\\]*\.(\w+)$/),
 										b = fileTypes;
-									return (a) ? b[a[1]] : b.default;
+									return (a && b[a[1]]) ? b[a[1]] : b.default;
 								})()} />
 							</div>
 						</div>
 						<div className="rn-chat-display-mat-item-content-info">
 							<span>{ this.props.creator && this.props.creator.name }</span>
 							<span className="space">•</span>
+							{
+								(() => {
+									let a = this.props.content.match(/[^\\]*\.(\w+)$/);
+									if(a && a[1]) {
+										return(
+											<Fragment>
+												<span>{ a[1].toUpperCase() } file</span>
+												<span className="space">•</span>
+											</Fragment>
+										);
+									} else {
+										return null;
+									}
+								})()
+							}
 							<span>{ convertTime(this.props.time) }</span>
 						</div>
 					</div>
@@ -870,7 +885,7 @@ class App extends Component {
 					...messages,
 					{
 						id: a,
-						content: (type !== "FILE_TYPE") ? value : "...Uploading file...",
+						content: (type !== "FILE_TYPE" && type !== "IMAGES_TYPE") ? value : "",
 						time: +new Date(),
 						type,
 						images: [],
@@ -926,6 +941,13 @@ class App extends Component {
 
 			if(ab !== -1) {
 				aa[ab] = message;
+
+				this.setState(({ dialog }) => ({
+					dialog: {
+						...dialog,
+						messages: aa
+					}
+				}));
 			} else {
 				this.setState(({ dialog, dialog: { messages } }) => ({
 					dialog: {
@@ -1107,13 +1129,60 @@ class App extends Component {
 					(this.state.stage === "LIST_STAGE") ? (
 						<Fragment>
 							<div className="rn-chat-search">
-								{/* hide, if no conversations */}
 								<input
 									type="search"
-									placeholder="Enter id, date of a last message or name..."
+									placeholder="Here you can search through the named dialogs..." // through / in
 									className="definp rn-chat-search-field"
+									onChange={ ({ target }) => {
+										clearTimeout(target.sendInterval);
+
+										const { id, authToken } = cookieControl.get("authdata"),
+											  errorTxt = "Something went wrong. Please, restart the page";
+
+										target.sendInterval = setTimeout(() => {
+											client.query({
+												query: gql`
+													query($id: ID!, $authToken: String!, $query: String!) {
+														searchConversations(id: $id, authToken: $authToken, query: $query) {
+															id,
+															isSeen(id: $id),
+															avatar(id: $id),
+															contributorsInt,
+															color,
+															name(id: $id),
+															lastMessage {
+																time,
+																type,
+																content,
+																creator {
+																	name
+																}
+															}
+														}
+													}
+												`,
+												variables: {
+													id, authToken,
+													query: target.value
+												}
+											}).then(({ data: { searchConversations: a } }) => {
+												if(!a) return this.props.castError(errorTxt);
+
+												this.setState(() => ({
+													conversations: a
+												}));
+											}).catch(() => this.props.castError(errorTxt));
+										}, 300);
+									} }
 								/>
 							</div>
+							{
+								(this.state.conversations && !this.state.conversations.length) ? (
+									<p className="rn-chat-emptyerr">
+										Nothing here...
+									</p>
+								) : null
+							}
 							<div className="rn-chat-conversations">
 								{
 									(this.state.conversations === null || this.state.conversations === false) ? (
@@ -1134,9 +1203,12 @@ class App extends Component {
 												contInt={ f - 1 }
 												preview={(c) ? {
 													...c,
-													content: (c.type !== "STICKER_TYPE" && c.type !== "TIMER_TYPE") ? c.content : (
-														(c.type === "STICKER_TYPE") ? "*sticker*" : "*timer*"
-													)
+													content: (c.type === "MESSAGE_TYPE") ? c.content : ({
+														"FILE_TYPE": "FILE",
+														"IMAGES_TYPE": "IMAGE",
+														"STICKER_TYPE": "STICKER",
+														"TIMER_TYPE": "TIMER"
+													}[c.type])
 												} : null}
 												clientAvatar={ (this.props.userdata && this.props.userdata.avatar) || placeholderGIF }
 												_onClick={ this.openConversation }

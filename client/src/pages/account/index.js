@@ -74,7 +74,11 @@ class FriendsGridFriend extends Component {
 						{
 							(this.props.currentStage === "MAIN_STAGE") ? (
 								<Fragment>
-									<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp" onClick={ () => this.props.submitAction("REMOVE_ACTION") }>Remove friend</button>
+									{
+										(this.props.userID !== this.props.clientID) ? null : (
+											<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp" onClick={ () => this.props.submitAction("REMOVE_ACTION") }>Remove friend</button>
+										)
+									}
 									<button className="rn-account-display-friends-nav-grid-user-set-list-btn definp" onClick={ () => this.props.submitAction("OPEN_PROFILE") }>Open profile</button>
 								</Fragment>
 							) : (
@@ -152,7 +156,7 @@ class App extends Component {
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!, $targetID: String) {
+				query($id: ID!, $authToken: String!, $targetID: ID) {
 					user(id: $id, authToken: $authToken, targetID: $targetID) {
 						id,
 						avatar,
@@ -410,10 +414,11 @@ class App extends Component {
 
 				client.query({
 					query: gql`
-						query($id: ID!, $authToken: String!) {
+						query($id: ID!, $authToken: String!, $targetID: ID!) {
 						  user(
 						    id: $id,
-						    authToken: $authToken
+						    authToken: $authToken,
+						    targetID: $targetID
 						  ) {
 						    id,
 						    friends {
@@ -425,8 +430,8 @@ class App extends Component {
 						}
 					`,
 					variables: {
-						id,
-						authToken
+						id, authToken,
+						targetID: this.state.user.id
 					}
 				}).then(({ data: { user } }) => {
 					this.setState(() => ({
@@ -931,6 +936,8 @@ class App extends Component {
 											id={ id }
 											name={ name }
 											avatar={ avatar }
+											userID={ this.state.user.id }
+											clientID={ this.props.userdata.id }
 											mutualFriends={ (Number.isInteger(a)) ? a : null }
 											submitAction={ action => (this.state.friendsStage === "MAIN_STAGE") ? (
 												this.executeFriend(id, action)
