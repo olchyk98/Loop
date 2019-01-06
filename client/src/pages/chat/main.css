@@ -39,6 +39,7 @@
 .rn-chat-search-field {
 	--padding:15px;
 
+	-webkit-appearance:none;
 	padding-left:var(--padding);
 	width:calc(100% - var(--padding));
 	font-size:.95em;
