@@ -110,8 +110,12 @@ class Conversation extends Component {
 			<div className={ `rn-chat-conversations-item ${ this.props.color || "white" }` } onClick={ () => this.props._onClick(this.props.id) }>
 				<div className="rn-chat-conversations-item-previewimg">
 					<div className="rn-chat-conversations-item-previewimg-image">
-					<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ (this.props.avatar && api.storage + this.props.avatar) || placeholderGIF } title="Conversation member" />
-						<div className="rn-chat-conversations-item-previewimg-not" />
+						<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ (this.props.avatar && api.storage + this.props.avatar) || placeholderGIF } title="Conversation member" />
+						{
+							(this.props.isSeen) ? null : (
+								<div className="rn-chat-conversations-item-previewimg-not" />
+							)
+						}
 					</div>
 				</div>
 				<div className="rn-chat-conversations-item-content">
@@ -450,7 +454,7 @@ class ContUser extends Component {
 				<div>
 					{
 						(this.props.control) ? (
-							(!this.props.isAdding) ? (
+							(!this.props.isLoading) ? (
 								(this.props.isAdd) ? (
 									<button className="rn-chat-display-contuser-btn green definp" onClick={ this.props.onAction }>
 										<i className="fas fa-plus" />
@@ -769,6 +773,7 @@ class App extends Component {
 						id,
 						conversations {
 							id,
+							isSeen(id: $id),
 							avatar(id: $id),
 							contributorsInt,
 							color,
@@ -806,14 +811,17 @@ class App extends Component {
 		const { id, authToken } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't load this conversation. Please, try later.";
 
+		// Promise.all([])?
+		// Load conversation
 		client.query({
 			query: gql`
 				query($id: ID!, $authToken: String!, $targetID: ID!) {
-					conversation(id: $id, authToken: $authToken, targetID: $targetID) {
+					conversation(id: $id, authToken: $authToken, targetID: $targetID, seeConversation: true) {
 						id,
 						name(id: $id),
 						avatar(id: $id),
 						color,
+						contributorsInt,
 						messages {
 							id,
 							content,
@@ -843,6 +851,8 @@ class App extends Component {
 			this.setState(() => ({
 				dialog: conversation
 			}), this.scrollEndDialog);
+
+			return conversation.id;
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
@@ -939,7 +949,7 @@ class App extends Component {
 			  errorTxt = `An error occured while we tried to invite ${ name } to the conversation. Please, try again.`;
 
 		let a = Array.from(this.state.dialog.inviteSuggestions);
-		a.find(io => io.id === targetID).isAdding = true;
+		a.find(io => io.id === targetID).isLoading = true;
 		this.setState(({ dialog }) => ({
 			dialog: {
 				...dialog,
@@ -965,13 +975,14 @@ class App extends Component {
 			if(!b) return this.props.castError(errorTxt);
 
 			a.splice(a.findIndex(io => io.id === targetID), 1); // remove from suggestions
-			this.setState(({ dialog, dialog: { contributors } }) => ({ // add to contributors
+			this.setState(({ dialog, dialog: { contributors, contributorsInt } }) => ({ // add to contributors
 				dialog: {
 					...dialog,
 					contributors: [
 						...contributors,
 						b
-					]
+					],
+					contributorsInt: contributorsInt + 1
 				}
 			}));
 
@@ -1013,6 +1024,82 @@ class App extends Component {
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
+	getDialogContributors = () => {
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "We couldn't load this list."
+
+		client.query({
+			query: gql`
+				query($id: ID!, $authToken: String!, $targetID: ID!) {
+					conversation(id: $id, authToken: $authToken, targetID: $targetID) {
+						id,
+						contributorsInt,
+						contributors {
+							id,
+							avatar,
+							name
+						},
+						inviteSuggestions(id: $id, authToken: $authToken) {
+							id,
+							name,
+							avatar
+						}
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				targetID: this.state.dialog.id
+			}
+		}).then(({ data: { conversation: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			this.setState(({ dialog }) => ({
+				dialog: {
+					...dialog,
+					contributors: a.contributors,
+					inviteSuggestions: a.inviteSuggestions,
+					contributorsInt: a.contributorsInt
+				}
+			}));
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	deleteDialogContributor = targetID => {
+		if(!this.state.dialog || !this.state.dialog.contributors || !targetID) return null;
+
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "Something went wrong. Please, try again.";
+
+		let a = Array.from(this.state.dialog.contributors);
+		a.find(io => io.id === targetID).isLoading = true;
+		this.setState(({ dialog }) => ({
+			dialog: {
+				...dialog,
+				contributors: a
+			}
+		}));
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $conversationID: ID!, $targetID: ID!) {
+					kickDialogContributor(id: $id, authToken: $authToken, conversationID: $conversationID, targetID: $targetID) {
+						id
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				conversationID: this.state.dialog.id,
+				targetID
+			}
+		}).then(({ data: { kickDialogContributor: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			this.getDialogContributors();
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
 	render() {
 		return(
 			<div className="rn rn-chat">
@@ -1036,13 +1123,14 @@ class App extends Component {
 											<Loadericon />
 										)
 									) : (
-										(this.state.conversations).map(({ id: a, avatar: b, lastMessage: c, color: d, name: e, contributorsInt: f }) => (
+										(this.state.conversations).map(({ id: a, avatar: b, lastMessage: c, color: d, name: e, contributorsInt: f, isSeen: g }) => (
 											<Conversation
 												key={ a }
 												id={ a }
 												avatar={ b }
 												name={ e }
 												color={ d }
+												isSeen={ g }
 												contInt={ f - 1 }
 												preview={(c) ? {
 													...c,
@@ -1073,7 +1161,7 @@ class App extends Component {
 											(this.state.chatStage === "CONVERSATION_STAGE") ? null : (
 												<button
 													className="rn-chat-display-header-control rn-chat-display-header-adduser definp"
-													onClick={ () => this.setState({ chatStage: "CONVERSATION_STAGE" }) }>
+													onClick={ () => this.setState({ chatStage: "CONVERSATION_STAGE" }, this.scrollEndDialog) }>
 													<i className="fas fa-envelope" />
 												</button>
 											)
@@ -1084,43 +1172,7 @@ class App extends Component {
 												if(!this.state.dialog) return;
 
 												this.setState({ chatStage: "CONTRIBUTORS_STAGE" });
-
-												const { id, authToken } = cookieControl.get("authdata"),
-													  errorTxt = "We couldn't load this list."
-
-												client.query({
-													query: gql`
-														query($id: ID!, $authToken: String!, $targetID: ID!) {
-															conversation(id: $id, authToken: $authToken, targetID: $targetID) {
-																id,
-																contributors {
-																	id,
-																	avatar,
-																	name
-																},
-																inviteSuggestions(id: $id, authToken: $authToken) {
-																	id,
-																	name,
-																	avatar
-																}
-															}
-														}
-													`,
-													variables: {
-														id, authToken,
-														targetID: this.state.dialog.id
-													}
-												}).then(({ data: { conversation: a } }) => {
-													if(!a) return this.props.castError(errorTxt);
-
-													this.setState(({ dialog }) => ({
-														dialog: {
-															...dialog,
-															contributors: a.contributors,
-															inviteSuggestions: a.inviteSuggestions
-														}
-													}));
-												}).catch(() => this.props.castError(errorTxt));
+												this.getDialogContributors();
 											} }>
 											<i className="fas fa-user-alt" />
 										</button>
@@ -1228,16 +1280,17 @@ class App extends Component {
 														<Fragment>
 															{
 																(this.state.dialog.contributors) ? (
-																	this.state.dialog.contributors.map(({ id, avatar, name }) => (
+																	this.state.dialog.contributors.map(({ id, avatar, name, isLoading }) => (
 																		<ContUser
 																			key={ id }
 																			id={ id }
 																			name={ name }
 																			avatar={ avatar }
 																			isAdd={ false }
-																			control={ this.state.dialog.contributorsInt > 2 }
+																			control={ this.state.dialog.contributorsInt > 2 && id !== this.props.userdata.id }
+																			isLoading={ !!isLoading }
 																			refreshDock={ this.props.refreshDock }
-																			onAction={ () => console.log("DELETE USER") }
+																			onAction={ () => this.deleteDialogContributor(id) }
 																		/>
 																	))
 																) : (
@@ -1286,13 +1339,13 @@ class App extends Component {
 																					}
 																				}));
 																			}).catch(() => this.props.castError(errorTxt));
-																		}, 400)
+																		}, 150)
 																	} }
 																/>
 															</div>
 															{
 																(this.state.dialog.inviteSuggestions) ? (
-																	this.state.dialog.inviteSuggestions.map(({ id, avatar, name, isAdding }) => (
+																	this.state.dialog.inviteSuggestions.map(({ id, avatar, name, isLoading }) => (
 																		<ContUser
 																			key={ id }
 																			id={ id }
@@ -1301,7 +1354,7 @@ class App extends Component {
 																			isAdd={ true }
 																			control={ true }
 																			refreshDock={ this.props.refreshDock }
-																			isAdding={ Boolean(isAdding) }
+																			isLoading={ !!isLoading }
 																			onAction={ () => this.inviteToConversation(id, name) }
 																		/>
 																	))

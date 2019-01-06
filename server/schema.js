@@ -470,6 +470,25 @@ const ConversationType = new GraphQLObjectType({
 
 				return c;
 			}
+		},
+		isSeen: {
+			type: GraphQLBoolean,
+			args: {
+				id: { type: GraphQLID }
+			},
+			async resolve({ id }, { id: userID }) {
+				let a = (await Message.find({
+					conversationID: id,
+					type: {
+						$ne: "SYSTEM_MESSAGE"
+					},
+					creatorID: {
+						$ne: str(userID || -1)
+					}
+				}).sort({ time: -1 }).limit(1))[0];
+
+				return (a) ? a.isSeen : true;
+			}
 		}
 	})
 });
@@ -611,9 +630,10 @@ const RootQuery = new GraphQLObjectType({
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
 				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
+				seeConversation: { type: GraphQLBoolean }
 			},
-			async resolve(_, { id, authToken, targetID }) {
+			async resolve(_, { id, authToken, targetID, seeConversation }) {
 				let a = await validateAccount(id, authToken);
 				if(!a) return null;
 
@@ -623,6 +643,18 @@ const RootQuery = new GraphQLObjectType({
 						$in: [str(id)]
 					}
 				});
+
+				if(seeConversation) {
+	 				await Message.updateMany({
+						conversationID: targetID,
+						isSeen: false,
+						creatorID: {
+							$ne: str(id)
+						}
+					}, {
+						isSeen: true
+					});
+				}
 
 				return b;
 			}
@@ -1419,6 +1451,52 @@ const RootMutation = new GraphQLObjectType({
 						type: "SYSTEM_MESSAGE",
 						creatorID: "-1",
 						conversationID: str(c._id),
+						isSeen: true,
+						images: []
+					})
+				).save();
+
+				return c;
+			}
+		},
+		kickDialogContributor: {
+			type: UserType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				conversationID: { type: new GraphQLNonNull(GraphQLID) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, conversationID, targetID }) {
+				// validate user (+)
+				// validate conversation and if user and target in the conversation (+)
+				// kick target (+)
+				// send back user data (+)
+
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await Conversation.findOneAndUpdate({
+					_id: conversationID,
+					contributors: {
+						$in: [str(id), str(targetID)]
+					}
+				}, {
+					$pull: {
+						contributors: str(targetID)
+					}
+				});
+				if(!b) return null;
+
+				let c = await User.findById(targetID);
+
+				await (
+					new Message({
+						time: new Date,
+						content: `${ a.name } kicked ${ c.name } from the conversation`,
+						type: "SYSTEM_MESSAGE",
+						creatorID: "-1",
+						conversationID: str(b._id),
 						isSeen: true,
 						images: []
 					})

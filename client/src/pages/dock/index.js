@@ -29,30 +29,42 @@ class App extends Component {
 			<div className={ `gl-dock${ (!this.props.showDock) ? "" : " show" }` }>
 				<span className="gl-dock-title">Menu</span>
 				<div className="gl-dock-title-navigation">
-					<DockBtn
-						title="Home"
-						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["HOME_PAGE"].absolute }
-						_to={ links["HOME_PAGE"].absolute }
-						_onClick={ () => { this.forceUpdate(); this.props.toggleDock() } }
-					/>
-					<DockBtn
-						title="Profile"
-						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["ACCOUNT_PAGE"].absolute }
-						_to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.userID }` }
-						_onClick={ () => { this.forceUpdate(); this.props.toggleDock() } }
-					/>
-					<DockBtn
-						title="Settings"
-						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["SETTINGS_PAGE"].absolute }
-						_to={ links["SETTINGS_PAGE"].absolute }
-						_onClick={ () => { this.forceUpdate(); this.props.toggleDock() } }
-					/>
-					<DockBtn
-						title="Chat"
-						active={ '/'+window.location.href.split("/")[3].toLowerCase() === links["CHAT_PAGE"].absolute }
-						_to={ links["CHAT_PAGE"].absolute }
-						_onClick={ () => { this.forceUpdate(); this.props.toggleDock() } }
-					/>
+					{
+						[
+							{
+								title: "Home",
+								active: '/'+window.location.href.split("/")[3].toLowerCase() === links["HOME_PAGE"].absolute,
+								_to: links["HOME_PAGE"].absolute
+							},
+							{
+								title: "Profile",
+								active: '/'+window.location.href.split("/")[3].toLowerCase() === links["ACCOUNT_PAGE"].absolute,
+								_to: `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.userID }`
+							},
+							{
+								title: "Settings",
+								active: '/'+window.location.href.split("/")[3].toLowerCase() === links["SETTINGS_PAGE"].absolute,
+								_to: links["SETTINGS_PAGE"].absolute
+							},
+							{
+								title: "Chat",
+								active: '/'+window.location.href.split("/")[3].toLowerCase() === links["CHAT_PAGE"].absolute,
+								_to: links["CHAT_PAGE"].absolute
+							}
+						].map(({ title, active, _to }, index) => (
+							<DockBtn
+								key={ index }
+								title={ title }
+								active={ active }
+								_to={ _to }
+								_onClick={() => {
+										this.forceUpdate();
+										if(this.props.showDock) this.props.toggleDock();
+									}
+								}
+							/>
+						))
+					}
 				</div>
 			</div>
 		);
