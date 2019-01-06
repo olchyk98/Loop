@@ -3,7 +3,7 @@
 :root {
 	--nav_realpadd:10px;
 	--nav_realheight:calc(var(--navheight) - var(--nav_realpadd) * 2);
-	--nav_logow:150px;
+	--nav_logow:185px;
 	--nav_accountw:150px;
 	--nav_docklpadd:22.5px;
 	--nav_notifopdntrans:.5s;

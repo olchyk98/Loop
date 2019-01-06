@@ -159,7 +159,7 @@ html, body {
 	}
 
 	.rn {
-		width:calc(100% - 15px)!important;
+		width:100%;
 		margin-left:auto!important;
 		margin-right:auto!important;
 	}

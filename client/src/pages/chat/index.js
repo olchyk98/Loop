@@ -209,7 +209,8 @@ class DisplayMessageTimer extends Component {
 			this.state = {
 				currentSeconds: 0,
 				currentMinutes: 0,
-				currentHours: 0
+				currentHours: 0,
+				isRunning: null
 			}
 
 			this.timerInt = null;
@@ -222,7 +223,13 @@ class DisplayMessageTimer extends Component {
 
 	componentDidMount() {
 		if(this.props.isProduction) {
-			let { start, time } = JSON.parse(this.props.data);
+			let { start, time, isRunning } = JSON.parse(this.props.data);
+
+			this.setState(() => ({
+				isRunning
+			}));
+			if(!isRunning) return;
+
 			// (time - (now - time)) / 1000
 
 			let set = () => {
@@ -501,7 +508,8 @@ class PortableModal extends Component {
 							isProduction={ false }
 							submit={ ({ s, m, h }) => { this.props._onSubmit("TIMER_TYPE", JSON.stringify({
 								time: s * 1000 + m * 60000 + h * 3600000, // ms
-								start: +new Date() // ms
+								start: +new Date(), // ms
+								isRunning: true
 							})); this.props.onClose() } }
 						/>
 					</div>
@@ -771,11 +779,12 @@ class App extends Component {
 		}
 
 		this.dialogDisplayRef = React.createRef();
+		this.conversationsUPSubscription = this.dialogSubscription = this.dialogSettingsSubscription = null;
 	}
 
 	componentDidMount() {
-		const { id, authToken } = cookieControl.get("authdata"),
-			  errorTxt = "We couldn't load your conversations. Please, try again."
+		const { id, authToken } = cookieControl.get("authdata");
+		let errorTxt = "We couldn't load your conversations. Please, try again."
 
 		this.setState(() => ({
 			conversations: false
@@ -815,16 +824,66 @@ class App extends Component {
 				conversations: user.conversations
 			}));
 		}).catch(() => this.props.castError(errorTxt));
+
+		errorTxt = "Wohoo. Something went wrong. We're trying to fix it right now."
+
+		this.conversationsUPSubscription = client.subscribe({
+			query: gql`
+				subscription($id: ID!, $authToken: String!) {
+					conversationsGridUpdated(id: $id, authToken: $authToken) {
+						id,
+						isSeen(id: $id),
+						avatar(id: $id),
+						contributorsInt,
+						color,
+						name(id: $id),
+						lastMessage {
+							time,
+							type,
+							content,
+							creator {
+								name
+							}
+						}
+					}
+				}
+			`,
+			variables: {
+				id, authToken
+			}
+		}).subscribe({
+			next: ({ data: { conversationsGridUpdated: a } }) => {
+				if(!a) return this.props.castError(errorTxt);
+
+				let b = Array.from(this.state.conversations);
+				b[b.findIndex(io => io.id === a.id)] = a;
+
+				this.setState(() => ({
+					conversations: b
+				}));
+			},
+			error: () => this.props.castError(errorTxt)
+		});
+	}
+
+	componentWillUnmount() {
+		(this.dialogSubscription && this.dialogSubscription.unsubscribe());
+		(this.dialogSettingsSubscription && this.dialogSettingsSubscription.unsubscribe());
+		(this.conversationsUPSubscription && this.conversationsUPSubscription.unsubscribe());
 	}
 
 	openConversation = targetID => {
+		(this.dialogSubscription && this.dialogSubscription.unsubscribe());
+		(this.dialogSettingsSubscription && this.dialogSettingsSubscription.unsubscribe());
+		(this.conversationsUPSubscription && this.conversationsUPSubscription.unsubscribe());
+
 		this.setState(() => ({
 			stage: "CHAT_STAGE",
 			dialog: false
 		}));
 
-		const { id, authToken } = cookieControl.get("authdata"),
-			  errorTxt = "We couldn't load this conversation. Please, try later.";
+		const { id, authToken } = cookieControl.get("authdata");
+		let errorTxt = "We couldn't load this conversation. Please, try later.";
 
 		// Promise.all([])?
 		// Load conversation
@@ -869,6 +928,86 @@ class App extends Component {
 
 			return conversation.id;
 		}).catch(() => this.props.castError(errorTxt));
+
+		errorTxt = "Something went wrong. Please, try later";
+
+		this.dialogSubscription = client.subscribe({
+			query: gql`
+				subscription($id: ID!, $authToken: String!, $conversationID: ID!) {
+				  hookConversationMessage(
+				    id: $id,
+				    authToken: $authToken,
+				    conversationID: $conversationID
+				  ) {
+				    id,
+					content,
+					time,
+					type,
+					images {
+						id,
+						url
+					},
+					creatorID,
+					creator {
+						id,
+						name,
+						avatar
+					}
+				  }
+				}
+			`,
+			variables: {
+				id, authToken,
+				conversationID: targetID
+			}
+		}).subscribe({
+			next: ({ data: { hookConversationMessage: a } }) => {
+				if(
+					!a ||
+					!this.state.dialog || // This message will be loaded with open conversation fetch request.
+					this.state.dialog.messages.findIndex(io => io.id === a.id) !== -1 // few devices on one account in the same conversation
+				) return;
+
+				this.setState(({ dialog, dialog: { messages } }) => ({
+					dialog: {
+						...dialog,
+						messages: [
+							...messages,
+							a
+						]
+					}
+				}), this.scrollEndDialog);
+			},
+			error: () => null
+		});
+
+		this.dialogSettingsSubscription = client.subscribe({
+			query: gql`
+				subscription($id: ID!, $authToken: String!, $conversationID: ID!) {
+					conversationSettingsUpdated(id: $id, authToken: $authToken, conversationID: $conversationID) {
+						id,
+						name(id: $id),
+						avatar(id: $id)
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				conversationID: targetID
+			}
+		}).subscribe({
+			next: ({ data: { conversationSettingsUpdated: a } }) => {
+				if(!a) return this.props.castError(errorTxt);
+
+				this.setState(({ dialog }) => ({
+					dialog: {
+						...dialog,
+						...a
+					}
+				}));
+			},
+			error: () => this.props.castError(errorTxt)
+		});
 	}
 
 	sendDialogMessage = (type, value) => {
@@ -963,6 +1102,8 @@ class App extends Component {
 	}
 
 	scrollEndDialog = () => {
+		if(!this.dialogDisplayRef) return;
+
 		this.dialogDisplayRef.scrollTop = this.dialogDisplayRef.scrollHeight;
 	}
 

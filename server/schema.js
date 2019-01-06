@@ -9,8 +9,12 @@ const {
 	GraphQLInt
 } = require('graphql');
 const {
-	GraphQLUpload
+	GraphQLUpload,
+	PubSub,
+	withFilter
 } = require('apollo-server');
+
+const pubsub = new PubSub();
 
 const fileSystem = require('fs');
 
@@ -1377,6 +1381,15 @@ const RootMutation = new GraphQLObjectType({
 					})
 				).save();
 
+				pubsub.publish('conversationMessageSent', {
+					conversationID,
+					message: c
+				});
+
+				pubsub.publish('conversationUpdated', {
+					conversation: b
+				});
+
 				return c;
 			}
 		},
@@ -1395,7 +1408,7 @@ const RootMutation = new GraphQLObjectType({
 				// validate if target exists (+)
 				// validate if target is friend for user (+)
 				// add target to the conversation |addToSet!| (+)
-				// send system message in conversation
+				// send system message in conversation (+)
 
 				let a = await validateAccount(id, authToken);
 				if(!a) return null;
@@ -1418,7 +1431,7 @@ const RootMutation = new GraphQLObjectType({
 					}
 				});
 
-				await (
+				let d = await (
 					new Message({
 						time: new Date,
 						content: `${ a.name } invited ${ c.name } to the conversation`,
@@ -1429,6 +1442,11 @@ const RootMutation = new GraphQLObjectType({
 						images: []
 					})
 				).save();
+
+				pubsub.publish('conversationMessageSent', {
+					conversationID,
+					message: d
+				});
 
 				return c;
 			}
@@ -1465,7 +1483,7 @@ const RootMutation = new GraphQLObjectType({
 					}
 				}, b, (__, a) => a);
 
-				await (
+				let d = await (
 					new Message({
 						time: new Date,
 						content: `${ a.name } updated conversation.`,
@@ -1476,6 +1494,19 @@ const RootMutation = new GraphQLObjectType({
 						images: []
 					})
 				).save();
+
+				pubsub.publish('conversationMessageSent', {
+					conversationID,
+					message: d
+				});
+
+				pubsub.publish('conversationSettingsUpdated', {
+					conversation: c
+				});
+
+				pubsub.publish('conversationUpdated', {
+					conversation: c
+				});
 
 				return c;
 			}
@@ -1506,12 +1537,12 @@ const RootMutation = new GraphQLObjectType({
 					$pull: {
 						contributors: str(targetID)
 					}
-				});
+				}, (_, b) => b);
 				if(!b) return null;
 
 				let c = await User.findById(targetID);
 
-				await (
+				let d = await (
 					new Message({
 						time: new Date,
 						content: `${ a.name } kicked ${ c.name } from the conversation`,
@@ -1523,13 +1554,97 @@ const RootMutation = new GraphQLObjectType({
 					})
 				).save();
 
+				pubsub.publish('conversationMessageSent', {
+					conversationID,
+					message: d
+				});
+
+				pubsub.publish('conversationMessageSent', {
+					conversation: b
+				});
+
 				return c;
 			}
 		}
 	}
 });
 
+const RootSubscription = new GraphQLObjectType({
+	name: "RootSubscription",
+	fields: {
+		hookConversationMessage: {
+			type: MessageType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				conversationID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			subscribe: withFilter(
+				() => pubsub.asyncIterator('conversationMessageSent'),
+				async ({ conversationID: targetID }, { id, authToken, conversationID }) => {
+					if(str(targetID) !== str(conversationID)) return false;
+					let a = await validateAccount(id, authToken);
+					if(!a) return false;
+
+					return true;
+				}
+			),
+			resolve: ({ message }) => message
+		},
+		conversationSettingsUpdated: {
+			type: ConversationType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				conversationID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			subscribe: withFilter(
+				() => pubsub.asyncIterator('conversationSettingsUpdated'),
+				async ({ conversation }, { id, authToken, conversationID }) => {
+					if(
+						str(conversationID) !== str(conversation.id) ||
+						!conversation.contributors.includes(str(id))
+					) return false;
+
+					let a = await validateAccount(id, authToken);
+					if(!a) return false;
+
+					return true;
+				}
+			),
+			resolve: ({ conversation }) => conversation
+		},
+		conversationsGridUpdated: {
+			type: ConversationType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) } 
+			},
+			subscribe: withFilter(
+				() => pubsub.asyncIterator('conversationUpdated'),
+				async ({ conversation }, { id, authToken }) => {
+					// find all user's conversations
+					// check if updated conversation in this list
+
+					let a = await validateAccount(id, authToken);
+					if(!a) return false;
+
+					let b = (await Conversation.find({ // get ids
+						contributors: {
+							$in: [str(a._id)]
+						}
+					}).select("_id")).map(io => str(io._id)); // convert [{_id: id1}, {_id: id2}] to [id1, id2, id3]
+
+					return b.includes(str(conversation._id));
+				}
+			),
+			resolve: ({ conversation }) => conversation
+		}
+	}
+})
+
 module.exports = new GraphQLSchema({
 	query: RootQuery,
-	mutation: RootMutation
+	mutation: RootMutation,
+	subscription: RootSubscription
 });
