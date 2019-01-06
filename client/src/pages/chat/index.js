@@ -107,8 +107,8 @@ class Conversation extends Component {
 
 	render() {
 		return(
-			<div className={ `rn-chat-conversations-item ${ this.props.color || "white" }` } onClick={ () => this.props._onClick(this.props.id) }>
-				<div className="rn-chat-conversations-item-previewimg">
+			<div className={ `rn-chat-conversations-item ${ this.props.color || "white" }` }>
+				<div onClick={ this.props._onClick } className="rn-chat-conversations-item-previewimg">
 					<div className="rn-chat-conversations-item-previewimg-image">
 						<img className="rn-chat-conversations-item-previewimg-img" alt="member" src={ (this.props.avatar && api.storage + this.props.avatar) || placeholderGIF } title="Conversation member" />
 						{
@@ -120,18 +120,18 @@ class Conversation extends Component {
 				</div>
 				<div className="rn-chat-conversations-item-content">
 					<div className="rn-chat-conversations-item-content-title">
-						<div>
+						<div onClick={ this.props._onClick }>
 							<span className="rn-chat-conversations-item-content-title-name">{ this.props.name }</span>
 							<span className="rn-chat-conversations-item-content-title-placeholder">•</span>
 							<span className="rn-chat-conversations-item-content-title-time">{ (this.props.preview && convertTime(this.props.preview.time, "ago", true, true)) || "" }</span>
 						</div>
 						<div className="rn-chat-conversations-item-content-controls">
-							<button className="rn-chat-conversations-item-content-controls-btn definp">
+							<button className="rn-chat-conversations-item-content-controls-btn definp" onClick={ this.props.leaveConversation }>
 								<i className="fas fa-sign-out-alt" />
 							</button>
 						</div>
 					</div>
-					<div className={ `rn-chat-conversations-item-content-last${ (+this.props.contInt > 1) ? "" : " lastinrow" }` } onClick={ () => null }>
+					<div onClick={ this.props._onClick } className={ `rn-chat-conversations-item-content-last${ (+this.props.contInt > 1) ? "" : " lastinrow" }` }>
 						<span className="rn-chat-conversations-item-content-last-name">{ this.props.preview && this.props.preview.creator.name }</span>
 						<span className="rn-chat-conversations-item-content-last-content">
 							{ this.props.preview && this.props.preview.content }
@@ -770,7 +770,7 @@ class App extends Component {
 
 		this.state = {
 			stage: "LIST_STAGE", // LIST_STAGE, CHAT_STAGE
-			chatStage: "CONVERSATION_STAGE", // CONVERSATION_STAGE, SETTINGS_STAGE, CONTRIBUTORS_STAGE
+			chatStage: "CONVERSATION_STAGE", // CONVERSATION_STAGE, CONTRIBUTORS_STAGE, SETTINGS_STAGE
 			contributorsStage: "MAIN_STAGE", // MAIN_STAGE, INVITATIONS_STAGE
 			pModalStage: null, // STOPWATCH_STAGE, STICKERS_STAGE
 			conversations: null,
@@ -1111,14 +1111,17 @@ class App extends Component {
 		const { id, authToken } = cookieControl.get("authdata"),
 			  errorTxt = `An error occured while we tried to invite ${ name } to the conversation. Please, try again.`;
 
-		let a = Array.from(this.state.dialog.inviteSuggestions);
-		a.find(io => io.id === targetID).isLoading = true;
-		this.setState(({ dialog }) => ({
-			dialog: {
-				...dialog,
-				inviteSuggestions: a
-			}
-		}));
+		let aqE = aa => {
+			let a = Array.from(this.state.dialog.inviteSuggestions);
+			a.find(io => io.id === targetID).isLoading = aa;
+			this.setState(({ dialog }) => ({
+				dialog: {
+					...dialog,
+					inviteSuggestions: a
+				}
+			}));
+		}
+		aqE(true);
 
 		client.mutate({
 			mutation: gql`
@@ -1137,15 +1140,20 @@ class App extends Component {
 		}).then(({ data: { addUserToConversation: b } }) => {
 			if(!b) return this.props.castError(errorTxt);
 
-			a.splice(a.findIndex(io => io.id === targetID), 1); // remove from suggestions
-			this.setState(({ dialog, dialog: { contributors, contributorsInt } }) => ({ // add to contributors
+			aqE(false);
+
+			let a = Array.from(this.state.dialog.inviteSuggestions);
+			a.splice(a.findIndex(io => io.id === targetID), 1);
+
+			this.setState(({ dialog, dialog: { contributors, contributorsInt } }) => ({
 				dialog: {
 					...dialog,
 					contributors: [
 						...contributors,
 						b
 					],
-					contributorsInt: contributorsInt + 1
+					contributorsInt: contributorsInt + 1,
+					inviteSuggestions: a
 				}
 			}));
 
@@ -1234,14 +1242,17 @@ class App extends Component {
 		const { id, authToken } = cookieControl.get("authdata"),
 			  errorTxt = "Something went wrong. Please, try again.";
 
-		let a = Array.from(this.state.dialog.contributors);
-		a.find(io => io.id === targetID).isLoading = true;
-		this.setState(({ dialog }) => ({
-			dialog: {
-				...dialog,
-				contributors: a
-			}
-		}));
+		let arA = aa => {
+			let a = Array.from(this.state.dialog.contributors);
+			a.find(io => io.id === targetID).isLoading = aa;
+			this.setState(({ dialog }) => ({
+				dialog: {
+					...dialog,
+					contributors: a
+				}
+			}));
+		}
+		arA(true);
 
 		client.mutate({
 			mutation: gql`
@@ -1259,7 +1270,37 @@ class App extends Component {
 		}).then(({ data: { kickDialogContributor: a } }) => {
 			if(!a) return this.props.castError(errorTxt);
 
+			arA(false);
 			this.getDialogContributors();
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	leaveConversation = targetID => {
+		if(!this.state.conversations) return;
+
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "Something went wrong. Please, try later.";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $conversationID: ID!) {
+					leaveConversation(id: $id, authToken: $authToken, conversationID: $conversationID) {
+						id
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				conversationID: targetID
+			}
+		}).then(({ data: { leaveConversation: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			let b = Array.from(this.state.conversations);
+			b.splice(b.findIndex(io => io.id === a.id), 1);
+			this.setState(() => ({
+				conversations: b
+			}));
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
@@ -1352,7 +1393,8 @@ class App extends Component {
 													}[c.type])
 												} : null}
 												clientAvatar={ (this.props.userdata && this.props.userdata.avatar) || placeholderGIF }
-												_onClick={ this.openConversation }
+												_onClick={ () => this.openConversation(a) }
+												leaveConversation={ () => this.leaveConversation(a) }
 											/>
 										))
 									)

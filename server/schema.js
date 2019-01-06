@@ -460,14 +460,12 @@ const ConversationType = new GraphQLObjectType({
 					}
 				}).select("_id");
 
-				let c = await User.find({
+				let c = await User.find({ // and?
 					_id: {
 						$in: [ // all friends
 							...a.friends,
 							...(b.map(io => io._id))
-						]
-					},
-					_id: { // but not contributors
+						],
 						$nin: contributors
 					}
 				});
@@ -695,9 +693,7 @@ const RootQuery = new GraphQLObjectType({
 						$in: [
 							...a.friends,
 							...(c.map(io => io._id))
-						]
-					},
-					_id: {
+						],
 						$nin: b.contributors
 					}
 				});
@@ -1486,7 +1482,7 @@ const RootMutation = new GraphQLObjectType({
 				let d = await (
 					new Message({
 						time: new Date,
-						content: `${ a.name } updated conversation.`,
+						content: `${ a.name } updated conversation`,
 						type: "SYSTEM_MESSAGE",
 						creatorID: "-1",
 						conversationID: str(c._id),
@@ -1559,11 +1555,55 @@ const RootMutation = new GraphQLObjectType({
 					message: d
 				});
 
-				pubsub.publish('conversationMessageSent', {
+				pubsub.publish('conversationUpdated', {
 					conversation: b
 				});
 
 				return c;
+			}
+		},
+		leaveConversation: {
+			type: ConversationType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				conversationID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, conversationID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await Conversation.findOneAndUpdate({
+					_id: conversationID
+				}, {
+					$pull: {
+						contributors: str(id)
+					}
+				}, (_, a) => a);
+				if(!b) return null;
+
+				let c = await (
+					new Message({
+						time: new Date,
+						content: `${ a.name } leaved the conversation.`,
+						type: "SYSTEM_MESSAGE",
+						creatorID: "-1",
+						conversationID: str(b._id),
+						isSeen: true,
+						images: []
+					})
+				).save();
+
+				pubsub.publish('conversationMessageSent', {
+					conversationID,
+					message: c
+				});
+
+				pubsub.publish('conversationUpdated', {
+					conversation: b
+				});
+
+				return b;
 			}
 		}
 	}
