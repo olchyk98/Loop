@@ -18,6 +18,10 @@ const links = {
 	"CHAT_PAGE": {
 		'absolute': '/chat',
 		'route': '/chat/:id?'
+	},
+	"NOTES_PAGE": {
+		'absolute': '/notes',
+		'route': '/notes'
 	}
 }
 

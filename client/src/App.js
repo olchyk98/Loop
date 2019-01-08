@@ -9,6 +9,7 @@ import Dock from './pages/dock';
 import Account from './pages/account';
 import Settings from './pages/settings';
 import Chat from './pages/chat';
+import Notes from './pages/notes';
 
 // Redux
 import store from './store';
@@ -136,6 +137,13 @@ class App extends Component {
 									path={ links["CHAT_PAGE"].route }
 									condition={ this.cookieID }
 									component={ Chat }
+									redirect={ Presentation }
+									exact
+								/>
+								<NeedleRoute
+									path={ links["NOTES_PAGE"].route }
+									condition={ this.cookieID }
+									component={ Notes }
 									redirect={ Presentation }
 									exact
 								/>

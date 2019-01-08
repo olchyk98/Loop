@@ -201,6 +201,7 @@ class App extends Component {
 					login={ this.state.userLogin }
 					userID={ this.state.userID }
 					label="Your account"
+					_onClick={ this.props.refreshDock }
 				/>
 				<form className="rn-settings-isl rn-settings-preferences" onSubmit={ e => e.preventDefault() || this.submitSettings("MAIN_BLOCK") }>
 					<span className="rn-settings-isl-title">Preferences</span>
@@ -247,7 +248,9 @@ class App extends Component {
 	}
 }
 
-const mapStateToProps = ({ user }) => ({});
+const mapStateToProps = ({ session: { dockRefresher } }) => ({
+	refreshDock: dockRefresher
+});
 
 const mapActionsToProps = {
 	setUserData: payload => ({ type: 'SET_USER_DATA', payload }),

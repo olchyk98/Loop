@@ -50,6 +50,11 @@ class App extends Component {
 								title: "Chat",
 								active: '/'+window.location.href.split("/")[3].toLowerCase() === links["CHAT_PAGE"].absolute,
 								_to: links["CHAT_PAGE"].absolute
+							},
+							{
+								title: "Notes",
+								active: '/'+window.location.href.split("/")[3].toLowerCase() === links["NOTES_PAGE"].absolute,
+								_to: links["NOTES_PAGE"].absolute
 							}
 						].map(({ title, active, _to }, index) => (
 							<DockBtn
