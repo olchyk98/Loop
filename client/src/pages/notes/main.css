@@ -226,3 +226,176 @@
 	font-size:.975em;
 	display:block;
 }
+
+.rn-notes-previewmodalbg,
+.rn-notes-previewmodal {
+	--trans:.15s;
+
+	transition:all var(--trans), visibility var(--trans);
+	opacity:0;
+	visibility:hidden;
+}
+
+.rn-notes-previewmodalbg.visible,
+.rn-notes-previewmodalbg.visible ~ .rn-notes-previewmodal {
+	transition:all var(--trans), visibility 0s;
+
+	opacity:1;
+	visibility:visible;
+}
+
+.rn-notes-previewmodalbg {
+	height:100vh;
+	width:100vw;
+	position:fixed;
+	background:red;
+	top:0;
+	left:0;
+	background:rgba(0, 0, 25, .1);
+	z-index:405;
+}
+
+.rn-notes-previewmodal {
+	--padding:40px;
+	--smpadd:10px;
+
+	padding:var(--padding);
+	height:auto;
+	width:calc(400px - var(--padding) * 2);
+	background:white;
+	position:fixed;
+	max-width:calc(100vw - var(--padding) * 2 - var(--smpadd) * 2);
+	top:50%;
+	left:50%;
+	margin-right:50%;
+	z-index:406;
+	border-radius:5px;
+	transform:translate(-50%, -50%);
+	box-shadow:0px 0px 25px -10px rgba(0, 0, 0, .5);
+}
+
+.rn-notes-previewmodal-title {
+	width:100%;
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+}
+
+.rn-notes-previewmodal-title-mat {
+	font-family:"Gothic A1";
+	font-weight:600;
+	letter-spacing:1px;
+	margin:0;
+}
+
+.rn-notes-previewmodal-title-times {
+	cursor:pointer;
+	font-size:1.1em;
+}
+
+.rn-notes-previewmodal-subtitle {
+	font-size:.925em;
+	color:rgba(0, 0, 0, .5);
+	margin-top:7.5px;
+	font-family:"Quicksand";
+	font-weight:600;
+}
+
+.rn-notes-previewmodal-input {
+	--margin:20px;
+
+	margin-top:var(--margin);
+	margin-bottom:var(--margin);
+	width:100%;
+	display:flex;
+	flex-direction:column;
+	align-items:flex-start;
+	justify-content:center;
+	position:relative;
+}
+
+.rn-notes-previewmodal-input-title {
+	font-family:"Quicksand";
+	font-weight:600;
+	font-size:.95em;
+	margin:0;
+	margin-bottom:2.5px;
+}
+
+.rn-notes-previewmodal-input-mat {
+	width:100%;
+	height:auto;
+	display:flex;
+	flex-direction:column;
+	align-items:stretch;
+	position:relative;
+}
+
+.rn-notes-previewmodal-input-mat > input {
+	height:37.5px;
+	font-size:1em;
+	font-family:"Arial";
+}
+
+.rn-notes-previewmodal-input-mat > div {
+	width:100%;
+	height:2px;
+	background:rgba(0, 0, 0, .1);
+	position:absolute;
+	bottom:0;
+	left:0;
+}
+
+.rn-notes-previewmodal-input-mat > div:before {
+	content:'';
+	position:absolute;
+	bottom:0;
+	left:50%;
+	margin-right:50%;
+	transform:translateX(-50%);
+	width:0;
+	height:100%;
+	transition:.15s;
+	background:blue;
+}
+
+.rn-notes-previewmodal-input-mat > input:focus ~ div:before,
+.rn-notes-previewmodal-input-mat > input:invalid:not(:placeholder-shown):not(:-ms-placeholder-shown) ~ div:before {
+	width:100%;
+}
+
+.rn-notes-previewmodal-input-mat > input:invalid:not(:placeholder-shown):not(:-ms-placeholder-shown) ~ div:before {
+	background:red;
+}
+
+.rn-notes-previewmodal-controls {
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	width:100%;
+	margin-top:5px;
+}
+
+.rn-notes-previewmodal-controls-btn {
+	font-size:.95em;
+	font-family:"Arial";
+	font-weight:600;
+	opacity:.65;
+	cursor:pointer;
+	text-transform:capitalize;
+	border-radius:3px;
+	padding:10px;
+	transition:.15s;
+}
+
+.rn-notes-previewmodal-controls-btn.cancel {
+	color:orangered;
+}
+
+.rn-notes-previewmodal-controls-btn.submit {
+	color:rebeccapurple;
+}
+
+.rn-notes-previewmodal-controls-btn:hover {
+	background:rgba(0, 0, 0, .025);
+}

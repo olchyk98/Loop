@@ -8,8 +8,8 @@ import client from '../../apollo';
 import { cookieControl } from '../../utils';
 import links from '../../links';
 
-import registerbg from './images/registerbg.jpg';
-import loginbg from './images/loginbg.jpg';
+// import registerbg from './images/registerbg.jpg';
+// import loginbg from './images/loginbg.jpg';
 import placeholderavatar from './images/placeholderavatar.jpg';
 
 const icons = {
@@ -60,10 +60,12 @@ class ScreenInput extends Component {
 					<input
 						type={ this.props._type }
 						required
+						title="Please, fill in this field."
 						onChange={ ({ target: { value } }) => { this.props._onChange(value); if(this.props.validatable) this.handleChange(value); } }
 						placeholder={ this.props._placeholder }
 						className="rn-presentation-stage-input-field definp"
 					/>
+					<div className="rn-presentation-stage-input-border" />
 					{
 						(this.props.validatable) ? (
 							<span
@@ -127,8 +129,11 @@ class Screen extends Component {
 	render() {
 		return(
 			<form onSubmit={ e => { e.preventDefault(); this.props._onSubmit(); } } className={ `rn-presentation-stage rn-presentation-${ this.props.adiclass }${ (!this.props.visible) ? "" : " active" }` }>
-				<img className="rn-presentation-stage-background" src={ this.props.background } alt="background" />
+				{/* <img className="rn-presentation-stage-background" src={ this.props.background } alt="background" /> */}
 				<div className="rn-presentation-stage-form">
+					<div className={ `rn-presentation-stage-form-logstatus${ (!this.props.inAuth) ? "" : " accepted" }` }>
+						{ (!this.props.inAuth) ? this.props.icon : this.props.iconAccepted }
+					</div>
 					<h2 className="rn-presentation-stage-form-title">{ this.props.title }</h2>
 					{ this.props.children }
 					<button type="submit" className={ `rn-presentation-stage-form-submit definp ${ this.getSubmitStatus() }` }>
@@ -146,7 +151,6 @@ class App extends Component {
 	constructor(props) {
 		super(props);
 
-		this.stages = ["EASY_STAGE", "FAST_STAGE", "CLEAN_STAGE", "NEEDL_STAGE"]
 		this.stages = {
 			"EASY_STAGE": {
 				background: "orange"
@@ -159,7 +163,7 @@ class App extends Component {
 			},
 			"NEEDL_STAGE": {
 				background: "rebeccapurple"
-			}
+			},
 		}
 
 		this.state = {
@@ -182,7 +186,8 @@ class App extends Component {
 					loginValid: null
 				}
 			},
-			isSubmiting: false
+			isSubmiting: false,
+			inAuth: false
 		}
 	}
 
@@ -269,6 +274,10 @@ class App extends Component {
 			this.setState(() => ({ isSubmiting: false }));
 			if(!data) return this.props.castError("Invalid login or password. Please, try again.");
 
+			this.setState(() => ({
+				inAuth: true
+			}));
+
 			cookieControl.set("authdata", {
 				id: data.id,
 				authToken: data.lastAuthToken
@@ -299,6 +308,10 @@ class App extends Component {
 		}).then(({ data: { registerUser: data } }) => {
 			this.setState(() => ({ isSubmiting: false }));
 			if(!data) return this.props.castError("We couldn't register your account. Please, try again.");
+
+			this.setState(() => ({
+				inAuth: true
+			}));
 
 			cookieControl.set("authdata", {
 				id: data.id,
@@ -444,12 +457,15 @@ class App extends Component {
 					<button className="definp" onClick={ () => this.setState({ currDisplay: "REGISTER_FORM" }) }>Register</button>
 				</div>
 				<Screen
-					background={ loginbg }
+					// background={ loginbg }
 					adiclass="login"
 					visible={ this.state.currDisplay === "LOGIN_FORM" }
 					title="Login in to your account"
 					submitText="Log in"
+					icon={ <i className="fas fa-lock" /> }
+					iconAccepted={ <i className="fas fa-lock-open" /> }
 					submitStatus={ this.getSubmitStatus('login') }
+					inAuth={ this.state.inAuth }
 					_onSubmit={ this.loginUser }>
 					<ScreenInput
 						title="Login"
@@ -467,12 +483,15 @@ class App extends Component {
 					/>
 				</Screen>
 				<Screen
-					background={ registerbg }
+					// background={ registerbg }
 					adiclass="register"
 					visible={ this.state.currDisplay === "REGISTER_FORM" }
 					title="Register a new account"
 					submitText="Register"
+					iconAccepted={ <i className="fas fa-fingerprint" /> }
+					icon={ <i className="fas fa-fingerprint" /> }
 					submitStatus={ this.getSubmitStatus('register') }
+					inAuth={ true }
 					_onSubmit={ this.registerUser }>
 					<ScreenImage
 						_id="rn-presentation-register-image"

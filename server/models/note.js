@@ -7,8 +7,7 @@ const NoteSchema = new Schema({
 	title: String,
 	content: String,
 	time: Date
-	estWords: Number, // estimate words in the note
-	likes: Array
+	estWords: Number // estimate words in the note
 });
 
 module.exports = mongoose.model("Note", NoteSchema);
