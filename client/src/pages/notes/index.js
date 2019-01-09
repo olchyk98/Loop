@@ -16,8 +16,6 @@ import { cookieControl } from '../../utils';
 import links from '../../links';
 import api from '../../api';
 
-const image = "https://yt3.ggpht.com/-qkiz6poo350/AAAAAAAAAAI/AAAAAAAAAAA/tKffXgsObqs/s48-c-k-no-mo-rj-c0xffffff/photo.jpg";
-
 class NoteContributor extends Component {
     render() {
         return (
