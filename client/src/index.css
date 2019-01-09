@@ -4,6 +4,7 @@
 	--defaultborder:rgba(0, 0, 0, .1);
 	--navheight:60px;
 	--navwidth:250px;
+	--rnnovnav-padds:65px;
 }
 
 html, body {
@@ -43,7 +44,7 @@ html, body {
 .rn:not(.nonav) {
 	height:calc(100vh - var(--navheight) - 1px);
 	width:calc(100vw - var(--navwidth));
-	padding-left:65px;
+	padding-left:var(--rnnovnav-padds);
 	display:flex;
 	align-items:flex-start;
 	flex-direction:column;
@@ -159,7 +160,7 @@ html, body {
 	}
 
 	.rn {
-		width:100%;
+		width:100%!important;
 		margin-left:auto!important;
 		margin-right:auto!important;
 	}

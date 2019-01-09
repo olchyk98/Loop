@@ -24,7 +24,8 @@ const {
 	Image,
 	Comment,
 	Conversation,
-	Message
+	Message,
+	Note
 } = require('./models');
 
 const settings = require('./settings');
@@ -252,6 +253,10 @@ const UserType = new GraphQLObjectType({
 					$in: [id]
 				}
 			})
+		},
+		notes: {
+			type: new GraphQLList(NoteType),
+			resolve: ({ id }) => Note.find({ creatorID: str(id) }).sort({ time: -1 })
 		}
 	})
 });
@@ -518,7 +523,52 @@ const MessageType = new GraphQLObjectType({
 			resolve: ({ creatorID }) => User.findById(creatorID)
 		}
 	})
-})
+});
+
+const NoteType = new GraphQLObjectType({
+	name: "NoteType",
+	fields: () => ({
+		id: { type: new GraphQLNonNull(GraphQLID) },
+		creatorID: { type: new GraphQLNonNull(GraphQLID) },
+		creator: {
+			type: UserType,
+			resolve: ({ creatorID: a }) => User.findById(id)
+		},
+		contributors: {
+			type: new GraphQLList(UserType),
+			args: {
+				limit: { type: GraphQLInt }
+			},
+			resolve: ({ contributors, creatorID }, { limit }) => User.find({
+				_id: {
+					$in: [...contributors, str(creatorID)]
+				}
+			}).limit(limit || Infinity)
+		},
+		title: { type: GraphQLString },
+		content: {
+			type: GraphQLString,
+			args: {
+				limit: { type: GraphQLInt }
+			},
+			resolve({ content }, { limit }) {
+				let a = content.split(" ");
+				if(a.length - 1 > limit) {
+					a.length = limit;
+					return a;
+				} else {
+					return content;
+				}
+			}
+		},
+		time: { type: GraphQLString },
+		currWords: {
+			type: GraphQLInt,
+			resolve: ({ content }) => content.split(" ").length - 1
+		},
+		estWords: { type: GraphQLInt }
+	})
+});
 
 const RootQuery = new GraphQLObjectType({
 	name: "RootQuery",
@@ -1602,6 +1652,32 @@ const RootMutation = new GraphQLObjectType({
 				pubsub.publish('conversationUpdated', {
 					conversation: b
 				});
+
+				return b;
+			}
+		},
+		createNote: {
+			type: NoteType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				title: { type: new GraphQLNonNull(GraphQLString) },
+				words: { type: new GraphQLNonNull(GraphQLInt) }
+			},
+			async resolve(_, { id, authToken, title, words }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await (
+					new Note({
+						creatorID: str(id),
+						contributors: [],
+						title,
+						estWords: words,
+						time: new Date,
+						content: ""
+					})
+				).save();
 
 				return b;
 			}

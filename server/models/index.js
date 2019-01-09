@@ -4,6 +4,7 @@ const Image = require('./image');
 const Comment = require('./comment');
 const Conversation = require('./conversation');
 const Message = require('./message');
+const Note = require('./note');
 
 module.exports = {
 	User,
@@ -11,5 +12,6 @@ module.exports = {
 	Image,
 	Comment,
 	Conversation,
-	Message
+	Message,
+	Note
 }
