@@ -11,7 +11,6 @@ import { Editor, EditorState, RichUtils, convertFromHTML } from 'draft-js';
 import { stateFromHTML } from 'draft-js-import-html';
 import { stateToHTML } from 'draft-js-export-html';
 
-
 import client from '../../apollo';
 import { cookieControl } from '../../utils';
 import links from '../../links';
@@ -242,7 +241,9 @@ class NoteCreator extends Component {
 class NoteEditorSettings extends Component {
 	render() {
 		return(
-			<div></div>
+			<div className={ `rn-notes-editor-settings${ (!this.props.active) ? "" : " active" }` }>
+				<Loadericon />
+			</div>
 		);
 	}
 }
@@ -253,7 +254,8 @@ class NoteEditor extends Component {
 
 		this.state = {
 			editState: EditorState.createEmpty(),
-			editorEmpty: true
+			editorEmpty: true,
+			settingsOpen: false
 		}
 	}
 
@@ -403,11 +405,14 @@ class NoteEditor extends Component {
 						editorState={ this.state.editState }
 					/>
 				</div>
-				<div className="rn-notes-editor-settingscall">
+				<div className="rn-notes-editor-settingscall" onClick={ () => this.setState(() => ({ settingsOpen: true })) }>
 					<button className="rn-notes-editor-settingscall-btn definp">
 						<i class="fas fa-cog" />
 					</button>
 				</div>
+				<NoteEditorSettings
+					active={ this.state.settingsOpen }
+				/>
 			</div>
 		);
 	}
