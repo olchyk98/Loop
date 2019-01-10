@@ -5,7 +5,7 @@ const NoteSchema = new Schema({
 	creatorID: String,
 	contributors: Array, // ids
 	title: String,
-	content: String,
+	contentHTML: String,
 	time: Date,
 	estWords: Number // approximate words in the note
 });

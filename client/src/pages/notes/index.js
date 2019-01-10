@@ -7,7 +7,7 @@ import { gql } from 'apollo-boost';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 
-import { Editor, EditorState, RichUtils, convertFromHTML } from 'draft-js';
+import { Editor, EditorState, RichUtils } from 'draft-js';
 import { stateFromHTML } from 'draft-js-import-html';
 import { stateToHTML } from 'draft-js-export-html';
 
@@ -15,6 +15,8 @@ import client from '../../apollo';
 import { cookieControl } from '../../utils';
 import links from '../../links';
 import api from '../../api';
+
+const image = "https://avatars1.githubusercontent.com/u/860099?s=40&v=4";
 
 class NoteContributor extends Component {
     render() {
@@ -33,17 +35,17 @@ class Note extends Component {
 		{
 			let a = [
 				(<Fragment>You can write about your day,
-				or about your homework. Do whatever you want.
+				or about your homework. Do can do whatever you want.
 				<br /><br />Just start editing this note...</Fragment>),
 
-				(<Fragment>Nothing here yet, but you can invite your friends to help you.
+				(<Fragment>There is nothing here yet, but you can invite your friends to help you.
 				<br /><br />You can write things here...</Fragment>),
 
-				(<Fragment>It's empty note, but you can always start using it.
+				(<Fragment>It's an empty note, but you can always start using it.
 				<br /><br />Just start typing text...</Fragment>),
 
-				(<Fragment>Unknown UFO cleared everything that was here... but wait,
-					maybe you just didn't start notate something.
+				(<Fragment>An unknown UFO cleared everything that was here... but wait,
+					maybe you just didn't write anything yet something.
 				<br /><br />Open and try to fix that...</Fragment>)
 			];
 			this.emptyFiller = a[Math.floor(Math.random() * a.length)];
@@ -61,7 +63,7 @@ class Note extends Component {
 		if(d === 0) c = "";
 		else if(d <= 25) c = "lowcontent"
 		else if(d > 25 && d <= 50) c = "mediumcontent"
-		else if(d > 50 && d <= 75) c = "highcontent";
+		else if(d > 50 && d < 100) c = "highcontent";
 		else c = "fullcontent";
 
 		return c;
@@ -73,7 +75,7 @@ class Note extends Component {
 				{
 					(!this.props.isVoid) ? (
 						<Fragment>
-							<div className="rn-notes-item__default-section">
+							<div className="rn-notes-item__default-section" onClick={ this.props._onClick }>
 								<h3 className="rn-notes-item-title">{ this.props.title }</h3>
 								{
 									(this.props.content.length) ? (
@@ -87,7 +89,7 @@ class Note extends Component {
 									)
 								}
 							</div>
-							<div className="rn-notes-item__default-progress">
+							<div className="rn-notes-item__default-progress" onClick={ this.props._onClick }>
 								<span className="rn-notes-item__default-progress-title">Progress</span>
 								<div className="rn-notes-item__default-progress-bar">
 									<div className="rn-notes-item__default-progress-bar-item first" />
@@ -236,6 +238,30 @@ class NoteCreator extends Component {
 	}
 }
 
+class NoteEditorSettingsFriend extends Component {
+	render() {
+		return(
+			<div className="rn-notes-editor-settings-invite-item">
+				<div className="rn-notes-editor-settings-invite-item-avatar">
+					<div>
+						<img src={ image } alt="user" />
+					</div>
+				</div>	
+				<div className="rn-notes-editor-settings-invite-item-info">
+					<p className="rn-notes-editor-settings-invite-item-info-name">Oles Odynets</p>
+					<p className="rn-notes-editor-settings-invite-item-info-shares">3 joint notes</p>
+				</div>
+				<div className="rn-notes-editor-settings-invite-item-join">
+					<button className="definp">
+						<i className="fas fa-plus" />
+					</button>
+				</div>
+			</div>
+			// isli -> avatar|name, shared documents (contributing together $in)
+		);
+	}
+}
+
 // <Loadericon />
 class NoteEditorSettings extends Component {
 	constructor(props) {
@@ -243,49 +269,93 @@ class NoteEditorSettings extends Component {
 
 		this.state = {
 			title: "",
-			words: 0
+			words: 0,
+			stage: "MAIN_STAGE" // MAIN_STAGE, INVITE_STAGE
 		}
+	}
+
+	setStage = stage => {
+		this.setState(() => ({
+			stage
+		}));
 	}
 
 	render() {
 		return(
 			<div className={ `rn-notes-editor-settings${ (!this.props.active) ? "" : " active" }` }>
-				<h3 className="rn-notes-editor-settings-title">Settings</h3>
 				{
-					[
-						{
-							title: "Title",
-							example: " ", // ...
-							pattern: ".+", // everything
-							field: "title",
-							transporter: value => value
-						},
-						{
-							title: "Approximate number of words in the note",
-							example: "160",
-							pattern: "[0-9]+", // \d+ is not working :( // only numbers
-							field: "words",
-							transporter: value => parseInt(value)
-						}
-					].map(({ title, example, pattern, field, transporter }, index) => (
-						<NoteCreatorInput
-							key={ index }
-							title={ title }
-							example={ example }
-							valid={ pattern }
-							value={ this.state[field] }
-							_style={{
-								maxWidth: "195px"
-							}}
-							_onChange={ value => this.setState(() => {
-								let a = transporter(value);
+					(this.state.stage === "MAIN_STAGE") ? (
+						<Fragment>
+							<div className="rn-notes-editor-settings-title">
+								<button className="definp" onClick={ this.props.onClose }>
+									<i className="fas fa-times" />
+								</button>
+								<h3 className="text">Settings</h3>
+								<div />
+							</div>
+							{
+								[
+									{
+										title: "Title",
+										example: " ", // ...
+										pattern: ".+", // everything
+										field: "title",
+										transporter: value => value
+									},
+									{
+										title: "AN of words",
+										example: "160",
+										pattern: "[0-9]+", // \d+ doesn't work :( // only numbers
+										field: "words",
+										transporter: value => parseInt(value)
+									}
+								].map(({ title, example, pattern, field, transporter }, index) => (
+									<NoteCreatorInput
+										key={ index }
+										title={ title }
+										example={ example }
+										valid={ pattern }
+										value={ this.state[field] }
+										_style={{
+											maxWidth: "195px"
+										}}
+										_onChange={ value => this.setState(() => {
+											let a = transporter(value);
 
-								return {
-									[field]: (!Number.isNaN(a)) ? a : 0
-								}
-							}) }
-						/>
-					))
+											return {
+												[field]: (!Number.isNaN(a)) ? a : 0
+											}
+										}) }
+									/>
+								))
+							}
+							<button
+								className="rn-notes-editor-settings-callinvite definp"
+								onClick={ () => this.setStage("INVITE_STAGE") }>
+								<span>Invite friends</span>
+								<div><i className="fas fa-angle-right" /></div>
+							</button>
+							<button className="rn-notes-editor-settings-submit definp">
+								Submit
+							</button>
+						</Fragment>
+					) : (
+						<Fragment>
+							<div className="rn-notes-editor-settings-title">
+								<button className="definp" onClick={ () => this.setStage("MAIN_STAGE") }>
+									<i className="fas fa-angle-left" />
+								</button>
+								<h3 className="text">Share with friends</h3>
+								<div />
+							</div>
+							<div className="rn-notes-editor-settings-invite">
+								<NoteEditorSettingsFriend />
+								<NoteEditorSettingsFriend />
+								<NoteEditorSettingsFriend />
+								<NoteEditorSettingsFriend />
+							</div>
+						</Fragment>
+					)
 				}
 			</div>
 		);
@@ -298,14 +368,47 @@ class NoteEditor extends Component {
 
 		this.state = {
 			editState: EditorState.createEmpty(),
-			settingsOpen: true
+			settingsOpen: false,
+			editorStyle: "",
+			showPlaceholder: true,
 		}
 
 		this.editorMat = React.createRef();
+		this.savingInt = null;
+		this.lastContent = null;
+	}
+
+	componentDidUpdate(prevProps) {
+		if(
+			(!prevProps.data && this.props.data) ||
+			(prevProps.data && this.props.data && prevProps.data.id !== this.props.data.id)
+		) { // set editor state
+			return this.setState(() => ({
+				editState: EditorState.createWithContent(stateFromHTML(this.props.data.contentHTML)),
+			}))
+		}
+
+		{
+			let a = this.getEditorBlock();
+
+	        if(this.state.editorCBlock !== a) {
+		    	this.setState(() => ({
+		    		editorCBlock: a,
+		    		showPlaceholder: a === 'unstyled'
+		    	}));
+	    	}
+		}
 	}
 
 	focusEditor = () => {
 		this.editorMat.focus();
+	}
+
+	getEditorBlock = () => {
+		let a = this.state.editState;
+	    return a.getCurrentContent() // // I HATE MYSELF
+	          .getBlockForKey(a.getSelection().getStartKey())
+	          .getType();
 	}
 
 	editText = (state = null, action = "") => {
@@ -347,9 +450,36 @@ class NoteEditor extends Component {
 		this.setState(() => ({
 			editState: state
 		}));
+
+		{ // Save document
+			let aa = state.getCurrentContent().getPlainText();
+			if(this.lastContent !== aa && !this.savingInt) {
+				this.lastContent = aa;
+				this.savingInt = setTimeout(() => {
+					this.savingInt = null;
+					this.saveDocument();
+				}, 300); // refresh freq
+			}
+		}
+	}
+
+	saveDocument = () => {
+		this.props.onSave(
+			this.props.data.id,
+			stateToHTML(this.state.editState.getCurrentContent())
+		);
 	}
 
 	render() {
+		if(!this.props.active) return null;
+		if(this.props.data === false) { // loading
+			return(
+				<div className="rn-notes-editor">
+					<Loadericon />
+				</div>
+			);
+		}
+
 		return(
 			<div className="rn-notes-editor">
 				<div className="rn-notes-editor-smcontrols">
@@ -357,8 +487,17 @@ class NoteEditor extends Component {
 						[
 							{
 								icon: <i className="fas fa-chevron-left" />,
-								editClass: "back-nav",
-								action: e => { e.preventDefault(); }
+								editClass: "head-control",
+								action: this.props.onClose
+							},
+							{
+								icon: (!this.props.docSaved) ? (
+									<div key="A"><i className="fas fa-save" /></div>
+								) : (
+									<div key="B"><i className="fas fa-cloud" /></div>
+								),
+								editClass: "head-control last",
+								action: this.saveDocument
 							},
 							{
 								icon: <i className="fas fa-bold" />,
@@ -381,73 +520,84 @@ class NoteEditor extends Component {
 							{
 								icon: <i className="fas fa-quote-right" />,
 								editClass: null,
-								execStyle: false,
+								execBlock: "blockquote",
 								action: e => { e.preventDefault(); this.editText(null, "blockquote") }
 							},
 							{
 								icon: <i className="fas fa-code" />,
 								editClass: null,
-								execStyle: false,
+								execBlock: "code-block",
 								action: e => { e.preventDefault(); this.editText(null, "code-block") }
 							},
 							{
 								icon: <i className="fas fa-list-ul" />,
 								editClass: null,
-								execStyle: false,
+								execBlock: "unordered-list-item",
 								action: e => { e.preventDefault(); this.editText(null, "unordered-list-item") }
 							},
 							{
 								icon: <i className="fas fa-list-ol" />,
 								editClass: null,
-								execStyle: false,
+								execBlock: "ordered-list-item",
 								action: e => { e.preventDefault(); this.editText(null, "ordered-list-item") }
 							},
 							{
 								icon: <i className="fas fa-font" />,
 								editClass: "font-h1",
-								execStyle: false,
+								execBlock: "header-one",
 								action: e => { e.preventDefault(); this.editText(null, "header-one") }
 							},
 							{
 								icon: <i className="fas fa-font" />,
 								editClass: "font-h2",
-								execStyle: false,
+								execBlock: "header-two",
 								action: e => { e.preventDefault(); this.editText(null, "header-two") }
 							},
 							{
 								icon: <i className="fas fa-font" />,
 								editClass: "font-h3",
-								execStyle: false,
+								execBlock: "header-three",
 								action: e => { e.preventDefault(); this.editText(null, "header-three") }
 							},
 							{
 								icon: <i className="fas fa-font" />,
 								editClass: "font-h4",
-								execStyle: false,
+								execBlock: "header-four",
 								action: e => { e.preventDefault(); this.editText(null, "header-four") }
 							},
 							{
 								icon: <i className="fas fa-font" />,
 								editClass: "font-h5",
-								execStyle: false,
+								execBlock: "header-five",
 								action: e => { e.preventDefault(); this.editText(null, "header-five") }
 							}, /* We don't need h6 here... */
-						].map(({ icon, editClass, action, execStyle }, index) => (
+						].map(({ icon, editClass, action, execStyle, execBlock }, index) => (
 							<button
 								key={ index }
-								className={ `definp rn-notes-editor-smcontrols-btn${ (editClass) ? " " + editClass : "" }${ (!execStyle || !this.state.editState.getCurrentInlineStyle().has(execStyle)) ? "" : " active" }` }
-								onMouseDown={ action }>
+								className={ `definp rn-notes-editor-smcontrols-btn${ (editClass) ? " " + editClass : "" }${ ( (execStyle && this.state.editState.getCurrentInlineStyle().has(execStyle)) || (execBlock && this.state.editorCBlock === execBlock) ) ? " active" : "" }` }
+								onMouseDown={ action }
+								style={{
+									animationDelay: (index + 1) * .15 + "s"
+								}}>
 								{ icon }
 							</button>
 						))
 					}
 				</div>
-				<div className="rn-notes-editor-display" onClick={ this.focusEditor }>
+				<div className="rn-notes-editor-display">
 					<Editor
 						onChange={ this.editText }
 						editorState={ this.state.editState }
 						ref={ ref => this.editorMat = ref }
-						placeholder="Start typing text..."
+						placeholder={ (this.state.showPlaceholder) ? "Start typing text..." : "" }
+						blockStyleFn={a => {
+							let b = a.getType();
+
+							switch(b) {
+								case 'blockquote': return "rn-notes-editor-edsts__INCLUDES__-blockquote";
+								default:break;
+							}
+						}}
 					/>
 				</div>
 				<div className="rn-notes-editor-settingscall" onClick={ () => this.setState(() => ({ settingsOpen: true })) }>
@@ -457,6 +607,7 @@ class NoteEditor extends Component {
 				</div>
 				<NoteEditorSettings
 					active={ this.state.settingsOpen }
+					onClose={ () => this.setState(() => ({ settingsOpen: false })) }
 				/>
 			</div>
 		);
@@ -469,8 +620,13 @@ class App extends Component {
 
 		this.state = {
 			isNewModal: false,
-			notes: false
+			notes: false,
+			editorOpened: false,
+			editorData: null,
+			editorSaved: true
 		}
+
+		this.editorSaves = 0;
 	}
 
 	componentDidMount() {
@@ -565,6 +721,90 @@ class App extends Component {
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
+	loadNote = targetID => {
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "An error occured while we tried to load the note. Maybe website was loaded incorrectly. Please, restart the page.";
+
+		this.setState(() => ({
+			editorData: false,
+			editorOpened: true
+		}));
+
+		client.query({ // TODO: Set rc
+			query: gql`
+				query($id: ID!, $authToken: String!, $targetID: ID!) {
+					note(id: $id, authToken: $authToken, targetID: $targetID) {
+						id,
+						contentHTML
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				targetID
+			}
+		}).then(({ data: { note: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			this.setState(() => ({
+				editorData: a
+			}));
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	saveNote = (targetID, content) => {
+		// WARNING: Content variable has fixed type: HTML
+		const save = ++this.editorSaves;
+		this.setState(() => ({
+			editorSaved: false
+		}));
+
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "Connection lost. Please, restart the page.";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $targetID: ID!, $content: String!, $contrLimit: Int, $contentLimit: Int) {
+					saveNote(id: $id, authToken: $authToken, targetID: $targetID, content: $content) {
+						id,
+						title,
+						content(limit: $contentLimit),
+						currWords,
+						estWords,
+						contributors(limit: $contrLimit) {
+							id,
+							avatar
+						}
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				targetID, content,
+				contrLimit: 3,
+				contentLimit: 16
+			}
+		}).then(({ data: { saveNote: a } }) => {
+			if(save < this.editorSaves) return;
+			if(!a) return this.props.castError(errorTxt);
+
+			this.setState(() => ({
+				editorSaved: true
+			}));
+
+			if(this.state.notes) {
+				let b = Array.from(this.state.notes),
+					c = b.findIndex(io => io.id === a.id);
+				if(c !== -1) {
+					b[c] = a;
+					this.setState(() => ({
+						notes: b
+					}));
+				}
+			}
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
     render() {
         return (
             <div className="rn rn-notes">
@@ -586,6 +826,7 @@ class App extends Component {
 											estWords={ estWords }
 											contributors={ contributors }
 											isVoid={ false }
+											_onClick={ () => this.loadNote(id) }
 										/>
 									))
 								}
@@ -606,7 +847,13 @@ class App extends Component {
 					onClose={ () => this.setState(() => ({ isNewModal: false })) }
 					_onSubmit={ this.createNote }
 				/>
-				<NoteEditor />
+				<NoteEditor
+					data={ this.state.editorData }
+					active={ this.state.editorOpened }
+					docSaved={ this.state.editorSaved }
+					onSave={ this.saveNote }
+					onClose={ () => this.setState({ editorOpened: false }) }
+				/>
 			</div>
         );
     }

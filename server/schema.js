@@ -526,6 +526,8 @@ const MessageType = new GraphQLObjectType({
 });
 
 const NoteType = new GraphQLObjectType({
+	// WARNING: The content field has fixed type: HTML
+
 	name: "NoteType",
 	fields: () => ({
 		id: { type: new GraphQLNonNull(GraphQLID) },
@@ -551,22 +553,23 @@ const NoteType = new GraphQLObjectType({
 			args: {
 				limit: { type: GraphQLInt }
 			},
-			resolve({ content }, { limit }) {
-				let a = content.split(" ");
-				if(a.length - 1 > limit) {
+			resolve({ contentHTML }, { limit }) {
+				let a = contentHTML.replace(/<\/?[^>]+(>|$)/g, "".split(" "));
+				if(a.length > limit) {
 					a.length = limit;
 					return a;
 				} else {
-					return content;
+					return a;
 				}
 			}
 		},
 		time: { type: GraphQLString },
 		currWords: {
 			type: GraphQLInt,
-			resolve: ({ content }) => content.split(" ").length - 1
+			resolve: ({ contentHTML }) => contentHTML.replace(/<\/?[^>]+(>|$)/g, "").split(" ").length
 		},
-		estWords: { type: GraphQLInt }
+		estWords: { type: GraphQLInt },
+		contentHTML: { type: GraphQLString }
 	})
 });
 
@@ -768,6 +771,32 @@ const RootQuery = new GraphQLObjectType({
 				});
 
 				return b;
+			}
+		},
+		note: {
+			type: NoteType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, targetID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				return Note.findOne({
+					_id: targetID,
+					$or: [
+						{
+							creatorID: str(id)
+						},
+						{
+							contributors: {
+								$in: [str(id)]
+							}
+						}
+					]
+				});
 			}
 		}
 	}
@@ -1675,9 +1704,40 @@ const RootMutation = new GraphQLObjectType({
 						title,
 						estWords: words,
 						time: new Date,
-						content: ""
+						contentHTML: ""
 					})
 				).save();
+
+				return b;
+			}
+		},
+		saveNote: {
+			type: NoteType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
+				content: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			async resolve(_, { id, authToken, targetID, content }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await Note.findOneAndUpdate({
+					_id: targetID,
+					$or: [
+						{
+							creatorID: str(id)
+						},
+						{
+							contributors: {
+								$in: [str(id)]
+							}
+						}
+					]
+				}, {
+					contentHTML: content
+				}, (_, a) => a);
 
 				return b;
 			}

@@ -25,6 +25,7 @@
 	grid-template-columns:repeat(auto-fill, minmax(calc(var(--notes_item-previewdef-swidth) + var(--notes_item-previewdef-margin)), 1fr));
 	min-height:100%;
 	width:100%;
+	overflow:visible;
 }
 
 .rn-notes-item {
@@ -67,6 +68,11 @@
 .rn-notes-item.default {
 	display:flex;
 	flex-direction:column;
+}
+
+.rn-notes-item__default-section,
+.rn-notes-item__default-progress {
+	cursor:pointer;
 }
 
 .rn-notes-item__default-section {
@@ -471,15 +477,37 @@
 	align-items:center;
 	justify-content:center;
 	cursor:pointer;
+	transform:rotate(35deg) scale(.75);
+	opacity:0;
 	transition:.25s;
+	animation:notes-editor-smcontrols-btn-initam .15s ease-in-out;
+	animation-fill-mode:forwards;
 }
 
-.rn-notes-editor-smcontrols-btn.back-nav {
+@keyframes notes-editor-smcontrols-btn-initam {
+	from {
+		transform:rotate(75deg) scale(.75);
+		opacity:0;
+	}
+
+	to {
+		transform:rotate(0deg) scale(1);
+		opacity:1;
+	}
+}
+
+.rn-notes-editor-smcontrols-btn.head-control {
 	--size:35px;
 
-	margin-bottom:15px;
+	height:var(--size);
+	width:var(--size);
 	color:rgba(0, 0, 0, .5);
 	border-radius:50%;
+	margin-bottom:0;
+}
+
+.rn-notes-editor-smcontrols-btn.head-control.last {
+	margin-bottom:5px;
 }
 
 .rn-notes-editor-smcontrols-btn.font-h2 {
@@ -523,6 +551,7 @@
 	font-weight:400;
 	-webkit-font-smoothing:antialiased;
 	position:relative;
+	overflow:scroll;
 }
 
 .rn-notes-editor-display > * {
@@ -592,9 +621,208 @@
 	opacity:1;
 }
 
-.rn-notes-editor-settings-title {
+.rn-notes-editor-settings-title:not(.text) {
+	--padding:15px;
+
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	padding-left:var(--padding);
+	padding-right:var(--padding);
+	width:calc(100% - var(--padding) * 2);
+}
+
+.rn-notes-editor-settings-title:not(.text) > button {
+	font-size:1.1em;
+	cursor:pointer;
+	color:rgba(0, 0, 0, .75);
+}
+
+.text.rn-notes-editor-settings-title,
+.rn-notes-editor-settings-title:not(.text) > .text {
 	font-family:"Quicksand";
 	font-weight:500;
 	font-size:1em;
 	text-align:center;
 }
+
+.rn-notes-editor-settings-callinvite {
+	font-family:"Quicksand";
+	font-weight:400;
+	font-size:1em;
+	margin-bottom:10px;
+	cursor:pointer;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+
+.rn-notes-editor-settings-callinvite > * {
+	--margin:2.5px;
+
+	margin-left:var(--margin);
+	margin-right:var(--margin);
+	color:rgba(0, 0, 0, .85);
+}
+
+.rn-notes-editor-settings-callinvite > div {
+	position:relative;
+	bottom:-1px;
+}
+
+.rn-notes-editor-settings-submit {
+	border-radius:3px;
+	margin-top:7.5px;
+	cursor:pointer;
+	height:40px;
+	width:165px;
+	background:rebeccapurple;
+	color:white;
+	font-size:1em;
+	font-family:"Quicksand";
+	font-weight:400;
+	transition:.25s;
+}
+
+.rn-notes-editor-settings-submit:hover {
+	box-shadow:0px 0px 15px -5px rgba(0, 0, .45);
+	transform:scale(1.025);
+}
+
+.rn-notes-editor-settings-submit:active {
+	box-shadow:none;
+	transform:scale(.975);
+}
+
+.rn-notes-editor-settings-invite {
+	height:auto;
+	width:100%;
+	display:flex;
+	position:relative;
+	flex-direction:column;
+	align-items:center;
+	justify-content:flex-start;
+}
+
+.rn-notes-editor-settings-invite-item {
+	--margin:5px;
+
+	margin-top:var(--margin);
+	margin-bottom:var(--margin);
+	width:calc(100% - 20px);
+	height:65px;
+	display:flex;
+	align-items:stretch;
+	justify-content:center;
+	border-radius:3px;
+	box-shadow:0px 0px 15px -4px rgba(0, 0, 0, .05);
+	position:relative;
+}
+
+.rn-notes-editor-settings-invite-item-avatar,
+.rn-notes-editor-settings-invite-item-info {
+	cursor:pointer;
+}
+
+.rn-notes-editor-settings-invite-item-avatar {
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	width:60px;
+	flex-shrink:0;
+}
+
+.rn-notes-editor-settings-invite-item-avatar * {
+	border-radius:50%;
+}
+
+.rn-notes-editor-settings-invite-item-avatar > div {
+	--size:40px;
+
+	height:var(--size);
+	width:var(--size);
+	position:relative;
+}
+
+.rn-notes-editor-settings-invite-item-avatar > img {
+	object-fit:cover;
+	object-position:center;
+	height:100%;
+	width:100%;
+}
+
+.rn-notes-editor-settings-invite-item-info {
+	min-width:0;
+	position:relative;
+	width:100%;
+	flex-shrink:1;
+	display:flex;
+	align-items:flex-start;
+	flex-direction:column;
+	justify-content:center;
+}
+
+.rn-notes-editor-settings-invite-item-info > p {
+	--margin:1px;
+	
+	margin-top:var(--margin);
+	margin-bottom:var(--margin);
+	overflow:hidden;
+	text-overflow:ellipsis;
+	white-space:nowrap;
+	font-family:"Arial";
+	-webkit-font-smoothing:antialiased;
+	font-weight:400;
+}
+
+.rn-notes-editor-settings-invite-item-info-name {
+	font-size:.95em;
+}
+
+.rn-notes-editor-settings-invite-item-info-shares {
+	color:rgba(0, 0, 0, .4);
+	font-size:.85em;
+}
+
+.rn-notes-editor-settings-invite-item-join {
+	width:40px;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	flex-shrink:0;
+	cursor:pointer;
+}
+
+.rn-notes-editor-settings-invite-item-join > button {
+	--size:30px;
+
+	height:var(--size);
+	width:var(--size);
+	background:transparent;
+	font-size:.85em;
+	cursor:pointer;
+	color:black;
+}
+
+.rn-notes-editor-settings-invite-item-join > button > svg {
+	position:relative;
+	top:1px;
+}
+
+/* WARNING: Editor blocks styles */
+.rn-notes-editor-edsts__INCLUDES__-blockquote {
+	position:relative;
+}
+
+.rn-notes-editor-edsts__INCLUDES__-blockquote:before {
+	content:'';
+	position:absolute;
+	top:-50%;
+	left:-15px;
+	height:45px;
+	width:5px;
+	border-radius:5px;
+	background:rebeccapurple;
+	transition:.25s;
+}
+/* ... */
