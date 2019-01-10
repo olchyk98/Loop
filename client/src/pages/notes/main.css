@@ -389,7 +389,7 @@
 	width:100%;
 }
 
-.rn-notes-previewmodal-input-mat > input:invalid:not(:placeholder-shown):not(:-ms-placeholder-shown) ~ div:before {
+.rn-notes-previewmodal-input-mat > input:invalid:not(:placeholder-shown) ~ div:before {
 	background:red;
 }
 
@@ -530,15 +530,6 @@
 	position:relative;
 }
 
-.rn-notes-editor-display.empty:before {
-	content:'Start typing text...';
-	opacity:.3;
-	position:absolute;
-	top:var(--padding);
-	left:var(--padding);
-	z-index:0;
-}
-
 .rn-notes-editor-settingscall {
 	width:var(--notes_editor-settingscall-width);
 	display:flex;
@@ -587,6 +578,10 @@
 	transform:translateX(100%);
 	opacity:0;
 	visibility:hidden;
+	display:flex;
+	flex-direction:column;
+	align-items:center;
+	justify-content:flex-start;
 	transition:all var(--trans), visibility var(--trans);
 }
 
@@ -595,4 +590,11 @@
 	transform:translateX(0);
 	visibility:visible;
 	opacity:1;
+}
+
+.rn-notes-editor-settings-title {
+	font-family:"Quicksand";
+	font-weight:500;
+	font-size:1em;
+	text-align:center;
 }

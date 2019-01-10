@@ -128,15 +128,15 @@ class Note extends Component {
     }
 }
 
-const NoteCreatorInput = ({ example, valid, title, _onChange, value }) => (
-	<div className="rn-notes-previewmodal-input">
+const NoteCreatorInput = ({ valid, title, example, value, _style, _onChange }) => (
+	<div className="rn-notes-previewmodal-input" style={ _style }>
 		<p className="rn-notes-previewmodal-input-title">{ title }</p>
 		<div className="rn-notes-previewmodal-input-mat">
 			<input
 				className="definp"
 				placeholder={ example }
 				type="text"
-				pattern={ valid } /* ultimate regex skills :D */
+				pattern={ valid }
 				value={ value }
 				onChange={ ({ target: { value } }) => _onChange(value) }
 				required
@@ -236,11 +236,57 @@ class NoteCreator extends Component {
 	}
 }
 
+// <Loadericon />
 class NoteEditorSettings extends Component {
+	constructor(props) {
+		super(props);
+
+		this.state = {
+			title: "",
+			words: 0
+		}
+	}
+
 	render() {
 		return(
 			<div className={ `rn-notes-editor-settings${ (!this.props.active) ? "" : " active" }` }>
-				<Loadericon />
+				<h3 className="rn-notes-editor-settings-title">Settings</h3>
+				{
+					[
+						{
+							title: "Title",
+							example: " ", // ...
+							pattern: ".+", // everything
+							field: "title",
+							transporter: value => value
+						},
+						{
+							title: "Approximate number of words in the note",
+							example: "160",
+							pattern: "[0-9]+", // \d+ is not working :( // only numbers
+							field: "words",
+							transporter: value => parseInt(value)
+						}
+					].map(({ title, example, pattern, field, transporter }, index) => (
+						<NoteCreatorInput
+							key={ index }
+							title={ title }
+							example={ example }
+							valid={ pattern }
+							value={ this.state[field] }
+							_style={{
+								maxWidth: "195px"
+							}}
+							_onChange={ value => this.setState(() => {
+								let a = transporter(value);
+
+								return {
+									[field]: (!Number.isNaN(a)) ? a : 0
+								}
+							}) }
+						/>
+					))
+				}
 			</div>
 		);
 	}
@@ -252,15 +298,14 @@ class NoteEditor extends Component {
 
 		this.state = {
 			editState: EditorState.createEmpty(),
-			editorEmpty: true,
-			settingsOpen: false
+			settingsOpen: true
 		}
+
+		this.editorMat = React.createRef();
 	}
 
-	syncAppState = () => { // editorEmpty?
-		this.setState(() => ({ // XXX
-			editorEmpty: stateToHTML(this.state.editState.getCurrentContent()).toString() === "<p><br></p>"
-		}));
+	focusEditor = () => {
+		this.editorMat.focus();
 	}
 
 	editText = (state = null, action = "") => {
@@ -301,7 +346,7 @@ class NoteEditor extends Component {
 
 		this.setState(() => ({
 			editState: state
-		}), this.syncAppState);
+		}));
 	}
 
 	render() {
@@ -313,99 +358,101 @@ class NoteEditor extends Component {
 							{
 								icon: <i className="fas fa-chevron-left" />,
 								editClass: "back-nav",
-								action: () => null
+								action: e => { e.preventDefault(); }
 							},
 							{
 								icon: <i className="fas fa-bold" />,
 								editClass: null,
 								execStyle: "BOLD",
-								action: () => this.editText(null, "BOLD")
+								action: e => { e.preventDefault(); this.editText(null, "BOLD") }
 							},
 							{
 								icon: <i className="fas fa-italic" />,
 								editClass: null,
 								execStyle: "ITALIC",
-								action: () => this.editText(null, "ITALIC")
+								action: e => { e.preventDefault(); this.editText(null, "ITALIC") }
 							},
 							{
 								icon: <i className="fas fa-underline" />,
 								editClass: null,
 								execStyle: "UNDERLINE",
-								action: () => this.editText(null, "UNDERLINE")
+								action: e => { e.preventDefault(); this.editText(null, "UNDERLINE") }
 							},
 							{
 								icon: <i className="fas fa-quote-right" />,
 								editClass: null,
 								execStyle: false,
-								action: () => this.editText(null, "blockquote")
+								action: e => { e.preventDefault(); this.editText(null, "blockquote") }
 							},
 							{
 								icon: <i className="fas fa-code" />,
 								editClass: null,
 								execStyle: false,
-								action: () => this.editText(null, "code-block")
+								action: e => { e.preventDefault(); this.editText(null, "code-block") }
 							},
 							{
 								icon: <i className="fas fa-list-ul" />,
 								editClass: null,
 								execStyle: false,
-								action: () => this.editText(null, "unordered-list-item")
+								action: e => { e.preventDefault(); this.editText(null, "unordered-list-item") }
 							},
 							{
 								icon: <i className="fas fa-list-ol" />,
 								editClass: null,
 								execStyle: false,
-								action: () => this.editText(null, "ordered-list-item")
+								action: e => { e.preventDefault(); this.editText(null, "ordered-list-item") }
 							},
 							{
 								icon: <i className="fas fa-font" />,
 								editClass: "font-h1",
 								execStyle: false,
-								action: () => this.editText(null, "header-one")
+								action: e => { e.preventDefault(); this.editText(null, "header-one") }
 							},
 							{
 								icon: <i className="fas fa-font" />,
 								editClass: "font-h2",
 								execStyle: false,
-								action: () => this.editText(null, "header-two")
+								action: e => { e.preventDefault(); this.editText(null, "header-two") }
 							},
 							{
 								icon: <i className="fas fa-font" />,
 								editClass: "font-h3",
 								execStyle: false,
-								action: () => this.editText(null, "header-three")
+								action: e => { e.preventDefault(); this.editText(null, "header-three") }
 							},
 							{
 								icon: <i className="fas fa-font" />,
 								editClass: "font-h4",
 								execStyle: false,
-								action: () => this.editText(null, "header-four")
+								action: e => { e.preventDefault(); this.editText(null, "header-four") }
 							},
 							{
 								icon: <i className="fas fa-font" />,
 								editClass: "font-h5",
 								execStyle: false,
-								action: () => this.editText(null, "header-five")
+								action: e => { e.preventDefault(); this.editText(null, "header-five") }
 							}, /* We don't need h6 here... */
 						].map(({ icon, editClass, action, execStyle }, index) => (
 							<button
 								key={ index }
 								className={ `definp rn-notes-editor-smcontrols-btn${ (editClass) ? " " + editClass : "" }${ (!execStyle || !this.state.editState.getCurrentInlineStyle().has(execStyle)) ? "" : " active" }` }
-								onClick={ action }>
+								onMouseDown={ action }>
 								{ icon }
 							</button>
 						))
 					}
 				</div>
-				<div className={ `rn-notes-editor-display${ (!this.state.editorEmpty) ? "" : " empty" }` }>
+				<div className="rn-notes-editor-display" onClick={ this.focusEditor }>
 					<Editor
 						onChange={ this.editText }
 						editorState={ this.state.editState }
+						ref={ ref => this.editorMat = ref }
+						placeholder="Start typing text..."
 					/>
 				</div>
 				<div className="rn-notes-editor-settingscall" onClick={ () => this.setState(() => ({ settingsOpen: true })) }>
 					<button className="rn-notes-editor-settingscall-btn definp">
-						<i class="fas fa-cog" />
+						<i className="fas fa-cog" />
 					</button>
 				</div>
 				<NoteEditorSettings
