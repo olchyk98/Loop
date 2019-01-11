@@ -78,7 +78,7 @@ class Note extends Component {
 							<div className="rn-notes-item__default-section" onClick={ this.props._onClick }>
 								<h3 className="rn-notes-item-title">{ this.props.title }</h3>
 								{
-									(this.props.content.length) ? (
+									(this.props.content.replace(/\s|\n/g, "").length) ? (
 										<p className="rn-notes-item-desc">
 											{ this.props.content }
 										</p>
@@ -362,6 +362,17 @@ class NoteEditorSettings extends Component {
 	}
 }
 
+class NoteEditorCloseAlert extends Component {
+	render() {
+		return(
+			<div className={ `rn-notes-editor-closealert__control${ (!this.props.active) ? "" : " active" }` } />
+			<div className="rn-notes-editor-closealert">
+				
+			</div>
+		);
+	}
+}
+
 class NoteEditor extends Component {
 	constructor(props) {
 		super(props);
@@ -371,6 +382,7 @@ class NoteEditor extends Component {
 			settingsOpen: false,
 			editorStyle: "",
 			showPlaceholder: true,
+			warningNSaveExit: true
 		}
 
 		this.editorMat = React.createRef();
@@ -385,7 +397,9 @@ class NoteEditor extends Component {
 		) { // set editor state
 			return this.setState(() => ({
 				editState: EditorState.createWithContent(stateFromHTML(this.props.data.contentHTML)),
-			}))
+			}), () => {
+				this.lastContent = this.state.editState.getCurrentContent().getPlainText();
+			});
 		}
 
 		{
@@ -427,13 +441,15 @@ class NoteEditor extends Component {
 			"unordered-list-item": "toggleBlockType",
 			"code-block": "toggleBlockType",
 			"blockquote": "toggleBlockType"
-		}
+		},
+			b = false; // styled
 
 		if(Object.keys(a).includes(action)) {
 			state = RichUtils[a[action]](
 				this.state.editState,
 				action
 			);
+			b = true;
 		} else if(!state) {
 			return console.error("Editor: Invlid action");
 		}
@@ -449,25 +465,31 @@ class NoteEditor extends Component {
 
 		this.setState(() => ({
 			editState: state
-		}));
+		}), () => this.saveDocument(b));
+	}
 
-		{ // Save document
-			let aa = state.getCurrentContent().getPlainText();
-			if(this.lastContent !== aa && !this.savingInt) {
-				this.lastContent = aa;
-				this.savingInt = setTimeout(() => {
-					this.savingInt = null;
-					this.saveDocument();
-				}, 300); // refresh freq
-			}
+	saveDocument = (style = false) => {
+		let a = this.state.editState.getCurrentContent().getPlainText();
+		if((this.lastContent !== a || style) && !this.savingInt) {
+			this.lastContent = a;
+			this.savingInt = setTimeout(() => {
+				this.savingInt = null;
+				this.props.onSave(
+					this.props.data.id,
+					stateToHTML(this.state.editState.getCurrentContent())
+				);
+			}, 300); // refresh freq
 		}
 	}
 
-	saveDocument = () => {
-		this.props.onSave(
-			this.props.data.id,
-			stateToHTML(this.state.editState.getCurrentContent())
-		);
+	closeDoc = () => {
+		if(this.props.docSaved) {
+			this.props.onClose();
+		} else {
+			this.setState(() => ({
+				warningNSaveExit: true
+			}));
+		}
 	}
 
 	render() {
@@ -488,7 +510,7 @@ class NoteEditor extends Component {
 							{
 								icon: <i className="fas fa-chevron-left" />,
 								editClass: "head-control",
-								action: this.props.onClose
+								action: this.closeDoc
 							},
 							{
 								icon: (!this.props.docSaved) ? (
