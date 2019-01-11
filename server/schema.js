@@ -256,7 +256,29 @@ const UserType = new GraphQLObjectType({
 		},
 		notes: {
 			type: new GraphQLList(NoteType),
-			resolve: ({ id }) => Note.find({ creatorID: str(id) }).sort({ time: -1 })
+			resolve: ({ id }) => Note.find({
+				$or: [
+					{
+						creatorID: str(id)
+					},
+					{
+						contributors: {
+							$in: [str(id)]
+						}
+					}
+				]
+			}).sort({ time: -1 })
+		},
+		jointNotesInt: {
+			type: GraphQLInt,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			resolve: ({ id }, { id: anID }) => Note.countDocuments({
+				contributors: {
+					$in: [str(id), str(anID)]
+				}
+			})
 		}
 	})
 });
@@ -796,6 +818,49 @@ const RootQuery = new GraphQLObjectType({
 							}
 						}
 					]
+				});
+			}
+		},
+		getNoteInviteSuggestions: {
+			type: new GraphQLList(UserType),
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				noteID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, noteID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = await Note.findOne({
+					_id: noteID,
+					$or: [
+						{
+							contributors: {
+								$in: [str(id)]
+							}
+						},
+						{
+							creatorID: str(id)
+						}
+					]
+				});
+				if(!b) return null;
+
+				let c = await User.find({
+					friends: {
+						$in: [str(id)]
+					}
+				});
+				c = [ // friends
+					...c,
+					...a.friends
+				]
+				return User.find({
+					_id: {
+						$in: c,
+						$nin: b.contributors
+					}
 				});
 			}
 		}
@@ -1740,6 +1805,71 @@ const RootMutation = new GraphQLObjectType({
 				}, (_, a) => a);
 
 				return b;
+			}
+		},
+		settingNote: {
+			type: NoteType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
+				title: { type: GraphQLString },
+				esWords: { type: GraphQLInt }
+			},
+			async resolve(_, { id, authToken, targetID, title, esWords }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				let b = {};
+				if(title) b.title = title;
+
+				return Note.findOneAndUpdate({
+					_id: targetID,
+					$or: [
+						{
+							creatorID: str(id)
+						},
+						{
+							contributors: {
+								$in: [str(id)]
+							}
+						}
+					]
+				}, {
+					...b,
+					estWords: esWords
+				}, (_, a) => a);
+			}
+		},
+		addNoteContributor: {
+			type: NoteType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				noteID: { type: new GraphQLNonNull(GraphQLID) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, noteID, targetID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				return Note.findOneAndUpdate({
+					_id: noteID,
+					$or: [
+						{
+							contributors: {
+								$in: [str(id)]
+							}
+						},
+						{
+							creatorID: str(id)
+						}
+					]
+				}, {
+					$addToSet: {
+						contributors: str(targetID)
+					}
+				}, (_, a) => a);
 			}
 		}
 	}

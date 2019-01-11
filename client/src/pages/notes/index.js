@@ -2,6 +2,8 @@ import React, { Component, Fragment } from 'react';
 import './main.css';
 
 import Loadericon from '../__forall__/loader.icon';
+import NoteEditorSettings from './NoteEditorSettings';
+import NoteCreatorInput from  './NoteCreatorInput';
 
 import { gql } from 'apollo-boost';
 import { Link } from 'react-router-dom';
@@ -15,8 +17,6 @@ import client from '../../apollo';
 import { cookieControl } from '../../utils';
 import links from '../../links';
 import api from '../../api';
-
-const image = "https://avatars1.githubusercontent.com/u/860099?s=40&v=4";
 
 class NoteContributor extends Component {
     render() {
@@ -130,24 +130,6 @@ class Note extends Component {
     }
 }
 
-const NoteCreatorInput = ({ valid, title, example, value, _style, _onChange }) => (
-	<div className="rn-notes-previewmodal-input" style={ _style }>
-		<p className="rn-notes-previewmodal-input-title">{ title }</p>
-		<div className="rn-notes-previewmodal-input-mat">
-			<input
-				className="definp"
-				placeholder={ example }
-				type="text"
-				pattern={ valid }
-				value={ value }
-				onChange={ ({ target: { value } }) => _onChange(value) }
-				required
-			/>
-			<div />
-		</div>
-	</div>
-)
-
 class NoteCreator extends Component {
 	constructor(props) {
 		super(props);
@@ -238,137 +220,21 @@ class NoteCreator extends Component {
 	}
 }
 
-class NoteEditorSettingsFriend extends Component {
-	render() {
-		return(
-			<div className="rn-notes-editor-settings-invite-item">
-				<div className="rn-notes-editor-settings-invite-item-avatar">
-					<div>
-						<img src={ image } alt="user" />
-					</div>
-				</div>	
-				<div className="rn-notes-editor-settings-invite-item-info">
-					<p className="rn-notes-editor-settings-invite-item-info-name">Oles Odynets</p>
-					<p className="rn-notes-editor-settings-invite-item-info-shares">3 joint notes</p>
-				</div>
-				<div className="rn-notes-editor-settings-invite-item-join">
-					<button className="definp">
-						<i className="fas fa-plus" />
-					</button>
-				</div>
-			</div>
-			// isli -> avatar|name, shared documents (contributing together $in)
-		);
-	}
-}
-
-// <Loadericon />
-class NoteEditorSettings extends Component {
-	constructor(props) {
-		super(props);
-
-		this.state = {
-			title: "",
-			words: 0,
-			stage: "MAIN_STAGE" // MAIN_STAGE, INVITE_STAGE
-		}
-	}
-
-	setStage = stage => {
-		this.setState(() => ({
-			stage
-		}));
-	}
-
-	render() {
-		return(
-			<div className={ `rn-notes-editor-settings${ (!this.props.active) ? "" : " active" }` }>
-				{
-					(this.state.stage === "MAIN_STAGE") ? (
-						<Fragment>
-							<div className="rn-notes-editor-settings-title">
-								<button className="definp" onClick={ this.props.onClose }>
-									<i className="fas fa-times" />
-								</button>
-								<h3 className="text">Settings</h3>
-								<div />
-							</div>
-							{
-								[
-									{
-										title: "Title",
-										example: " ", // ...
-										pattern: ".+", // everything
-										field: "title",
-										transporter: value => value
-									},
-									{
-										title: "AN of words",
-										example: "160",
-										pattern: "[0-9]+", // \d+ doesn't work :( // only numbers
-										field: "words",
-										transporter: value => parseInt(value)
-									}
-								].map(({ title, example, pattern, field, transporter }, index) => (
-									<NoteCreatorInput
-										key={ index }
-										title={ title }
-										example={ example }
-										valid={ pattern }
-										value={ this.state[field] }
-										_style={{
-											maxWidth: "195px"
-										}}
-										_onChange={ value => this.setState(() => {
-											let a = transporter(value);
-
-											return {
-												[field]: (!Number.isNaN(a)) ? a : 0
-											}
-										}) }
-									/>
-								))
-							}
-							<button
-								className="rn-notes-editor-settings-callinvite definp"
-								onClick={ () => this.setStage("INVITE_STAGE") }>
-								<span>Invite friends</span>
-								<div><i className="fas fa-angle-right" /></div>
-							</button>
-							<button className="rn-notes-editor-settings-submit definp">
-								Submit
-							</button>
-						</Fragment>
-					) : (
-						<Fragment>
-							<div className="rn-notes-editor-settings-title">
-								<button className="definp" onClick={ () => this.setStage("MAIN_STAGE") }>
-									<i className="fas fa-angle-left" />
-								</button>
-								<h3 className="text">Share with friends</h3>
-								<div />
-							</div>
-							<div className="rn-notes-editor-settings-invite">
-								<NoteEditorSettingsFriend />
-								<NoteEditorSettingsFriend />
-								<NoteEditorSettingsFriend />
-								<NoteEditorSettingsFriend />
-							</div>
-						</Fragment>
-					)
-				}
-			</div>
-		);
-	}
-}
-
 class NoteEditorCloseAlert extends Component {
 	render() {
 		return(
-			<div className={ `rn-notes-editor-closealert__control${ (!this.props.active) ? "" : " active" }` } />
-			<div className="rn-notes-editor-closealert">
-				
-			</div>
+			<Fragment>
+				<div className={ `rn-notes-editor-closealert__control${ (!this.props.active) ? "" : " active" }` } onClick={ this.props.onClose } />
+				<div className="rn-notes-editor-closealert">
+					<h3 className="rn-notes-editor-closealert-title">Exit without saving?</h3>
+					<p className="rn-notes-editor-closealert-content">You're trying exit editor without saving the document. Do you wanna save it?</p>
+					<div className="rn-notes-editor-closealert-val">
+						<button type="button" className="definp rn-notes-previewmodal-controls-btn cancel" onClick={ this.props.onClose }>Cancel</button>
+						<button type="button" className="definp rn-notes-previewmodal-controls-btn submit" onClick={ this.props.onExit }>Exit</button>
+						<button type="button" className="definp rn-notes-previewmodal-controls-btn accept" onClick={ this.props.onExitSave }>Save and Exit</button>
+					</div>
+				</div>
+			</Fragment>
 		);
 	}
 }
@@ -380,9 +246,8 @@ class NoteEditor extends Component {
 		this.state = {
 			editState: EditorState.createEmpty(),
 			settingsOpen: false,
-			editorStyle: "",
 			showPlaceholder: true,
-			warningNSaveExit: true
+			warningNSaveExit: false
 		}
 
 		this.editorMat = React.createRef();
@@ -468,9 +333,9 @@ class NoteEditor extends Component {
 		}), () => this.saveDocument(b));
 	}
 
-	saveDocument = (style = false) => {
+	saveDocument = (force = false) => {
 		let a = this.state.editState.getCurrentContent().getPlainText();
-		if((this.lastContent !== a || style) && !this.savingInt) {
+		if((this.lastContent !== a || force) && !this.savingInt) {
 			this.lastContent = a;
 			this.savingInt = setTimeout(() => {
 				this.savingInt = null;
@@ -482,8 +347,8 @@ class NoteEditor extends Component {
 		}
 	}
 
-	closeDoc = () => {
-		if(this.props.docSaved) {
+	closeDoc = (force = false) => {
+		if(force || this.props.docSaved) {
 			this.props.onClose();
 		} else {
 			this.setState(() => ({
@@ -503,135 +368,154 @@ class NoteEditor extends Component {
 		}
 
 		return(
-			<div className="rn-notes-editor">
-				<div className="rn-notes-editor-smcontrols">
-					{
-						[
-							{
-								icon: <i className="fas fa-chevron-left" />,
-								editClass: "head-control",
-								action: this.closeDoc
-							},
-							{
-								icon: (!this.props.docSaved) ? (
-									<div key="A"><i className="fas fa-save" /></div>
-								) : (
-									<div key="B"><i className="fas fa-cloud" /></div>
-								),
-								editClass: "head-control last",
-								action: this.saveDocument
-							},
-							{
-								icon: <i className="fas fa-bold" />,
-								editClass: null,
-								execStyle: "BOLD",
-								action: e => { e.preventDefault(); this.editText(null, "BOLD") }
-							},
-							{
-								icon: <i className="fas fa-italic" />,
-								editClass: null,
-								execStyle: "ITALIC",
-								action: e => { e.preventDefault(); this.editText(null, "ITALIC") }
-							},
-							{
-								icon: <i className="fas fa-underline" />,
-								editClass: null,
-								execStyle: "UNDERLINE",
-								action: e => { e.preventDefault(); this.editText(null, "UNDERLINE") }
-							},
-							{
-								icon: <i className="fas fa-quote-right" />,
-								editClass: null,
-								execBlock: "blockquote",
-								action: e => { e.preventDefault(); this.editText(null, "blockquote") }
-							},
-							{
-								icon: <i className="fas fa-code" />,
-								editClass: null,
-								execBlock: "code-block",
-								action: e => { e.preventDefault(); this.editText(null, "code-block") }
-							},
-							{
-								icon: <i className="fas fa-list-ul" />,
-								editClass: null,
-								execBlock: "unordered-list-item",
-								action: e => { e.preventDefault(); this.editText(null, "unordered-list-item") }
-							},
-							{
-								icon: <i className="fas fa-list-ol" />,
-								editClass: null,
-								execBlock: "ordered-list-item",
-								action: e => { e.preventDefault(); this.editText(null, "ordered-list-item") }
-							},
-							{
-								icon: <i className="fas fa-font" />,
-								editClass: "font-h1",
-								execBlock: "header-one",
-								action: e => { e.preventDefault(); this.editText(null, "header-one") }
-							},
-							{
-								icon: <i className="fas fa-font" />,
-								editClass: "font-h2",
-								execBlock: "header-two",
-								action: e => { e.preventDefault(); this.editText(null, "header-two") }
-							},
-							{
-								icon: <i className="fas fa-font" />,
-								editClass: "font-h3",
-								execBlock: "header-three",
-								action: e => { e.preventDefault(); this.editText(null, "header-three") }
-							},
-							{
-								icon: <i className="fas fa-font" />,
-								editClass: "font-h4",
-								execBlock: "header-four",
-								action: e => { e.preventDefault(); this.editText(null, "header-four") }
-							},
-							{
-								icon: <i className="fas fa-font" />,
-								editClass: "font-h5",
-								execBlock: "header-five",
-								action: e => { e.preventDefault(); this.editText(null, "header-five") }
-							}, /* We don't need h6 here... */
-						].map(({ icon, editClass, action, execStyle, execBlock }, index) => (
-							<button
-								key={ index }
-								className={ `definp rn-notes-editor-smcontrols-btn${ (editClass) ? " " + editClass : "" }${ ( (execStyle && this.state.editState.getCurrentInlineStyle().has(execStyle)) || (execBlock && this.state.editorCBlock === execBlock) ) ? " active" : "" }` }
-								onMouseDown={ action }
-								style={{
-									animationDelay: (index + 1) * .15 + "s"
-								}}>
-								{ icon }
-							</button>
-						))
-					}
-				</div>
-				<div className="rn-notes-editor-display">
-					<Editor
-						onChange={ this.editText }
-						editorState={ this.state.editState }
-						ref={ ref => this.editorMat = ref }
-						placeholder={ (this.state.showPlaceholder) ? "Start typing text..." : "" }
-						blockStyleFn={a => {
-							let b = a.getType();
+			<Fragment>
+				<div className="rn-notes-editor">
+					<div className="rn-notes-editor-smcontrols">
+						{
+							[
+								{
+									icon: <i className="fas fa-chevron-left" />,
+									editClass: "head-control",
+									action: () => this.closeDoc(false)
+								},
+								{
+									icon: (!this.state.warningNSaveExit) ? (
+										(!this.props.docSaved) ? (
+											<div key="A"><i className="fas fa-save" /></div>
+										) : (
+											<div key="B"><i className="fas fa-cloud" /></div>
+										)
+									) : (
+										<div key="C"><i className="fas fa-question" /></div>
+									),
+									editClass: "head-control last",
+									action: this.saveDocument
+								},
+								{
+									icon: <i className="fas fa-bold" />,
+									editClass: null,
+									execStyle: "BOLD",
+									action: e => { e.preventDefault(); this.editText(null, "BOLD") }
+								},
+								{
+									icon: <i className="fas fa-italic" />,
+									editClass: null,
+									execStyle: "ITALIC",
+									action: e => { e.preventDefault(); this.editText(null, "ITALIC") }
+								},
+								{
+									icon: <i className="fas fa-underline" />,
+									editClass: null,
+									execStyle: "UNDERLINE",
+									action: e => { e.preventDefault(); this.editText(null, "UNDERLINE") }
+								},
+								{
+									icon: <i className="fas fa-quote-right" />,
+									editClass: null,
+									execBlock: "blockquote",
+									action: e => { e.preventDefault(); this.editText(null, "blockquote") }
+								},
+								{
+									icon: <i className="fas fa-code" />,
+									editClass: null,
+									execBlock: "code-block",
+									action: e => { e.preventDefault(); this.editText(null, "code-block") }
+								},
+								{
+									icon: <i className="fas fa-list-ul" />,
+									editClass: null,
+									execBlock: "unordered-list-item",
+									action: e => { e.preventDefault(); this.editText(null, "unordered-list-item") }
+								},
+								{
+									icon: <i className="fas fa-list-ol" />,
+									editClass: null,
+									execBlock: "ordered-list-item",
+									action: e => { e.preventDefault(); this.editText(null, "ordered-list-item") }
+								},
+								{
+									icon: <i className="fas fa-font" />,
+									editClass: "font-h1",
+									execBlock: "header-one",
+									action: e => { e.preventDefault(); this.editText(null, "header-one") }
+								},
+								{
+									icon: <i className="fas fa-font" />,
+									editClass: "font-h2",
+									execBlock: "header-two",
+									action: e => { e.preventDefault(); this.editText(null, "header-two") }
+								},
+								{
+									icon: <i className="fas fa-font" />,
+									editClass: "font-h3",
+									execBlock: "header-three",
+									action: e => { e.preventDefault(); this.editText(null, "header-three") }
+								},
+								{
+									icon: <i className="fas fa-font" />,
+									editClass: "font-h4",
+									execBlock: "header-four",
+									action: e => { e.preventDefault(); this.editText(null, "header-four") }
+								},
+								{
+									icon: <i className="fas fa-font" />,
+									editClass: "font-h5",
+									execBlock: "header-five",
+									action: e => { e.preventDefault(); this.editText(null, "header-five") }
+								}, /* We don't need h6 here... */
+							].map(({ icon, editClass, action, execStyle, execBlock }, index) => (
+								<button
+									key={ index }
+									className={ `definp rn-notes-editor-smcontrols-btn${ (editClass) ? " " + editClass : "" }${ ( (execStyle && this.state.editState.getCurrentInlineStyle().has(execStyle)) || (execBlock && this.state.editorCBlock === execBlock) ) ? " active" : "" }` }
+									onMouseDown={ action }
+									style={{
+										animationDelay: (index + 1) * .15 + "s"
+									}}>
+									{ icon }
+								</button>
+							))
+						}
+					</div>
+					<div className="rn-notes-editor-display">
+						<Editor
+							onChange={ this.editText }
+							editorState={ this.state.editState }
+							ref={ ref => this.editorMat = ref }
+							placeholder={ (this.state.showPlaceholder) ? "Start typing text..." : "" }
+							blockStyleFn={a => {
+								let b = a.getType();
 
-							switch(b) {
-								case 'blockquote': return "rn-notes-editor-edsts__INCLUDES__-blockquote";
-								default:break;
-							}
+								switch(b) {
+									case 'blockquote': return "rn-notes-editor-edsts__INCLUDES__-blockquote";
+									default:break;
+								}
+							}}
+						/>
+					</div>
+					<div className="rn-notes-editor-settingscall" onClick={ () => this.setState(() => ({ settingsOpen: true })) }>
+						<button className="rn-notes-editor-settingscall-btn definp">
+							<i className="fas fa-cog" />
+						</button>
+					</div>
+					<NoteEditorSettings
+						targetID={ this.props.data.id }
+						active={ this.state.settingsOpen }
+						currentTitle={ this.props.data.title }
+						currentExword={ this.props.data.estWords }
+						onClose={ () => this.setState(() => ({ settingsOpen: false })) }
+						_onSubmit={(title, words) => {
+							this.props.onSettingNote(title, words, this.props.data.id);
+							this.setState(() => ({ settingsOpen: false }));
 						}}
 					/>
 				</div>
-				<div className="rn-notes-editor-settingscall" onClick={ () => this.setState(() => ({ settingsOpen: true })) }>
-					<button className="rn-notes-editor-settingscall-btn definp">
-						<i className="fas fa-cog" />
-					</button>
-				</div>
-				<NoteEditorSettings
-					active={ this.state.settingsOpen }
-					onClose={ () => this.setState(() => ({ settingsOpen: false })) }
-				/>
-			</div>
+			<NoteEditorCloseAlert
+				active={ this.state.warningNSaveExit }
+				onClose={ () => this.setState({ warningNSaveExit: false }) }
+				onExit={ () => this.setState(() => ({ warningNSaveExit: false }), () => this.closeDoc(true)) }
+				onExitSave={ () => { this.saveDocument(true); this.setState(() => ({ warningNSaveExit: false }), () => this.closeDoc(true)); } }
+			/>
+			</Fragment>
 		);
 	}
 }
@@ -757,7 +641,9 @@ class App extends Component {
 				query($id: ID!, $authToken: String!, $targetID: ID!) {
 					note(id: $id, authToken: $authToken, targetID: $targetID) {
 						id,
-						contentHTML
+						contentHTML,
+						title,
+						estWords
 					}
 				}
 			`,
@@ -782,7 +668,7 @@ class App extends Component {
 		}));
 
 		const { id, authToken } = cookieControl.get("authdata"),
-			  errorTxt = "Connection lost. Please, restart the page.";
+			  errorTxt = "We couldn't save the note. You can find last update in backups.";
 
 		client.mutate({
 			mutation: gql`
@@ -819,6 +705,57 @@ class App extends Component {
 					c = b.findIndex(io => io.id === a.id);
 				if(c !== -1) {
 					b[c] = a;
+					this.setState(() => ({
+						notes: b
+					}));
+				}
+			}
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	settingNote = (title, words, targetID) => {
+		if((!title && !words) || !targetID || !this.state.editorData) return;
+
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "We couldn't submit these settings. Please, try later."
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $targetID: ID!, $title: String, $esWords: Int) {
+					settingNote(id: $id, authToken: $authToken, targetID: $targetID, title: $title, esWords: $esWords) {
+						id,
+						title,
+						currWords,
+						estWords
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				targetID, title,
+				esWords: words
+			}
+		}).then(({ data: { settingNote: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			if(this.state.editorData) {
+				this.setState(({ editorData }) => ({
+					editorData: {
+						...editorData,
+						...a
+					}
+				}));
+			}
+			if(this.state.notes) {
+				let b = Array.from(this.state.notes),
+					c = b.findIndex(io => io.id === a.id);
+
+				if(c !== -1) {
+					b[c].id = a.id;
+					b[c].title = a.title;
+					b[c].currWords = a.currWords;
+					b[c].estWords = a.estWords;
+
 					this.setState(() => ({
 						notes: b
 					}));
@@ -875,6 +812,7 @@ class App extends Component {
 					docSaved={ this.state.editorSaved }
 					onSave={ this.saveNote }
 					onClose={ () => this.setState({ editorOpened: false }) }
+					onSettingNote={ this.settingNote }
 				/>
 			</div>
         );
