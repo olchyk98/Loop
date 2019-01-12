@@ -6,33 +6,41 @@ import NoteCreatorInput from  './NoteCreatorInput';
 
 import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
+import { Link } from 'react-router-dom';
 
 import { cookieControl } from '../../utils';
 import client from '../../apollo';
 import api from '../../api';
+import links from '../../links';
 
-class NoteEditorSettingsFriend extends Component {
+class NoteEditorSettingsUser extends Component {
 	render() {
 		return(
 			<div className="rn-notes-editor-settings-invite-item">
-				<div className="rn-notes-editor-settings-invite-item-avatar">
+				<Link className="rn-notes-editor-settings-invite-item-avatar" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.id }` }>
 					<div>
 						<img src={ api.storage + this.props.avatar } alt="user" />
 					</div>
-				</div>	
-				<div className="rn-notes-editor-settings-invite-item-info">
+				</Link>	
+				<Link className="rn-notes-editor-settings-invite-item-info" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.id }` }>
 					<p className="rn-notes-editor-settings-invite-item-info-name">{ this.props.name }</p>
 					<p className="rn-notes-editor-settings-invite-item-info-shares">{ this.props.notes } joint notes</p>
-				</div>
+				</Link>
 				<div className="rn-notes-editor-settings-invite-item-join">
 					{
 						(!this.props.loading) ? (
-							(!this.props.added) ? (
-								<button key="A" type="button" className="definp rn-notes-editor-settings-invite-item-join-add" onClick={ this.props.onAdd }>
-									<i className="fas fa-plus" />
-								</button>
+							(!this.props.fired) ? (
+								(this.props.itemType === "friend") ? (
+									<button key="A" type="button" className="definp rn-notes-editor-settings-invite-item-join-add" onClick={ this.props.onFire }>
+										<i className="fas fa-plus" />
+									</button>
+								) : (this.props.allowed) ? (
+									<button key="B" type="button" className="definp rn-notes-editor-settings-invite-item-join-add" onClick={ this.props.onFire }>
+										<i className="fas fa-trash" />
+									</button>
+								) : null
 							) : (
-								<button key="B" type="button" className="definp rn-notes-editor-settings-invite-item-join-add" onClick={ this.props.onAdd }>
+								<button key="C" type="button" className="definp rn-notes-editor-settings-invite-item-join-add" onClick={ this.props.onFire }>
 									<i className="fas fa-check" />
 								</button>
 							)
@@ -55,7 +63,8 @@ class NoteEditorSettings extends Component {
 			title: "",
 			words: "",
 			stage: "MAIN_STAGE", // MAIN_STAGE, INVITE_STAGE, CONTRIBUTORS_STAGE
-			iFriends: null
+			iFriends: null,
+			iContributors: null
 		}
 	}
 
@@ -70,12 +79,14 @@ class NoteEditorSettings extends Component {
 
 	setStage = stage => {
 		if(stage === "INVITE_STAGE") {
-			this.setState(() => ({
-				iFriends: false
-			}));
+			if(!this.state.iFriends) {
+				this.setState(() => ({
+					iFriends: false
+				}));
+			}
 
 			const { id, authToken } = cookieControl.get("authdata"),
-				  errorTxt = "Something went wrong. Please, restart the page.";
+				  errorTxt = "An error occured while tried to load invite suggestions. Please, restart the page."; // weak english
 
 			client.query({
 				query: gql`
@@ -99,6 +110,41 @@ class NoteEditorSettings extends Component {
 					iFriends: a
 				}));
 			}).catch(() => this.props.castError(errorTxt));
+		} else if(stage === "CONTRIBUTORS_STAGE") {
+			if(!this.state.iContributors) {
+				this.setState(() => ({
+					iContributors: false
+				}));
+			}
+
+			const { id, authToken } = cookieControl.get("authdata"),
+				  errorTxt = "Something went wrong. Please, restart the page.";
+
+			client.query({
+				query: gql`
+					query($id: ID!, $authToken: String!, $targetID: ID!) {
+						note(id: $id, authToken: $authToken, targetID: $targetID) {
+							id,
+							contributors(except: $id) {
+								id,
+								avatar,
+								name,
+								jointNotesInt(id: $id)
+							}
+						}
+					}
+				`,
+				variables: {
+					id, authToken,
+					targetID: this.props.targetID
+				}
+			}).then(({ data: { note: a } }) => {
+				if(!a) return this.props.castError(errorTxt);
+
+				this.setState(() => ({
+					iContributors: a.contributors
+				}));
+			}).catch(() => this.props.castError(errorTxt));
 		}
 
 		this.setState(() => ({
@@ -110,12 +156,15 @@ class NoteEditorSettings extends Component {
 		if(!this.state.iFriends) return;
 
 		let qAr = (aa, ab) => {
-			let a = Array.from(this.state.iFriends);
-			a.find(io => io.id === ab).isAdded = aa;
-			a.find(io => io.id === ab).isLoading = !aa;
-			this.setState(() => ({
-				iFriends: a
-			}));
+			let a = Array.from(this.state.iFriends),
+				az = a.find(io => io.id === ab);
+			if(az) {
+				az.isFired = aa;
+				az.isLoading = !aa;
+				this.setState(() => ({
+					iFriends: a
+				}));
+			}
 		}
 		qAr(false, targetID);
 
@@ -139,6 +188,47 @@ class NoteEditorSettings extends Component {
 			if(!a) return this.props.castError(errorTxt);
 
 			qAr(true, targetID);
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	removeContributor = targetID => {
+		if(!this.state.iContributors) return;
+
+		let a = Array.from(this.state.iContributors),
+			b = a.find(io => io.id === targetID);
+
+		if(b) {
+			b.isFired = false;
+			b.isLoading = true;
+			this.setState(() => ({
+				iContributors: a
+			}));
+		}
+
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "An error occured while tried to kick this user from the conversation. Please, try later";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $authToken: String!, $noteID: ID!, $targetID: ID!) {
+					kickNoteContributor(id: $id, authToken: $authToken, noteID: $noteID, targetID: $targetID) {
+						id
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				targetID,
+				noteID: this.props.targetID
+			}
+		}).then(({ data: { kickNoteContributor: c } }) => {
+			if(!c) return this.props.castError(errorTxt);
+
+			let d = Array.from(this.state.iContributors);
+			d.splice(d.findIndex(io => io.id === targetID), 1);
+			this.setState(() => ({
+				iContributors: d
+			}));
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
@@ -212,7 +302,7 @@ class NoteEditorSettings extends Component {
 								Submit
 							</button>
 						</Fragment>
-					) : (
+					) : (this.state.stage === "INVITE_STAGE") ? (
 						<Fragment>
 							<div className="rn-notes-editor-settings-title">
 								<button className="definp" onClick={ () => this.setStage("MAIN_STAGE") }>
@@ -225,16 +315,51 @@ class NoteEditorSettings extends Component {
 								{
 									(this.state.iFriends !== null) ? (
 										(typeof this.state.iFriends === "object") ? (
-											this.state.iFriends.map(({ id, avatar, name, jointNotesInt: notes, isAdded, isLoading }) => (
-												<NoteEditorSettingsFriend
+											this.state.iFriends.map(({ id, avatar, name, jointNotesInt: notes, isFired, isLoading }) => (
+												<NoteEditorSettingsUser
 													key={ id }
 													id={ id }
+													itemType="friend"
 													avatar={ avatar }
 													loading={ isLoading }
-													added={ isAdded }
+													fired={ isFired }
 													name={ name }
 													notes={ notes }
-													onAdd={ () => (!isAdded) ? this.addContributor(id) : null }
+													onFire={ () => (!isFired) ? this.addContributor(id) : null }
+												/>
+											))
+										) : ( // loading
+ 											<Loadericon />
+										)
+									) : null
+								}
+							</div>
+						</Fragment>
+					) : ( // CONTRIBUTORS_STAGE
+						<Fragment>
+							<div className="rn-notes-editor-settings-title">
+								<button className="definp" onClick={ () => this.setStage("MAIN_STAGE") }>
+									<i className="fas fa-angle-left" />
+								</button>
+								<h3 className="text">Contributors</h3>
+								<div />
+							</div>
+							<div className="rn-notes-editor-settings-invite">
+								{
+									(this.state.iContributors !== null) ? (
+										(typeof this.state.iContributors === "object") ? (
+											this.state.iContributors.map(({ id, avatar, name, jointNotesInt: notes, isFired, isLoading }) => (
+												<NoteEditorSettingsUser
+													key={ id }
+													id={ id }
+													itemType="contributor"
+													allowed={ this.props.clientHost }
+													avatar={ avatar }
+													loading={ isLoading }
+													fired={ isFired }
+													name={ name }
+													notes={ notes }
+													onFire={ () => (!isFired) ? this.removeContributor(id) : null }
 												/>
 											))
 										) : ( // loading

@@ -499,6 +499,7 @@ class NoteEditor extends Component {
 					</div>
 					<NoteEditorSettings
 						targetID={ this.props.data.id }
+						clientHost={ this.props.data.clientHost }
 						active={ this.state.settingsOpen }
 						currentTitle={ this.props.data.title }
 						currentExword={ this.props.data.estWords }
@@ -536,6 +537,10 @@ class App extends Component {
 	}
 
 	componentDidMount() {
+		this.loadNotesList();
+	}
+
+	loadNotesList = () => {
 		const { id, authToken } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't load your notes. Please, try later.";
 
@@ -636,14 +641,15 @@ class App extends Component {
 			editorOpened: true
 		}));
 
-		client.query({ // TODO: Set rc
+		client.query({
 			query: gql`
 				query($id: ID!, $authToken: String!, $targetID: ID!) {
 					note(id: $id, authToken: $authToken, targetID: $targetID) {
 						id,
 						contentHTML,
 						title,
-						estWords
+						estWords,
+						clientHost(id: $id)
 					}
 				}
 			`,
@@ -764,6 +770,12 @@ class App extends Component {
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
+	closeEditor = () => {
+		// Close editor and update notes 
+		this.setState({ editorOpened: false });
+		this.loadNotesList();
+	}
+
     render() {
         return (
             <div className="rn rn-notes">
@@ -811,7 +823,7 @@ class App extends Component {
 					active={ this.state.editorOpened }
 					docSaved={ this.state.editorSaved }
 					onSave={ this.saveNote }
-					onClose={ () => this.setState({ editorOpened: false }) }
+					onClose={ this.closeEditor }
 					onSettingNote={ this.settingNote }
 				/>
 			</div>

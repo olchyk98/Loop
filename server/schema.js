@@ -548,8 +548,6 @@ const MessageType = new GraphQLObjectType({
 });
 
 const NoteType = new GraphQLObjectType({
-	// WARNING: The content field has fixed type: HTML
-
 	name: "NoteType",
 	fields: () => ({
 		id: { type: new GraphQLNonNull(GraphQLID) },
@@ -561,13 +559,19 @@ const NoteType = new GraphQLObjectType({
 		contributors: {
 			type: new GraphQLList(UserType),
 			args: {
+				except: { type: GraphQLID },
 				limit: { type: GraphQLInt }
 			},
-			resolve: ({ contributors, creatorID }, { limit }) => User.find({
-				_id: {
+			resolve({ contributors, creatorID }, { limit, except }) {
+				let a = {
 					$in: [...contributors, str(creatorID)]
 				}
-			}).limit(limit || Infinity)
+				if(except) a.$ne = except;
+
+				return User.find({
+					_id: a
+				}).limit(limit || 0)
+			}
 		},
 		title: { type: GraphQLString },
 		content: {
@@ -591,7 +595,14 @@ const NoteType = new GraphQLObjectType({
 			resolve: ({ contentHTML }) => contentHTML.replace(/<\/?[^>]+(>|$)/g, "").split(" ").length
 		},
 		estWords: { type: GraphQLInt },
-		contentHTML: { type: GraphQLString }
+		contentHTML: { type: GraphQLString },
+		clientHost: {
+			type: GraphQLBoolean,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			resolve: ({ creatorID }, { id }) => str(creatorID) === str(id)
+		}
 	})
 });
 
@@ -1867,6 +1878,37 @@ const RootMutation = new GraphQLObjectType({
 					]
 				}, {
 					$addToSet: {
+						contributors: str(targetID)
+					}
+				}, (_, a) => a);
+			}
+		},
+		kickNoteContributor: {
+			type: NoteType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				noteID: { type: new GraphQLNonNull(GraphQLID) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, authToken, noteID, targetID }) {
+				let a = await validateAccount(id, authToken);
+				if(!a) return null;
+
+				return Note.findOneAndUpdate({
+					_id: noteID,
+					$or: [
+						{
+							contributors: {
+								$in: [str(id)]
+							}
+						},
+						{
+							creatorID: str(id)
+						}
+					]
+				}, {
+					$pull: {
 						contributors: str(targetID)
 					}
 				}, (_, a) => a);
