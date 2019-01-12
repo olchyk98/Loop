@@ -242,8 +242,8 @@ class App extends Component {
 
 			client.query({
 				query: gql`
-					query($id: ID!, $authToken: String!) {
-						user(id: $id, authToken: $authToken) {
+					query($id: ID!, $authToken: String!, $targetID: ID) {
+						user(id: $id, authToken: $authToken, targetID: $targetID) {
 							id,
 							gallery {
 								id,
@@ -253,7 +253,8 @@ class App extends Component {
 					}
 				`,
 				variables: {
-					id, authToken
+					id, authToken,
+					targetID: this.state.user.id
 				}
 			}).then(({ data: { user } }) => {
 				if(!user) return this.props.castError(errorTxt);
@@ -275,15 +276,16 @@ class App extends Component {
 
 			client.query({
 				query: gql`
-					query($id: ID!, $authToken: String!) {
-						user(id: $id, authToken: $authToken) {
+					query($id: ID!, $authToken: String!, $targetID: ID) {
+						user(id: $id, authToken: $authToken, targetID: $targetID) {
 							id,
 							description
 						}
 					}
 				`,
 				variables: {
-					id, authToken
+					id, authToken,
+					targetID: this.state.user.id
 				}
 			}).then(({ data: { user } }) => {
 				this.setState(() => ({
@@ -992,7 +994,7 @@ class App extends Component {
 											/>
 										))
 									) : (
-										<p className="rn-account-display-gallery-grid-alertion">Nothing here :|</p>
+										<p className="rn-account-display-gallery-grid-alertion">Nothing here</p>
 									)
 								)
 							}

@@ -31,6 +31,7 @@
 	box-shadow:0px 0px 15px -7.5px var(--defaultborder);
 	margin-top:65px;
 	margin-bottom:25px;
+	overflow:hidden;
 }
 
 .rn-feed-new > * {

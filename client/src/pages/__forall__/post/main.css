@@ -65,6 +65,7 @@
 	align-items:center;
 	font-size:.95em;
 	font-weight:500;
+	color:rgba(0, 0, 0, .85);
 }
 
 .rn-feed-mat-item-head-info-mat-name > * {

@@ -976,9 +976,29 @@ class App extends Component {
 							a
 						]
 					}
-				}), this.scrollEndDialog);
+				}), () => {
+					// Filter
+					let b = Array.from(this.state.dialog.messages),
+						c = [];
+
+					b.filter(io => {
+						if(c.findIndex(ia => ia === io) === -1) {
+							c.push(io);
+							return true;
+						} else {
+							return false;
+						}
+					});
+
+					this.setState(({ dialog }) => ({
+						dialog: {
+							...dialog,
+							messages: b
+						}
+					}), this.scrollEndDialog);
+				});
 			},
-			error: () => null
+			error: () => this.props.castError(errorTxt)
 		});
 
 		this.dialogSettingsSubscription = client.subscribe({
@@ -1108,8 +1128,7 @@ class App extends Component {
 	}
 
 	inviteToConversation = (targetID, name) => {
-		const { id, authToken } = cookieControl.get("authdata"),
-			  errorTxt = `An error occured while we tried to invite ${ name } to the conversation. Please, try again.`;
+		const { id, authToken } = cookieControl.get("authdata");
 
 		let aqE = aa => {
 			let a = Array.from(this.state.dialog.inviteSuggestions);
@@ -1138,7 +1157,7 @@ class App extends Component {
 				conversationID: this.state.dialog.id
 			}
 		}).then(({ data: { addUserToConversation: b } }) => {
-			if(!b) return this.props.castError(errorTxt);
+			if(!b) return;
 
 			aqE(false);
 
@@ -1157,7 +1176,7 @@ class App extends Component {
 				}
 			}));
 
-		}).catch(() => this.props.castError(errorTxt));
+		});
 	}
 
 	settingConversation = (avatar, name, color) => {

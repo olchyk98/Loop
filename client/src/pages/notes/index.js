@@ -9,7 +9,7 @@ import { gql } from 'apollo-boost';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 
-import { Editor, EditorState, RichUtils } from 'draft-js';
+import { Editor, EditorState, RichUtils, ContentState } from 'draft-js';
 import { stateFromHTML } from 'draft-js-import-html';
 import { stateToHTML } from 'draft-js-export-html';
 
@@ -35,7 +35,7 @@ class Note extends Component {
 		{
 			let a = [
 				(<Fragment>You can write about your day,
-				or about your homework. Do can do whatever you want.
+				or about your homework. You can write whatever you want.
 				<br /><br />Just start editing this note...</Fragment>),
 
 				(<Fragment>There is nothing here yet, but you can invite your friends to help you.
@@ -247,12 +247,13 @@ class NoteEditor extends Component {
 			editState: EditorState.createEmpty(),
 			settingsOpen: false,
 			showPlaceholder: true,
-			warningNSaveExit: false
+			warningNSaveExit: false,
+			internalData: null
 		}
 
 		this.editorMat = React.createRef();
-		this.savingInt = null;
 		this.lastContent = null;
+		this.editorSubscription = null;
 	}
 
 	componentDidUpdate(prevProps) {
@@ -260,10 +261,14 @@ class NoteEditor extends Component {
 			(!prevProps.data && this.props.data) ||
 			(prevProps.data && this.props.data && prevProps.data.id !== this.props.data.id)
 		) { // set editor state
+			(this.editorSubscription && this.editorSubscription());
+
 			return this.setState(() => ({
+				internalData: null,
 				editState: EditorState.createWithContent(stateFromHTML(this.props.data.contentHTML)),
 			}), () => {
 				this.lastContent = this.state.editState.getCurrentContent().getPlainText();
+				this.subscribeToNote();
 			});
 		}
 
@@ -288,6 +293,53 @@ class NoteEditor extends Component {
 	    return a.getCurrentContent() // // I HATE MYSELF
 	          .getBlockForKey(a.getSelection().getStartKey())
 	          .getType();
+	}
+
+	subscribeToNote = () => {
+		const { id, authToken } = cookieControl.get("authdata"),
+			  errorTxt = "Something went wrong. Please, restart the page.";
+
+		client.subscribe({
+			query: gql`
+				subscription($id: ID!, $authToken: String!, $targetID: ID!) {
+					listenNoteUpdates(id: $id, authToken: $authToken, targetID: $targetID) {
+						id,
+						contentHTML,
+						estWords,
+						title
+					}
+				}
+			`,
+			variables: {
+				id, authToken,
+				targetID: this.props.data.id
+			}
+		}).subscribe({
+			next: ({ data: { listenNoteUpdates: a } }) => {
+				if(!a) return this.props.castError(errorTxt);
+
+				// Issue: When the state updates by subscription hh the cursor jumps to the beginning.
+
+				// Get cursor position before the update
+				let prevC = Object.assign({}, this.state.editState.getSelection());
+
+				this.setState(() => ({
+					// internalData: {
+					// 	...this.props.data,
+					// 	...a
+					// },
+					// editState: EditorState.createWithContent(stateFromHTML(a.contentHTML)),
+					/*end*/// editState: EditorState.moveFocusToEnd(EditorState.createWithContent(stateFromHTML(a.contentHTML))),
+					editState: EditorState.forceSelection(
+						EditorState.createWithContent(stateFromHTML(a.contentHTML)),
+						prevC
+					)
+				}), () => {
+					this.lastContent = this.state.editState.getCurrentContent().getPlainText();
+				});
+			},
+			catch: () => this.props.castError(errorTxt)
+		})
 	}
 
 	editText = (state = null, action = "") => {
@@ -319,8 +371,6 @@ class NoteEditor extends Component {
 			return console.error("Editor: Invlid action");
 		}
 
-		// props.editorState.getCurrentInlineStyle
-
 		// Receive, send data
 		// stateFromHTML // this.state.editState.getCurrentContent()
 		// stateToHTML // this.state.editState.getCurrentContent()
@@ -335,15 +385,12 @@ class NoteEditor extends Component {
 
 	saveDocument = (force = false) => {
 		let a = this.state.editState.getCurrentContent().getPlainText();
-		if((this.lastContent !== a || force) && !this.savingInt) {
+		if((this.lastContent !== a || force)) {
 			this.lastContent = a;
-			this.savingInt = setTimeout(() => {
-				this.savingInt = null;
-				this.props.onSave(
-					this.props.data.id,
-					stateToHTML(this.state.editState.getCurrentContent())
-				);
-			}, 300); // refresh freq
+			this.props.onSave(
+				(this.state.internalData && this.state.internalData.id) || this.props.data.id,
+				stateToHTML(this.state.editState.getCurrentContent())
+			);
 		}
 	}
 
@@ -498,14 +545,14 @@ class NoteEditor extends Component {
 						</button>
 					</div>
 					<NoteEditorSettings
-						targetID={ this.props.data.id }
-						clientHost={ this.props.data.clientHost }
+						targetID={ (this.state.internalData && this.state.internalData.id) || this.props.data.id }
+						clientHost={ (this.state.internalData && this.state.internalData.clientHost) || this.props.data.clientHost }
 						active={ this.state.settingsOpen }
-						currentTitle={ this.props.data.title }
-						currentExword={ this.props.data.estWords }
+						currentTitle={ (this.state.internalData && this.state.internalData.title) || this.props.data.title }
+						currentExword={ (this.state.internalData && this.state.internalData.estWords) || this.props.data.estWords }
 						onClose={ () => this.setState(() => ({ settingsOpen: false })) }
 						_onSubmit={(title, words) => {
-							this.props.onSettingNote(title, words, this.props.data.id);
+							this.props.onSettingNote(title, words, (this.state.internalData && this.state.internalData.id) || this.props.data.id);
 							this.setState(() => ({ settingsOpen: false }));
 						}}
 					/>

@@ -63,7 +63,7 @@ class ScreenInput extends Component {
 						title="Please, fill in this field."
 						onChange={ ({ target: { value } }) => { this.props._onChange(value); if(this.props.validatable) this.handleChange(value); } }
 						placeholder={ this.props._placeholder }
-						className="rn-presentation-stage-input-field definp"
+						className={ `rn-presentation-stage-input-field definp${ (!this.props.isLoading) ? "" : " loading" }` }
 					/>
 					<div className="rn-presentation-stage-input-border" />
 					{
@@ -472,6 +472,7 @@ class App extends Component {
 						_placeholder="set190283"
 						_type="text"
 						validatable={ false }
+						isLoading={ this.getSubmitStatus('login') === null }
 						_onChange={ value => this.setDataValue("login", "login", value) }
 					/>
 					<ScreenInput
@@ -479,6 +480,7 @@ class App extends Component {
 						_placeholder="*******"
 						_type="password"
 						validatable={ false }
+						isLoading={ this.getSubmitStatus('login') === null }
 						_onChange={ value => this.setDataValue("login", "password", value) }
 					/>
 				</Screen>
@@ -507,6 +509,7 @@ class App extends Component {
 						_onChange={ value => this.setDataValue("register", "login", value) }
 						onExternalValidate={ this._external_validateLogin }
 						validatable={ true }
+						isLoading={ this.getSubmitStatus('register') === null }
 						isValid={ this.state.data.register.loginValid }
 					/>
 					<ScreenInput
@@ -515,6 +518,7 @@ class App extends Component {
 						_type="password"
 						_onChange={ value => this.setDataValue("register", "password", value) }
 						validatable={ false }
+						isLoading={ this.getSubmitStatus('register') === null }
 					/>
 					<ScreenInput
 						title="Name"
@@ -522,6 +526,7 @@ class App extends Component {
 						_type="text"
 						_onChange={ value => this.setDataValue("register", "name", value) }
 						validatable={ false }
+						isLoading={ this.getSubmitStatus('register') === null }
 					/>
 				</Screen>
 			</div>

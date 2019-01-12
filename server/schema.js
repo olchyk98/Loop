@@ -1451,7 +1451,7 @@ const RootMutation = new GraphQLObjectType({
 				if(!b) return null;
 
 				// Validate if the conversation exists
-				let c = Conversation.findOne({
+				let c = await Conversation.findOne({
 					$or: [ // XXX
 						{
 							contributors: [
@@ -1815,6 +1815,11 @@ const RootMutation = new GraphQLObjectType({
 					contentHTML: content
 				}, (_, a) => a);
 
+				pubsub.publish('noteContentUpdated', {
+					posterID: id,
+					note: b
+				});
+
 				return b;
 			}
 		},
@@ -1987,6 +1992,26 @@ const RootSubscription = new GraphQLObjectType({
 				}
 			),
 			resolve: ({ conversation }) => conversation
+		},
+		listenNoteUpdates: {
+			type: NoteType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				authToken: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			subscribe: withFilter(
+				() => pubsub.asyncIterator('noteContentUpdated'),
+				async ({ note, posterID }, { id, authToken, targetID }) => {
+					if(str(note._id) !== str(targetID) || str(posterID) === str(id)) return false;
+
+					let a = await validateAccount(id, authToken);
+					if(!a) return false;
+
+					return true;
+				}
+			),
+			resolve: ({ note }) => note
 		}
 	}
 })
