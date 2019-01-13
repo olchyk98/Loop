@@ -12,11 +12,15 @@ const client = new ApolloClient({
 		sys => getMainDefinition(sys.query).operation === "subscription",
 		new WebSocketLink({
 			uri: api.websocket,
+			credentials: 'include',
 			options: {
 				reconnect: true
 			}
 		}),
-		createUploadLink({ uri: api.server })
+		createUploadLink({
+			uri: api.server,
+			credentials: 'include',
+		})
 	),
 	cache: new InMemoryCache(),
 	// disable cache

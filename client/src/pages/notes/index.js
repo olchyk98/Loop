@@ -319,21 +319,21 @@ class NoteEditor extends Component {
 				if(!a) return this.props.castError(errorTxt);
 
 				// Issue: When the state updates by subscription hh the cursor jumps to the beginning.
+				/*[ https://github.com/facebook/draft-js/issues/1975 ]*/
 
-				// Get cursor position before the update
-				let prevC = Object.assign({}, this.state.editState.getSelection());
+				// let prevC = Object.assign({}, this.state.editState.getSelection());
 
 				this.setState(() => ({
-					// internalData: {
-					// 	...this.props.data,
-					// 	...a
-					// },
+					internalData: {
+						...this.props.data,
+						...a
+					},
 					// editState: EditorState.createWithContent(stateFromHTML(a.contentHTML)),
-					/*end*/// editState: EditorState.moveFocusToEnd(EditorState.createWithContent(stateFromHTML(a.contentHTML))),
-					editState: EditorState.forceSelection(
-						EditorState.createWithContent(stateFromHTML(a.contentHTML)),
-						prevC
-					)
+					editState: EditorState.moveFocusToEnd(EditorState.createWithContent(stateFromHTML(a.contentHTML))),
+					// editState: EditorState.forceSelection(
+					// 	EditorState.createWithContent(stateFromHTML(a.contentHTML)),
+					// 	prevC
+					// )
 				}), () => {
 					this.lastContent = this.state.editState.getCurrentContent().getPlainText();
 				});
