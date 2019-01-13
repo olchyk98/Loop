@@ -1906,8 +1906,6 @@ const RootSubscription = new GraphQLObjectType({
 				() => pubsub.asyncIterator('conversationMessageSent'),
 				async ({ conversationID: targetID }, { id, conversationID }, { req }) => {
 					if(str(targetID) !== str(conversationID)) return false;
-					let a = await validateAccount(id, req.session.authToken);
-					if(!a) return false;
 
 					return true;
 				}
@@ -1928,9 +1926,6 @@ const RootSubscription = new GraphQLObjectType({
 						!conversation.contributors.includes(str(id))
 					) return false;
 
-					let a = await validateAccount(id, req.session.authToken);
-					if(!a) return false;
-
 					return true;
 				}
 			),
@@ -1946,9 +1941,6 @@ const RootSubscription = new GraphQLObjectType({
 				async ({ conversation }, { id }, { req }) => {
 					// find all user's conversations
 					// check if updated conversation in this list
-
-					let a = await validateAccount(id, req.session.authToken);
-					if(!a) return false;
 
 					let b = (await Conversation.find({ // get ids
 						contributors: {
@@ -1969,13 +1961,16 @@ const RootSubscription = new GraphQLObjectType({
 			},
 			subscribe: withFilter(
 				() => pubsub.asyncIterator('noteContentUpdated'),
-				async ({ note, posterID }, { id, targetID }, { req }) => {
-					if(str(note._id) !== str(targetID) || str(posterID) === str(id)) return false;
+				async ({ note, posterID }, { id, targetID }) => {
+					return !(
+						str(note._id) !== str(targetID) ||
+						str(posterID) === str(id) ||
+						(
+							!note.contributors.includes(str(id)) &&
+							str(id) !== str(note.creatorID)
+						)
+					);
 
-					let a = await validateAccount(id, req.session.authToken);
-					if(!a) return false;
-
-					return true;
 				}
 			),
 			resolve: ({ note }) => note

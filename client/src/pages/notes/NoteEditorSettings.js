@@ -85,13 +85,13 @@ class NoteEditorSettings extends Component {
 				}));
 			}
 
-			const { id, authToken } = cookieControl.get("authdata"),
+			const { id } = cookieControl.get("authdata"),
 				  errorTxt = "An error occured while tried to load invite suggestions. Please, restart the page."; // weak english
 
 			client.query({
 				query: gql`
-					query($id: ID!, $authToken: String!, $noteID: ID!) {
-						getNoteInviteSuggestions(id: $id, authToken: $authToken, noteID: $noteID) {
+					query($id: ID! $noteID: ID!) {
+						getNoteInviteSuggestions(id: $id, noteID: $noteID) {
 							id,
 							avatar,
 							name,
@@ -100,7 +100,7 @@ class NoteEditorSettings extends Component {
 					}
 				`,
 				variables: {
-					id, authToken,
+					id,
 					noteID: this.props.targetID
 				}
 			}).then(({ data: { getNoteInviteSuggestions: a } }) => {
@@ -117,13 +117,13 @@ class NoteEditorSettings extends Component {
 				}));
 			}
 
-			const { id, authToken } = cookieControl.get("authdata"),
+			const { id } = cookieControl.get("authdata"),
 				  errorTxt = "Something went wrong. Please, restart the page.";
 
 			client.query({
 				query: gql`
-					query($id: ID!, $authToken: String!, $targetID: ID!) {
-						note(id: $id, authToken: $authToken, targetID: $targetID) {
+					query($id: ID!, $targetID: ID!) {
+						note(id: $id, targetID: $targetID) {
 							id,
 							contributors(except: $id) {
 								id,
@@ -135,7 +135,7 @@ class NoteEditorSettings extends Component {
 					}
 				`,
 				variables: {
-					id, authToken,
+					id,
 					targetID: this.props.targetID
 				}
 			}).then(({ data: { note: a } }) => {
@@ -168,19 +168,19 @@ class NoteEditorSettings extends Component {
 		}
 		qAr(false, targetID);
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "An error occured while tried to add this user to conversation. Please, try later";
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $noteID: ID!, $targetID: ID!) {
-					addNoteContributor(id: $id, authToken: $authToken, noteID: $noteID, targetID: $targetID) {
+				mutation($id: ID!, $noteID: ID!, $targetID: ID!) {
+					addNoteContributor(id: $id, noteID: $noteID, targetID: $targetID) {
 						id
 					}
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				noteID: this.props.targetID,
 				targetID 
 			}
@@ -205,19 +205,19 @@ class NoteEditorSettings extends Component {
 			}));
 		}
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "An error occured while tried to kick this user from the conversation. Please, try later";
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $noteID: ID!, $targetID: ID!) {
-					kickNoteContributor(id: $id, authToken: $authToken, noteID: $noteID, targetID: $targetID) {
+				mutation($id: ID!, $noteID: ID!, $targetID: ID!) {
+					kickNoteContributor(id: $id, noteID: $noteID, targetID: $targetID) {
 						id
 					}
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID,
 				noteID: this.props.targetID
 			}

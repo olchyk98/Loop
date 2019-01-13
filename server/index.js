@@ -29,7 +29,7 @@ app.use('/files', express.static('./files'));
 const apolloServer = new ApolloServer({
 	schema,
 	engine: false,
-	context: ({ req }) => ({ req }),
+	context: ({ req }) => ({ req })
 });
 const server = createServer(app);
 
@@ -37,7 +37,7 @@ apolloServer.applyMiddleware({
 	app,
 	path: '/graphql',
 	cors: {
-		origin: 'http://localhost:3000',
+		origin: 'http://192.168.10.170:5000',
 		credentials: true
 	}
 });

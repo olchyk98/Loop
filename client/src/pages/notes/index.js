@@ -9,7 +9,7 @@ import { gql } from 'apollo-boost';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 
-import { Editor, EditorState, RichUtils, ContentState } from 'draft-js';
+import { Editor, EditorState, RichUtils, ContentState, convertToRaw, convertFromRaw } from 'draft-js';
 import { stateFromHTML } from 'draft-js-import-html';
 import { stateToHTML } from 'draft-js-export-html';
 
@@ -290,7 +290,7 @@ class NoteEditor extends Component {
 
 	getEditorBlock = () => {
 		let a = this.state.editState;
-	    return a.getCurrentContent() // // I HATE MYSELF
+	    return a.getCurrentContent()
 	          .getBlockForKey(a.getSelection().getStartKey())
 	          .getType();
 	}
@@ -320,8 +320,40 @@ class NoteEditor extends Component {
 
 				// Issue: When the state updates by subscription hh the cursor jumps to the beginning.
 				/*[ https://github.com/facebook/draft-js/issues/1975 ]*/
+				// Fix: I'm not sure about performance and is it the best way to do that.
 
-				// let prevC = Object.assign({}, this.state.editState.getSelection());
+				let prevC = this.state.editState.getSelection()
+				
+				let blocks = convertToRaw(this.state.editState.getCurrentContent()).blocks,
+					newState = EditorState.createWithContent(stateFromHTML(a.contentHTML));
+
+				// data: {}
+				// depth: 0
+				// entityRanges: []
+				// inlineStyleRanges: []
+				// key: "7hai0"
+				// text: "341431146041ojafa143e54444s"
+				// type: "unstyled"
+
+				convertToRaw(newState.getCurrentContent()).blocks.forEach((io, ia) => {
+					if(!blocks[ia]) { // new block
+						blocks.push(io);
+					} else { // blocks[ia].text !== io.getText() || blocks[ia].type !== io.getType()
+						// set new value to this block by key
+						io.key = blocks[ia].key;
+						blocks[ia] = io;
+						// blocks[ia].text = io.getText();
+						// blocks[ia].type = io.getType();
+						// blocks[ia].data = io.getData();
+					}
+				});
+
+				let preparState = convertToRaw(this.state.editState.getCurrentContent());
+				preparState.blocks = blocks;
+				newState = EditorState.forceSelection(
+					EditorState.createWithContent(convertFromRaw(preparState)),
+					prevC
+				);
 
 				this.setState(() => ({
 					internalData: {
@@ -329,11 +361,12 @@ class NoteEditor extends Component {
 						...a
 					},
 					// editState: EditorState.createWithContent(stateFromHTML(a.contentHTML)),
-					editState: EditorState.moveFocusToEnd(EditorState.createWithContent(stateFromHTML(a.contentHTML))),
+					// editState: EditorState.moveFocusToEnd(EditorState.createWithContent(stateFromHTML(a.contentHTML))),
 					// editState: EditorState.forceSelection(
 					// 	EditorState.createWithContent(stateFromHTML(a.contentHTML)),
 					// 	prevC
 					// )
+					editState: newState
 				}), () => {
 					this.lastContent = this.state.editState.getCurrentContent().getPlainText();
 				});
