@@ -252,8 +252,7 @@ class NoteEditor extends Component {
 		}
 
 		this.editorMat = React.createRef();
-		this.lastContent = null;
-		this.editorSubscription = null;
+		this.lastContent = this.saveInt = this.editorSubscription = null;
 	}
 
 	componentDidUpdate(prevProps) {
@@ -417,13 +416,19 @@ class NoteEditor extends Component {
 	}
 
 	saveDocument = (force = false) => {
+		if(this.saveInt) return;
+	
 		let a = this.state.editState.getCurrentContent().getPlainText();
 		if((this.lastContent !== a || force)) {
-			this.lastContent = a;
-			this.props.onSave(
-				(this.state.internalData && this.state.internalData.id) || this.props.data.id,
-				stateToHTML(this.state.editState.getCurrentContent())
-			);
+			this.saveInt = setTimeout(() => {
+				this.saveInt = null;
+
+				this.lastContent = a;
+				this.props.onSave(
+					(this.state.internalData && this.state.internalData.id) || this.props.data.id,
+					stateToHTML(this.state.editState.getCurrentContent())
+				);
+			}, 200) // 0.1s
 		}
 	}
 

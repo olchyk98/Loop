@@ -37,7 +37,7 @@ apolloServer.applyMiddleware({
 	app,
 	path: '/graphql',
 	cors: {
-		origin: 'http://192.168.10.170:5000',
+		origin: 'http://localhost:3000',
 		credentials: true
 	}
 });
