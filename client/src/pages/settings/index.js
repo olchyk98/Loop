@@ -61,13 +61,13 @@ class App extends Component {
 	}
 
 	componentDidMount() {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't connect to the server. Please, check your internet connection."
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!) {
-					user(id: $id, authToken: $authToken) {
+				query($id: ID!) {
+					user(id: $id) {
 						id,
 						login,
 						name
@@ -75,7 +75,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken
+				id
 			}
 		}).then(({ data: { user } }) => {
 			if(!user) return this.props.castError(errorTxt);
@@ -114,14 +114,14 @@ class App extends Component {
 
 		switch(stage) {
 			case 'MAIN_BLOCK': {
-				const { id, authToken } = cookieControl.get("authdata"),
+				const { id } = cookieControl.get("authdata"),
 					  { login, password, name } = xs.data,
 					  errorTxt = "We couldn't submit new data. Please, try later."
 
 				client.mutate({
 					mutation: gql`
-						mutation($id: ID!, $authToken: String!, $name: String, $login: String, $password: String) {
-							settingProfile(id: $id, authToken: $authToken, name: $name, login: $login, password: $password) {
+						mutation($id: ID!, $name: String, $login: String, $password: String) {
+							settingProfile(id: $id, name: $name, login: $login, password: $password) {
 								id,
 								login,
 								name
@@ -129,7 +129,7 @@ class App extends Component {
 						}
 					`,
 					variables: {
-						id, authToken,
+						id,
 						login, password, name
 					}
 				}).then(({ data: { settingProfile: a } }) => {

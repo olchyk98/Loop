@@ -134,7 +134,7 @@ const UserType = new GraphQLObjectType({
 		mutualFriends: {
 			type: new GraphQLList(UserType),
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			resolve({ id }, { id: _id }) {
 				if(str(id) === str(_id)) return [];
@@ -159,7 +159,7 @@ const UserType = new GraphQLObjectType({
 		mutualFriendsInt: {
 			type: GraphQLInt,
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			async resolve({ id }, { id: _id }) {
 				if(str(id) === str(_id)) return 0;
@@ -194,7 +194,7 @@ const UserType = new GraphQLObjectType({
 		isSubscribed: {
 			type: GraphQLBoolean,
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			async resolve({ id: _id }, { id }) {
 				let a = await User.findById(id);
@@ -204,7 +204,7 @@ const UserType = new GraphQLObjectType({
 		isFriend: {
 			type: GraphQLBoolean,
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			async resolve({ id: _id }, { id }) {
 				let a = await User.findOne({
@@ -222,7 +222,7 @@ const UserType = new GraphQLObjectType({
 		isWaitingFriend: { // user is waiting
 			type: GraphQLBoolean,
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			async resolve({ id: _id }, { id }) {
 				let a = await User.countDocuments({
@@ -238,7 +238,7 @@ const UserType = new GraphQLObjectType({
 		isTrialFriend: { // we're waiting
 			type: GraphQLBoolean,
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			resolve: ({ waitingFriends }, { id }) => waitingFriends.includes(str(id))
 		},
@@ -272,7 +272,7 @@ const UserType = new GraphQLObjectType({
 		jointNotesInt: {
 			type: GraphQLInt,
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			resolve: ({ id }, { id: anID }) => Note.countDocuments({
 				contributors: {
@@ -298,7 +298,7 @@ const PostType = new GraphQLObjectType({
 		isLiked: {
 			type: GraphQLBoolean,
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			resolve: ({ likes }, { id }) => likes.includes(str(id))
 		},
@@ -334,7 +334,7 @@ const ImageType = new GraphQLObjectType({
 		isLiked: {
 			type: GraphQLBoolean,
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			resolve: ({ likes }, { id }) => likes.includes(id)
 		},
@@ -373,7 +373,7 @@ const CommentType = new GraphQLObjectType({
 		isLiked: {
 			type: GraphQLBoolean,
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			resolve: ({ likes }, { id }) => likes.includes(id)
 		},
@@ -474,11 +474,10 @@ const ConversationType = new GraphQLObjectType({
 			type: new GraphQLList(UserType),
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) }
 			},
-			async resolve({ contributors }, { id, authToken }) {
+			async resolve({ contributors }, { id }, { req }) {
 				if(!contributors.includes(id)) return null;
-				let a = await validateAccount(id, authToken);
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await User.find({
@@ -599,7 +598,7 @@ const NoteType = new GraphQLObjectType({
 		clientHost: {
 			type: GraphQLBoolean,
 			args: {
-				id: { type: new GraphQLNonNull(GraphQLID) }
+				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			resolve: ({ creatorID }, { id }) => str(creatorID) === str(id)
 		}
@@ -617,11 +616,10 @@ const RootQuery = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				targetID: { type: GraphQLID }
 			},
-			async resolve(_, { id, authToken, targetID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				return (targetID) ? User.findById(targetID) : a;
@@ -630,7 +628,7 @@ const RootQuery = new GraphQLObjectType({
 		loginExists: {
 			type: GraphQLBoolean,
 			args: {
-				login: { type: new GraphQLNonNull(GraphQLString) }
+				login: { type: new GraphQLNonNull(GraphQLString) },
 			},
 			resolve: async (_, { login }) => !(await User.findOne({ login }))
 		},
@@ -641,7 +639,7 @@ const RootQuery = new GraphQLObjectType({
 		image: {
 			type: ImageType,
 			args: {
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			resolve: (_, { targetID }) => Image.findById(targetID)
 		},
@@ -653,10 +651,9 @@ const RootQuery = new GraphQLObjectType({
 			type: new GraphQLList(PostType),
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) }
 			},
-			async resolve(_, { id, authToken }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				return Post.find({
@@ -675,13 +672,12 @@ const RootQuery = new GraphQLObjectType({
 			type: new GraphQLList(UserType),
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				match: { type: new GraphQLNonNull(GraphQLString) },
-				section: { type: new GraphQLNonNull(GraphQLString) }
+				section: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			async resolve(_, { id, authToken, match, section }) {
+			async resolve(_, { id, match, section }, { req }) {
 				// Validate requester
-				let a = await validateAccount(id, authToken);
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = new RegExp(match, "i"), // Create match regex
@@ -717,12 +713,11 @@ const RootQuery = new GraphQLObjectType({
 			type: ConversationType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				targetID: { type: new GraphQLNonNull(GraphQLID) },
 				seeConversation: { type: GraphQLBoolean }
 			},
-			async resolve(_, { id, authToken, targetID, seeConversation }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID, seeConversation }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await Conversation.findOne({
@@ -751,12 +746,11 @@ const RootQuery = new GraphQLObjectType({
 			type: new GraphQLList(UserType),
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				conversationID: { type: new GraphQLNonNull(GraphQLID) },
-				query: { type: new GraphQLNonNull(GraphQLString) }
+				query: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			async resolve(_, { id, authToken, conversationID, query }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, conversationID, query }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await Conversation.findOne({
@@ -789,11 +783,10 @@ const RootQuery = new GraphQLObjectType({
 			type: new GraphQLList(ConversationType),
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				query: { type: new GraphQLNonNull(GraphQLString) }
+				query: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			async resolve(_, { id, authToken, query }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, query }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await Conversation.find({
@@ -810,11 +803,10 @@ const RootQuery = new GraphQLObjectType({
 			type: NoteType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, targetID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				return Note.findOne({
@@ -836,11 +828,10 @@ const RootQuery = new GraphQLObjectType({
 			type: new GraphQLList(UserType),
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				noteID: { type: new GraphQLNonNull(GraphQLID) }
+				noteID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, noteID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, noteID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await Note.findOne({
@@ -887,9 +878,9 @@ const RootMutation = new GraphQLObjectType({
 				login: { type: new GraphQLNonNull(GraphQLString) },
 				password: { type: new GraphQLNonNull(GraphQLString) },
 				name: { type: new GraphQLNonNull(GraphQLString) },
-				avatar: { type: new GraphQLNonNull(GraphQLUpload) }
+				avatar: { type: new GraphQLNonNull(GraphQLUpload) },
 			},
-			async resolve(_, { login, password, name, avatar }) {
+			async resolve(_, { login, password, name, avatar }, {  req }) {
 				{
 					let a = await User.findOne({ login });
 					if(a) return null;
@@ -900,11 +891,12 @@ const RootMutation = new GraphQLObjectType({
 				// receive image
 				if(avatar) {					
 					let { filename, stream } = await avatar;
-					var avatarPath = `${ settings.files.avatars }/${ generateNoise(128) }.${ getExtension(filename) }`
+					var avatarPath = `${ settings.files.avatars }/${ generateNoise(128) },.${ getExtension(filename) },`
 
 					stream.pipe(fileSystem.createWriteStream('.' + avatarPath));
 				}
 
+				req.session.authToken = token;
 				let user = await (new User({
 					login, password, name,
 					avatar: avatarPath || settings.default.avatar,
@@ -922,12 +914,15 @@ const RootMutation = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				login: { type: new GraphQLNonNull(GraphQLString) },
-				password: { type: new GraphQLNonNull(GraphQLString) }
+				password: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			resolve(_, { login, password }) {
+			resolve(_, { login, password }, { req }) {
+				let a = generateNoise(); // authToken
+				req.session.authToken = a;
+
 				return User.findOneAndUpdate({ login, password }, {
 					$push: {
-						authTokens: generateNoise() 
+						authTokens: a
 					}
 				}, (__, a) => a);
 			}
@@ -936,13 +931,12 @@ const RootMutation = new GraphQLObjectType({
 			type: PostType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				content: { type: GraphQLString },
-				images: { type: new GraphQLList(new GraphQLNonNull(GraphQLUpload)) }
+				images: { type: new GraphQLList(new GraphQLNonNull(GraphQLUpload)) },
 			},
-			async resolve(_, { id, authToken, content, images }) {
+			async resolve(_, { id, content, images }, { req }) {
 				if(!content && (!images || !images.length)) return null;
-				let a = await validateAccount(id, authToken);
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				// Publish
@@ -962,7 +956,7 @@ const RootMutation = new GraphQLObjectType({
 						images.forEach(async (io, index, arr) => {
 							let { stream, filename } = await io;
 
-							let link = `${ settings.files.images }/${ generateNoise(128) }.${ getExtension(filename) }`;
+							let link = `${ settings.files.images }/${ generateNoise(128) },.${ getExtension(filename) },`;
 							stream.pipe(fileSystem.createWriteStream('.' + link));
 
 							let b = await (
@@ -988,15 +982,14 @@ const RootMutation = new GraphQLObjectType({
 			type: CommentType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				targetID: { type: new GraphQLNonNull(GraphQLID) },
 				content: { type: GraphQLString },
 				image: { type: GraphQLUpload }
 			},
-			async resolve(_, { id, authToken, targetID, content, image }) {
+			async resolve(_, { id, targetID, content, image }, { req }) {
 				// Global validation
 				if(!content && !image) return null;
-				let a = await validateAccount(id, authToken);
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				// Target validation
@@ -1036,7 +1029,7 @@ const RootMutation = new GraphQLObjectType({
 				if(image) {
 					let { stream, filename } = await image;
 
-					let link = `${ settings.files.images }/${ generateNoise(128) }.${ getExtension(filename) }`;
+					let link = `${ settings.files.images }/${ generateNoise(128) },.${ getExtension(filename) },`;
 					stream.pipe(fileSystem.createWriteStream('.' + link));
 
 					await (new Image({
@@ -1056,11 +1049,10 @@ const RootMutation = new GraphQLObjectType({
 			type: PostType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, targetID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a || !targetID) return null;
 
 				let b = await Post.findById(targetID);
@@ -1087,11 +1079,10 @@ const RootMutation = new GraphQLObjectType({
 			type: CommentType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, targetID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a || !targetID) return null;
 
 				let b = await Comment.findById(targetID);
@@ -1118,11 +1109,10 @@ const RootMutation = new GraphQLObjectType({
 			type: ImageType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, targetID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await Image.findById(targetID);
@@ -1149,21 +1139,20 @@ const RootMutation = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				avatar: { type: new GraphQLNonNull(GraphQLUpload) }
+				avatar: { type: new GraphQLNonNull(GraphQLUpload) },
 			},
-			async resolve(_, { id, authToken, avatar }) {
+			async resolve(_, { id, avatar }, { req }) {
 				// Receive image
 				let { stream, filename } = await avatar;
 
-				let link = `${ settings.files.images }/${ generateNoise(128) }.${ getExtension(filename) }`;
+				let link = `${ settings.files.images }/${ generateNoise(128) },.${ getExtension(filename) },`;
 				stream.pipe(fileSystem.createWriteStream('.' + link));
 
 				// Submit
 				return User.findOneAndUpdate({
 					_id: id,
 					authTokens: {
-						$in: [authToken]
+						$in: [req.session.authToken]
 					}
 				}, {
 					avatar: link
@@ -1174,21 +1163,20 @@ const RootMutation = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				cover: { type: new GraphQLNonNull(GraphQLUpload) }
+				cover: { type: new GraphQLNonNull(GraphQLUpload) },
 			},
-			async resolve(_, { id, authToken, cover }) {
+			async resolve(_, { id, cover }, { req }) {
 				// Receive image
 				let { stream, filename } = await cover;
 
-				let link = `${ settings.files.images }/${ generateNoise(128) }.${ getExtension(filename) }`;
+				let link = `${ settings.files.images }/${ generateNoise(128) },.${ getExtension(filename) },`;
 				stream.pipe(fileSystem.createWriteStream('.' + link));
 
 				// Submit
 				return User.findOneAndUpdate({
 					_id: id,
 					authTokens: {
-						$in: [authToken]
+						$in: [req.session.authToken]
 					}
 				}, {
 					cover: link
@@ -1199,15 +1187,14 @@ const RootMutation = new GraphQLObjectType({
 			type: ImageType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				avatar: { type: new GraphQLNonNull(GraphQLUpload) }
+				avatar: { type: new GraphQLNonNull(GraphQLUpload) },
 			},
-			async resolve(_, { id, authToken, avatar }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, avatar }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let { stream, filename } = await avatar;
-				let link = `${ settings.files.images }/${ generateNoise(128) }.${ getExtension(filename) }`;
+				let link = `${ settings.files.images }/${ generateNoise(128) },.${ getExtension(filename) },`;
 				stream.pipe(fileSystem.createWriteStream('.' + link));
 
 				let b = (
@@ -1229,11 +1216,10 @@ const RootMutation = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, targetID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await User.findById(targetID);
@@ -1321,11 +1307,10 @@ const RootMutation = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) } 
+				targetID: { type: new GraphQLNonNull(GraphQLID) }, 
 			},
-			async resolve(_, { id, authToken, targetID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await User.findById(targetID);
@@ -1350,12 +1335,11 @@ const RootMutation = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				targetID: { type: new GraphQLNonNull(GraphQLID) },
-				status: { type: new GraphQLNonNull(GraphQLString) }
+				status: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			async resolve(_, { id, authToken, targetID, status }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID, status }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				switch(status) {
 					case 'ACCEPT_ACTION':
 						await a.updateOne({
@@ -1398,13 +1382,12 @@ const RootMutation = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				content: { type: new GraphQLNonNull(GraphQLString) }
+				content: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			resolve: (_, { id, authToken, content }) => User.findOneAndUpdate({
+			resolve: (_, { id, content }, { req }) => User.findOneAndUpdate({
 				_id: id,
 				authTokens: {
-					$in: [authToken]
+					$in: [req.session.authToken]
 				}
 			}, {
 				description: content
@@ -1414,12 +1397,11 @@ const RootMutation = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				name: { type: GraphQLString },
 				login: { type: GraphQLString },
 				password: { type: GraphQLString }
 			},
-			resolve(_, { id, authToken, name, login, password }) {
+			resolve(_, { id, name, login, password }, { req }) {
 				let a = {};
 
 				if(name) a.name = name;
@@ -1430,7 +1412,7 @@ const RootMutation = new GraphQLObjectType({
 				return User.findOneAndUpdate({
 					_id: id,
 					authTokens: {
-						$in: [authToken]
+						$in: [req.session.authToken]
 					}
 				}, a, (_, a) => a);
 			}
@@ -1439,12 +1421,11 @@ const RootMutation = new GraphQLObjectType({
 			type: ConversationType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, targetID }) {
+			async resolve(_, { id, targetID }, { req }) {
 				// Validate init contributors
-				let a = await validateAccount(id, authToken);
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await User.findById(targetID);
@@ -1492,13 +1473,12 @@ const RootMutation = new GraphQLObjectType({
 			type: MessageType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				content: { type: GraphQLUpload }, // takes any type of data (string, object)
 				type: { type: new GraphQLNonNull(GraphQLString) },
-				conversationID: { type: new GraphQLNonNull(GraphQLID) }
+				conversationID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, content, type, conversationID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, content, type, conversationID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await Conversation.findOne({
@@ -1512,7 +1492,7 @@ const RootMutation = new GraphQLObjectType({
 				let images = [];
 				if(type === "FILE_TYPE") { // Download file and return url as value
 					let { filename, stream } = await content;
-					content = `${ settings.files.files }/${ generateNoise(128) }.${ getExtension(filename) }`
+					content = `${ settings.files.files }/${ generateNoise(128) },.${ getExtension(filename) },`
 
 					stream.pipe(fileSystem.createWriteStream('.' + content));
 				} else if(type === "IMAGES_TYPE") {
@@ -1548,11 +1528,10 @@ const RootMutation = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				conversationID: { type: new GraphQLNonNull(GraphQLID) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, conversationID, targetID }) {
+			async resolve(_, { id, conversationID, targetID }, { req }) {
 				// validate user (+)
 				// validate if conversation exists (+)
 				// validate if user is in conversation
@@ -1561,7 +1540,7 @@ const RootMutation = new GraphQLObjectType({
 				// add target to the conversation |addToSet!| (+)
 				// send system message in conversation (+)
 
-				let a = await validateAccount(id, authToken);
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await Conversation.findById(conversationID);
@@ -1606,21 +1585,20 @@ const RootMutation = new GraphQLObjectType({
 			type: ConversationType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				conversationID: { type: new GraphQLNonNull(GraphQLID) },
 				avatar: { type: new GraphQLNonNull(GraphQLUpload) },
 				name: { type: new GraphQLNonNull(GraphQLString) },
-				color: { type: new GraphQLNonNull(GraphQLString) }
+				color: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			async resolve(_, { id, authToken, conversationID, avatar, name, color }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, conversationID, avatar, name, color }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = {};
 
 				if(avatar) {
 					let { filename, stream } = await avatar;
-					b.avatar = `${ settings.files.avatars }/${ generateNoise(128) }.${ getExtension(filename) }`
+					b.avatar = `${ settings.files.avatars }/${ generateNoise(128) },.${ getExtension(filename) },`
 
 					stream.pipe(fileSystem.createWriteStream('.' + b.avatar));
 				}
@@ -1666,17 +1644,16 @@ const RootMutation = new GraphQLObjectType({
 			type: UserType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				conversationID: { type: new GraphQLNonNull(GraphQLID) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, conversationID, targetID }) {
+			async resolve(_, { id, conversationID, targetID }, { req }) {
 				// validate user (+)
 				// validate conversation and if user and target in the conversation (+)
 				// kick target (+)
 				// send back user data (+)
 
-				let a = await validateAccount(id, authToken);
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await Conversation.findOneAndUpdate({
@@ -1721,11 +1698,10 @@ const RootMutation = new GraphQLObjectType({
 			type: ConversationType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				conversationID: { type: new GraphQLNonNull(GraphQLID) }
+				conversationID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, conversationID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, conversationID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await Conversation.findOneAndUpdate({
@@ -1765,12 +1741,11 @@ const RootMutation = new GraphQLObjectType({
 			type: NoteType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				title: { type: new GraphQLNonNull(GraphQLString) },
-				words: { type: new GraphQLNonNull(GraphQLInt) }
+				words: { type: new GraphQLNonNull(GraphQLInt) },
 			},
-			async resolve(_, { id, authToken, title, words }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, title, words }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await (
@@ -1791,12 +1766,11 @@ const RootMutation = new GraphQLObjectType({
 			type: NoteType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				targetID: { type: new GraphQLNonNull(GraphQLID) },
-				content: { type: new GraphQLNonNull(GraphQLString) }
+				content: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			async resolve(_, { id, authToken, targetID, content }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID, content }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await Note.findOneAndUpdate({
@@ -1827,13 +1801,12 @@ const RootMutation = new GraphQLObjectType({
 			type: NoteType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				targetID: { type: new GraphQLNonNull(GraphQLID) },
 				title: { type: GraphQLString },
 				esWords: { type: GraphQLInt }
 			},
-			async resolve(_, { id, authToken, targetID, title, esWords }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, targetID, title, esWords }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = {};
@@ -1861,12 +1834,11 @@ const RootMutation = new GraphQLObjectType({
 			type: NoteType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				noteID: { type: new GraphQLNonNull(GraphQLID) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, noteID, targetID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, noteID, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				return Note.findOneAndUpdate({
@@ -1892,12 +1864,11 @@ const RootMutation = new GraphQLObjectType({
 			type: NoteType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
 				noteID: { type: new GraphQLNonNull(GraphQLID) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			async resolve(_, { id, authToken, noteID, targetID }) {
-				let a = await validateAccount(id, authToken);
+			async resolve(_, { id, noteID, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				return Note.findOneAndUpdate({
@@ -1929,14 +1900,13 @@ const RootSubscription = new GraphQLObjectType({
 			type: MessageType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				conversationID: { type: new GraphQLNonNull(GraphQLID) }
+				conversationID: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			subscribe: withFilter(
 				() => pubsub.asyncIterator('conversationMessageSent'),
-				async ({ conversationID: targetID }, { id, authToken, conversationID }) => {
+				async ({ conversationID: targetID }, { id, conversationID }, { req }) => {
 					if(str(targetID) !== str(conversationID)) return false;
-					let a = await validateAccount(id, authToken);
+					let a = await validateAccount(id, req.session.authToken);
 					if(!a) return false;
 
 					return true;
@@ -1948,18 +1918,17 @@ const RootSubscription = new GraphQLObjectType({
 			type: ConversationType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				conversationID: { type: new GraphQLNonNull(GraphQLID) }
+				conversationID: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			subscribe: withFilter(
 				() => pubsub.asyncIterator('conversationSettingsUpdated'),
-				async ({ conversation }, { id, authToken, conversationID }) => {
+				async ({ conversation }, { id, conversationID }, { req }) => {
 					if(
 						str(conversationID) !== str(conversation.id) ||
 						!conversation.contributors.includes(str(id))
 					) return false;
 
-					let a = await validateAccount(id, authToken);
+					let a = await validateAccount(id, req.session.authToken);
 					if(!a) return false;
 
 					return true;
@@ -1971,15 +1940,14 @@ const RootSubscription = new GraphQLObjectType({
 			type: ConversationType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) } 
 			},
 			subscribe: withFilter(
 				() => pubsub.asyncIterator('conversationUpdated'),
-				async ({ conversation }, { id, authToken }) => {
+				async ({ conversation }, { id }, { req }) => {
 					// find all user's conversations
 					// check if updated conversation in this list
 
-					let a = await validateAccount(id, authToken);
+					let a = await validateAccount(id, req.session.authToken);
 					if(!a) return false;
 
 					let b = (await Conversation.find({ // get ids
@@ -1997,15 +1965,14 @@ const RootSubscription = new GraphQLObjectType({
 			type: NoteType,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
-				authToken: { type: new GraphQLNonNull(GraphQLString) },
-				targetID: { type: new GraphQLNonNull(GraphQLID) }
+				targetID: { type: new GraphQLNonNull(GraphQLID) },
 			},
 			subscribe: withFilter(
 				() => pubsub.asyncIterator('noteContentUpdated'),
-				async ({ note, posterID }, { id, authToken, targetID }) => {
+				async ({ note, posterID }, { id, targetID }, { req }) => {
 					if(str(note._id) !== str(targetID) || str(posterID) === str(id)) return false;
 
-					let a = await validateAccount(id, authToken);
+					let a = await validateAccount(id, req.session.authToken);
 					if(!a) return false;
 
 					return true;

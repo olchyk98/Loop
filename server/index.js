@@ -27,15 +27,15 @@ app.use(new session({
 app.use('/files', express.static('./files'));
 
 const apolloServer = new ApolloServer({
-	schema
+	schema,
+	engine: false,
+	context: ({ req }) => ({ req }),
 });
 const server = createServer(app);
 
 apolloServer.applyMiddleware({
 	app,
 	path: '/graphql',
-	engine: false,
-	context: ({ req }) => ({ req }),
 	cors: {
 		origin: 'http://localhost:3000',
 		credentials: true

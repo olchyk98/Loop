@@ -31,13 +31,13 @@ class Hero extends Component {
 			likesInt: (a) ? !a : !c ? a + 1 : -1
 		}));
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't submit your like. Please, try again.";
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $targetID: ID!) {
-					likeComment(id: $id, authToken: $authToken, targetID: $targetID) {
+				mutation($id: ID!, $targetID: ID!) {
+					likeComment(id: $id, targetID: $targetID) {
 						id,
 						likesInt,
 						isLiked(id: $id)
@@ -45,7 +45,7 @@ class Hero extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID: this.props.id
 			}
 		}).then(({ data: { likeComment } }) => {

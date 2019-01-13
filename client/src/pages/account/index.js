@@ -151,13 +151,13 @@ class App extends Component {
 	}
 
 	componentDidMount() {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't find a user with that id in our library. Please, try again.";
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!, $targetID: ID) {
-					user(id: $id, authToken: $authToken, targetID: $targetID) {
+				query($id: ID!, $targetID: ID) {
+					user(id: $id, targetID: $targetID) {
 						id,
 						avatar,
 						cover,
@@ -206,7 +206,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID: this.props.match.params.id || ""
 			}
 		}).then(({ data: { user } }) => {
@@ -237,13 +237,13 @@ class App extends Component {
 				}
 			}));
 
-			const { id, authToken } = cookieControl.get("authdata"),
+			const { id } = cookieControl.get("authdata"),
 				  errorTxt = "We couldn't load user's gallery. Please, try again."
 
 			client.query({
 				query: gql`
-					query($id: ID!, $authToken: String!, $targetID: ID) {
-						user(id: $id, authToken: $authToken, targetID: $targetID) {
+					query($id: ID!, $targetID: ID) {
+						user(id: $id, targetID: $targetID) {
 							id,
 							gallery {
 								id,
@@ -253,7 +253,7 @@ class App extends Component {
 					}
 				`,
 				variables: {
-					id, authToken,
+					id,
 					targetID: this.state.user.id
 				}
 			}).then(({ data: { user } }) => {
@@ -267,7 +267,7 @@ class App extends Component {
 				}));
 			}).catch(() => this.props.castError(errorTxt));
 		} else if(stage === "ABOUT_STAGE") {
-			const { id, authToken } = cookieControl.get("authdata"),
+			const { id } = cookieControl.get("authdata"),
 				  errorTxt = "We couldn't load the user's about me section. Please, try again."
 
 			this.setState(() => ({
@@ -276,15 +276,15 @@ class App extends Component {
 
 			client.query({
 				query: gql`
-					query($id: ID!, $authToken: String!, $targetID: ID) {
-						user(id: $id, authToken: $authToken, targetID: $targetID) {
+					query($id: ID!, $targetID: ID) {
+						user(id: $id, targetID: $targetID) {
 							id,
 							description
 						}
 					}
 				`,
 				variables: {
-					id, authToken,
+					id,
 					targetID: this.state.user.id
 				}
 			}).then(({ data: { user } }) => {
@@ -315,20 +315,20 @@ class App extends Component {
 	}
 
 	replaceAvatar = avatar => {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't upload an new avatar. Please, try later.";
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $avatar: Upload!) {
-					setUserAvatar(id: $id, authToken: $authToken, avatar: $avatar) {
+				mutation($id: ID!, $avatar: Upload!) {
+					setUserAvatar(id: $id, avatar: $avatar) {
 						id,
 						avatar
 					}
 				}
 			`,
 			variables: {
-				id, authToken, avatar
+				id, avatar
 			}
 		}).then(({ data: { setUserAvatar: a } }) => {
 			if(!a) return this.props.castError(errorTxt);
@@ -343,20 +343,20 @@ class App extends Component {
 	}
 
 	uploadImage = file => {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't update your image. Please try again."
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $avatar: Upload!) {
-					uploadImage(id: $id, authToken: $authToken, avatar: $avatar) {
+				mutation($id: ID!, $avatar: Upload!) {
+					uploadImage(id: $id, avatar: $avatar) {
 						id,
 						url
 					}
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				avatar: file
 			}
 		}).then(({ data: { uploadImage } }) => {
@@ -376,20 +376,20 @@ class App extends Component {
 	}
 
 	replaceCover = file => {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't upload a new cover image. Please, try again.";
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $cover: Upload!) {
-					setUserCover(id: $id, authToken: $authToken, cover: $cover) {
+				mutation($id: ID!, $cover: Upload!) {
+					setUserCover(id: $id, cover: $cover) {
 						id,
 						cover
 					}
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				cover: file
 			}
 		}).then(({ data: { setUserCover } }) => {
@@ -407,7 +407,7 @@ class App extends Component {
 	setFriendsStage = stage => {
 		switch(stage) {
 			case 'MAIN_STAGE': {
-				const { id, authToken } = cookieControl.get("authdata"),
+				const { id } = cookieControl.get("authdata"),
 					  errorTxt = "";
 
 				this.setState(() => ({
@@ -416,10 +416,9 @@ class App extends Component {
 
 				client.query({
 					query: gql`
-						query($id: ID!, $authToken: String!, $targetID: ID!) {
+						query($id: ID!, $targetID: ID!) {
 						  user(
 						    id: $id,
-						    authToken: $authToken,
 						    targetID: $targetID
 						  ) {
 						    id,
@@ -432,7 +431,7 @@ class App extends Component {
 						}
 					`,
 					variables: {
-						id, authToken,
+						id,
 						targetID: this.state.user.id
 					}
 				}).then(({ data: { user } }) => {
@@ -448,7 +447,7 @@ class App extends Component {
 			}
 			break;
 			case 'REQUESTS_STAGE':
-				const { id, authToken } = cookieControl.get("authdata"),
+				const { id } = cookieControl.get("authdata"),
 					  errorTxt = "We couldn't load friend requests list. Sorry about that :(";
 
 				this.setState(() => ({
@@ -457,11 +456,8 @@ class App extends Component {
 
 				client.query({
 					query: gql`
-						query($id: ID!, $authToken: String!) {
-						  user(
-						    id: $id,
-						    authToken: $authToken
-						  ) {
+						query($id: ID!) {
+						  user(id: $id) {
 						    id,
 						    waitingFriends {
 						      id,
@@ -473,7 +469,7 @@ class App extends Component {
 						}
 					`,
 					variables: {
-						id, authToken
+						id
 					}
 				}).then(({ data: { user } }) => {
 					this.setState(() => ({
@@ -496,7 +492,7 @@ class App extends Component {
 
 	toggleFriend = () => {
 		if(this.state.friendProcessing) return;
-		const { id, authToken } = cookieControl.get("authdata");
+		const { id } = cookieControl.get("authdata");
 
 		this.setState(() => ({
 			friendProcessing: true
@@ -504,8 +500,8 @@ class App extends Component {
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $targetID: ID!) {
-					processFriendRequest(id: $id, authToken: $authToken, targetID: $targetID) {
+				mutation($id: ID!, $targetID: ID!) {
+					processFriendRequest(id: $id, targetID: $targetID) {
 						id,
 						isFriend(id: $id),
 						isWaitingFriend(id: $id),
@@ -514,7 +510,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID: this.state.user.id
 			}
 		}).then(({ data: { processFriendRequest } }) => {
@@ -539,7 +535,7 @@ class App extends Component {
 
 	toggleSubscription = () => {
 		if(this.state.isSubscribing) return;
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "Sorry, we couldn't submit your subscription status. Please, try later.";
 
 		this.setState(({ user, user: { isSubscribed } }) => ({
@@ -552,15 +548,15 @@ class App extends Component {
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $targetID: ID!) {
-					subscribeUser(id: $id, authToken: $authToken, targetID: $targetID) {
+				mutation($id: ID!, $targetID: ID!) {
+					subscribeUser(id: $id, targetID: $targetID) {
 						id,
 						isSubscribed(id: $id)
 					}
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID: this.state.user.id
 			}
 		}).then(({ data: { subscribeUser } }) => {
@@ -579,19 +575,19 @@ class App extends Component {
 	}
 
 	addFriendManual = (tid, status) => {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "Something went wrong. Please, try again.";
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $targetID: ID!, $status: String!) {
-					declareFriendRequestStatus(id: $id, authToken: $authToken, targetID: $targetID, status: $status) {
+				mutation($id: ID!, $targetID: ID!, $status: String!) {
+					declareFriendRequestStatus(id: $id, targetID: $targetID, status: $status) {
 						id
 					}
 				}
 			`,
 			variables: {
-				id, authToken, status,
+				id, status,
 				targetID: tid
 			}
 		}).then(({ data: { declareFriendRequestStatus: a } }) => {
@@ -619,19 +615,19 @@ class App extends Component {
 				this.props.history.push(`${ links["ACCOUNT_PAGE"].absolute }/${ tid }`);
 			break;
 			case 'REMOVE_ACTION': {
-				const { id, authToken } = cookieControl.get("authdata"),
+				const { id } = cookieControl.get("authdata"),
 					  errorTxt = "Something went wrong. Please, try again.";
 
 				client.mutate({
 					mutation: gql`
-						mutation($id: ID!, $authToken: String!, $targetID: ID!, $status: String!) {
-							declareFriendRequestStatus(id: $id, authToken: $authToken, targetID: $targetID, status: $status) {
+						mutation($id: ID!, $targetID: ID!, $status: String!) {
+							declareFriendRequestStatus(id: $id, targetID: $targetID, status: $status) {
 								id
 							}
 						}
 					`,
 					variables: {
-						id, authToken,
+						id,
 						status: action,
 						targetID: tid
 					}
@@ -664,7 +660,7 @@ class App extends Component {
 			}));
 		}
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "Something went wrong. Please, restart the page.";
 
 		this.setState(() => ({
@@ -673,8 +669,8 @@ class App extends Component {
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!, $match: String!, $section: String!) {
-					searchFriends(id: $id, authToken: $authToken, match: $match, section: $section) {
+				query($id: ID!, $match: String!, $section: String!) {
+					searchFriends(id: $id, match: $match, section: $section) {
 						id,
 						avatar,
 						name
@@ -682,7 +678,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				match: value,
 				section: {
 					"MAIN_STAGE": 'FRIENDS',
@@ -723,7 +719,7 @@ class App extends Component {
 			descriptionStatus: "Saving..."
 		}));
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			castError = () => {
 			  	this.props.castError(
 			  		"We couldn't save the information about you. Please, try again."
@@ -736,14 +732,14 @@ class App extends Component {
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $content: String!) {
-					updateProfileDescription(id: $id, authToken: $authToken, content: $content) {
+				mutation($id: ID!, $content: String!) {
+					updateProfileDescription(id: $id, content: $content) {
 						id
 					}
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				content: value
 			}
 		}).then(({ data: { updateProfileDescription: a } }) => {

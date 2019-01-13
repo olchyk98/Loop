@@ -296,13 +296,13 @@ class NoteEditor extends Component {
 	}
 
 	subscribeToNote = () => {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "Something went wrong. Please, restart the page.";
 
 		client.subscribe({
 			query: gql`
-				subscription($id: ID!, $authToken: String!, $targetID: ID!) {
-					listenNoteUpdates(id: $id, authToken: $authToken, targetID: $targetID) {
+				subscription($id: ID! $targetID: ID!) {
+					listenNoteUpdates(id: $id targetID: $targetID) {
 						id,
 						contentHTML,
 						estWords,
@@ -311,7 +311,7 @@ class NoteEditor extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID: this.props.data.id
 			}
 		}).subscribe({
@@ -588,13 +588,13 @@ class App extends Component {
 	}
 
 	loadNotesList = () => {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't load your notes. Please, try later.";
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!, $contrLimit: Int, $contentLimit: Int) {
-					user(id: $id, authToken: $authToken) {
+				query($id: ID!, $contrLimit: Int, $contentLimit: Int) {
+					user(id: $id) {
 						id,
 						notes {
 							id,
@@ -612,7 +612,6 @@ class App extends Component {
 			`,
 			variables: {
 				id,
-				authToken,
 				contrLimit: 3,
 				contentLimit: 16 // words
 			}
@@ -635,16 +634,15 @@ class App extends Component {
 		if(!this.state.notes) return;
 
 		// Authtoken and err message
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't create a new note. Please try again.";
 
 		// Send a mutation request
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $title: String!, $words: Int!, $contrLimit: Int, $contentLimit: Int) {
+				mutation($id: ID!, $title: String!, $words: Int!, $contrLimit: Int, $contentLimit: Int) {
 				  createNote(
-				    id: $id
-				    authToken: $authToken,
+				    id: $id,
 				    title: $title
 				    words: $words
 				  ) {
@@ -661,7 +659,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				title, words,
 				contrLimit: 3,
 				contentLimit: 16	
@@ -680,7 +678,7 @@ class App extends Component {
 	}
 
 	loadNote = targetID => {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "An error occured while we tried to load the note. Maybe website was loaded incorrectly. Please, restart the page.";
 
 		this.setState(() => ({
@@ -690,8 +688,8 @@ class App extends Component {
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!, $targetID: ID!) {
-					note(id: $id, authToken: $authToken, targetID: $targetID) {
+				query($id: ID!, $targetID: ID!) {
+					note(id: $id, targetID: $targetID) {
 						id,
 						contentHTML,
 						title,
@@ -701,7 +699,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID
 			}
 		}).then(({ data: { note: a } }) => {
@@ -720,13 +718,13 @@ class App extends Component {
 			editorSaved: false
 		}));
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't save the note. You can find last update in backups.";
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $targetID: ID!, $content: String!, $contrLimit: Int, $contentLimit: Int) {
-					saveNote(id: $id, authToken: $authToken, targetID: $targetID, content: $content) {
+				mutation($id: ID!, $targetID: ID!, $content: String!, $contrLimit: Int, $contentLimit: Int) {
+					saveNote(id: $id, targetID: $targetID, content: $content) {
 						id,
 						title,
 						content(limit: $contentLimit),
@@ -740,7 +738,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID, content,
 				contrLimit: 3,
 				contentLimit: 16
@@ -769,13 +767,13 @@ class App extends Component {
 	settingNote = (title, words, targetID) => {
 		if((!title && !words) || !targetID || !this.state.editorData) return;
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't submit these settings. Please, try later."
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $targetID: ID!, $title: String, $esWords: Int) {
-					settingNote(id: $id, authToken: $authToken, targetID: $targetID, title: $title, esWords: $esWords) {
+				mutation($id: ID!, $targetID: ID!, $title: String, $esWords: Int) {
+					settingNote(id: $id, targetID: $targetID, title: $title, esWords: $esWords) {
 						id,
 						title,
 						currWords,
@@ -784,7 +782,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID, title,
 				esWords: words
 			}

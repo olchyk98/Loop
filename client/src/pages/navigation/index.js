@@ -97,13 +97,13 @@ class App extends Component {
 	}
 
 	fetchAPI = () => {
-		let { id, authToken } = cookieControl.get("authdata"),
+		let { id } = cookieControl.get("authdata"),
 			errorTxt = "This application was loaded incorrectly. Please, restart the page."
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!) {
-					user(id: $id, authToken: $authToken) {
+				query($id: ID!) {
+					user(id: $id) {
 						id,
 						avatar,
 						name
@@ -111,7 +111,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken
+				id
 			}
 		}).then(({ data: { user } }) => {
 			if(!user) return this.props.castError(errorTxt);

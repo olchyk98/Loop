@@ -610,13 +610,13 @@ class PhotoGrid extends Component {
 	}
 
 	componentDidMount() {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't fetch your images. Please, try again."
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!) {
-				  user(id: $id, authToken: $authToken) {
+				query($id: ID!) {
+				  user(id: $id) {
 				    id,
 				    gallery {
 				      id,
@@ -626,7 +626,7 @@ class PhotoGrid extends Component {
 				}
 			`,
 			variables: {
-				id, authToken
+				id
 			}
 		}).then(({ data: { user: { gallery: a } } }) => {
 			if(!a) return this.props.castError(errorTxt);
@@ -783,7 +783,7 @@ class App extends Component {
 	}
 
 	componentDidMount() {
-		const { id, authToken } = cookieControl.get("authdata");
+		const { id } = cookieControl.get("authdata");
 		let errorTxt = "We couldn't load your conversations. Please, try again."
 
 		this.setState(() => ({
@@ -792,8 +792,8 @@ class App extends Component {
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!) {
-					user(id: $id, authToken: $authToken) {
+				query($id: ID!,) {
+					user(id: $id,) {
 						id,
 						conversations {
 							id,
@@ -815,7 +815,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken
+				id
 			}
 		}).then(({ data: { user } }) => {
 			if(!user) return this.props.castError(errorTxt);
@@ -829,8 +829,8 @@ class App extends Component {
 
 		this.conversationsUPSubscription = client.subscribe({
 			query: gql`
-				subscription($id: ID!, $authToken: String!) {
-					conversationsGridUpdated(id: $id, authToken: $authToken) {
+				subscription($id: ID!,) {
+					conversationsGridUpdated(id: $id,) {
 						id,
 						isSeen(id: $id),
 						avatar(id: $id),
@@ -849,7 +849,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken
+				id
 			}
 		}).subscribe({
 			next: ({ data: { conversationsGridUpdated: a } }) => {
@@ -882,15 +882,15 @@ class App extends Component {
 			dialog: false
 		}));
 
-		const { id, authToken } = cookieControl.get("authdata");
+		const { id } = cookieControl.get("authdata");
 		let errorTxt = "We couldn't load this conversation. Please, try later.";
 
 		// Promise.all([])?
 		// Load conversation
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!, $targetID: ID!) {
-					conversation(id: $id, authToken: $authToken, targetID: $targetID, seeConversation: true) {
+				query($id: ID!, $targetID: ID!) {
+					conversation(id: $id, targetID: $targetID, seeConversation: true) {
 						id,
 						name(id: $id),
 						avatar(id: $id),
@@ -916,7 +916,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID
 			}
 		}).then(({ data: { conversation } }) => {
@@ -933,10 +933,10 @@ class App extends Component {
 
 		this.dialogSubscription = client.subscribe({
 			query: gql`
-				subscription($id: ID!, $authToken: String!, $conversationID: ID!) {
+				subscription($id: ID!, $conversationID: ID!) {
 				  hookConversationMessage(
 				    id: $id,
-				    authToken: $authToken,
+				   ,
 				    conversationID: $conversationID
 				  ) {
 				    id,
@@ -957,7 +957,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				conversationID: targetID
 			}
 		}).subscribe({
@@ -1003,8 +1003,8 @@ class App extends Component {
 
 		this.dialogSettingsSubscription = client.subscribe({
 			query: gql`
-				subscription($id: ID!, $authToken: String!, $conversationID: ID!) {
-					conversationSettingsUpdated(id: $id, authToken: $authToken, conversationID: $conversationID) {
+				subscription($id: ID!, $conversationID: ID!) {
+					conversationSettingsUpdated(id: $id, conversationID: $conversationID) {
 						id,
 						name(id: $id),
 						avatar(id: $id)
@@ -1012,7 +1012,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				conversationID: targetID
 			}
 		}).subscribe({
@@ -1033,7 +1033,7 @@ class App extends Component {
 	sendDialogMessage = (type, value) => {
 		if(!this.state.dialog || !value) return;
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "An error occured while we tried to send your message. Please, try again."
 
 		let a = this.state.dialog.messages.length;
@@ -1061,10 +1061,10 @@ class App extends Component {
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $content: Upload!, $type: String!, $conversationID: ID!) {
+				mutation($id: ID!, $content: Upload!, $type: String!, $conversationID: ID!) {
 				  sendMessage(
 				    id: $id,
-				    authToken: $authToken,
+				   ,
 				    content: $content,
 				    type: $type,
 				    conversationID: $conversationID
@@ -1087,7 +1087,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				content: value,
 				type,
 				conversationID: this.state.dialog.id
@@ -1128,7 +1128,7 @@ class App extends Component {
 	}
 
 	inviteToConversation = (targetID, name) => {
-		const { id, authToken } = cookieControl.get("authdata");
+		const { id } = cookieControl.get("authdata");
 
 		let aqE = aa => {
 			let a = Array.from(this.state.dialog.inviteSuggestions);
@@ -1144,8 +1144,8 @@ class App extends Component {
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $conversationID: ID!, $targetID: ID!) {
-					addUserToConversation(id: $id, authToken: $authToken, conversationID: $conversationID, targetID: $targetID) {
+				mutation($id: ID!, $conversationID: ID!, $targetID: ID!) {
+					addUserToConversation(id: $id, conversationID: $conversationID, targetID: $targetID) {
 						id,
 						name,
 						avatar
@@ -1153,7 +1153,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken, targetID,
+				id, targetID,
 				conversationID: this.state.dialog.id
 			}
 		}).then(({ data: { addUserToConversation: b } }) => {
@@ -1182,13 +1182,13 @@ class App extends Component {
 	settingConversation = (avatar, name, color) => {
 		if(!this.state.dialog || (!avatar && !name && !color)) return;
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "Something went wrong. Please, try later.";
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $conversationID: ID!, $avatar: Upload!, $name: String!, $color: String!) {
-					settingConversation(id: $id, authToken: $authToken, conversationID: $conversationID, avatar: $avatar, name: $name, color: $color) {
+				mutation($id: ID!, $conversationID: ID!, $avatar: Upload!, $name: String!, $color: String!) {
+					settingConversation(id: $id, conversationID: $conversationID, avatar: $avatar, name: $name, color: $color) {
 						id,
 						avatar(id: $id),
 						name(id: $id)
@@ -1196,7 +1196,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				conversationID: this.state.dialog.id,
 				avatar: avatar || "",
 				name: name || "", // String(name)? -- bad for performance
@@ -1215,13 +1215,13 @@ class App extends Component {
 	}
 
 	getDialogContributors = () => {
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't load this list."
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!, $targetID: ID!) {
-					conversation(id: $id, authToken: $authToken, targetID: $targetID) {
+				query($id: ID!, $targetID: ID!) {
+					conversation(id: $id, targetID: $targetID) {
 						id,
 						contributorsInt,
 						contributors {
@@ -1229,7 +1229,7 @@ class App extends Component {
 							avatar,
 							name
 						},
-						inviteSuggestions(id: $id, authToken: $authToken) {
+						inviteSuggestions(id: $id,) {
 							id,
 							name,
 							avatar
@@ -1238,7 +1238,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID: this.state.dialog.id
 			}
 		}).then(({ data: { conversation: a } }) => {
@@ -1258,7 +1258,7 @@ class App extends Component {
 	deleteDialogContributor = targetID => {
 		if(!this.state.dialog || !this.state.dialog.contributors || !targetID) return null;
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "Something went wrong. Please, try again.";
 
 		let arA = aa => {
@@ -1275,14 +1275,14 @@ class App extends Component {
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $conversationID: ID!, $targetID: ID!) {
-					kickDialogContributor(id: $id, authToken: $authToken, conversationID: $conversationID, targetID: $targetID) {
+				mutation($id: ID!, $conversationID: ID!, $targetID: ID!) {
+					kickDialogContributor(id: $id, conversationID: $conversationID, targetID: $targetID) {
 						id
 					}
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				conversationID: this.state.dialog.id,
 				targetID
 			}
@@ -1297,19 +1297,19 @@ class App extends Component {
 	leaveConversation = targetID => {
 		if(!this.state.conversations) return;
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "Something went wrong. Please, try later.";
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $conversationID: ID!) {
-					leaveConversation(id: $id, authToken: $authToken, conversationID: $conversationID) {
+				mutation($id: ID!, $conversationID: ID!) {
+					leaveConversation(id: $id, conversationID: $conversationID) {
 						id
 					}
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				conversationID: targetID
 			}
 		}).then(({ data: { leaveConversation: a } }) => {
@@ -1337,14 +1337,14 @@ class App extends Component {
 									onChange={ ({ target }) => {
 										clearTimeout(target.sendInterval);
 
-										const { id, authToken } = cookieControl.get("authdata"),
+										const { id } = cookieControl.get("authdata"),
 											  errorTxt = "Something went wrong. Please, restart the page";
 
 										target.sendInterval = setTimeout(() => {
 											client.query({
 												query: gql`
-													query($id: ID!, $authToken: String!, $query: String!) {
-														searchConversations(id: $id, authToken: $authToken, query: $query) {
+													query($id: ID!, $query: String!) {
+														searchConversations(id: $id, query: $query) {
 															id,
 															isSeen(id: $id),
 															avatar(id: $id),
@@ -1363,7 +1363,7 @@ class App extends Component {
 													}
 												`,
 												variables: {
-													id, authToken,
+													id,
 													query: target.value
 												}
 											}).then(({ data: { searchConversations: a } }) => {
@@ -1585,13 +1585,13 @@ class App extends Component {
 																	onChange={ ({ target }) => {
 																		clearTimeout(target.sendInt);
 																		target.sendInt = setTimeout(() => {
-																			const { id, authToken } = cookieControl.get("authdata"),
+																			const { id } = cookieControl.get("authdata"),
 																				  errorTxt = "Something wrong. Please try restart the page.";
 
 																			client.query({
 																				query: gql`
-																					query($id: ID!, $authToken: String!, $conversationID: ID!, $query: String!) {
-																						searchInConversationInviteSuggestions(id: $id, authToken: $authToken, conversationID: $conversationID, query: $query) {
+																					query($id: ID!, $conversationID: ID!, $query: String!) {
+																						searchInConversationInviteSuggestions(id: $id, conversationID: $conversationID, query: $query) {
 																							id,
 																							name,
 																							avatar
@@ -1599,7 +1599,7 @@ class App extends Component {
 																					}
 																				`,
 																				variables: {
-																					id, authToken,
+																					id,
 																					conversationID: this.state.dialog.id,
 																					query: target.value
 																				}

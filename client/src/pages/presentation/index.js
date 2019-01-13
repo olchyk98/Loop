@@ -279,11 +279,10 @@ class App extends Component {
 			}));
 
 			cookieControl.set("authdata", {
-				id: data.id,
-				authToken: data.lastAuthToken
+				id: data.id
 			});
 			window.location.href = links["HOME_PAGE"].absolute;			
-		}).catch(() => this.props.castError("An error occured when we've tried to log in to your account. Please, try again."));
+		}).catch((e) => console.log(e), this.props.castError("An error occured when we've tried to log in to your account. Please, try again."));
 	}
 
 	registerUser = () => {
@@ -314,8 +313,7 @@ class App extends Component {
 			}));
 
 			cookieControl.set("authdata", {
-				id: data.id,
-				authToken: data.lastAuthToken
+				id: data.id
 			});
 			window.location.href = links["HOME_PAGE"].absolute;
 		}).catch(() => this.props.castError("We couldn't register your account. Please, try again."));

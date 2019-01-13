@@ -129,7 +129,7 @@ class App extends Component {
 
 		if(!content.replace(/\s|\n/g, "").length && !image) return;	
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't publish your comment. Please, try again.";
 
 		this.setState(() => ({
@@ -138,8 +138,8 @@ class App extends Component {
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $targetID: ID!, $content: String, $image: Upload) {
-					commentItem(id: $id, authToken: $authToken, targetID: $targetID, content: $content, image: $image) {
+				mutation($id: ID!, $targetID: ID!, $content: String, $image: Upload) {
+					commentItem(id: $id, targetID: $targetID, content: $content, image: $image) {
 						id,
 						content,
 						creator {
@@ -157,7 +157,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID: this.state.data.id,
 				content,
 				image
@@ -203,13 +203,13 @@ class App extends Component {
 			isLiking: true
 		}));
 
-		const { id, authToken } = cookieControl.get("authdata"),
+		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't submit your like. Please try again."
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $targetID: ID!) {
-					likeImage(id: $id, authToken: $authToken, targetID: $targetID) {
+				mutation($id: ID!, $targetID: ID!) {
+					likeImage(id: $id, targetID: $targetID) {
 						id,
 						likesInt,
 						isLiked(id: $id)
@@ -217,7 +217,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken,
+				id,
 				targetID: this.state.data.id
 			}
 		}).then(({ data: { likeImage } }) => {

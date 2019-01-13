@@ -65,15 +65,14 @@ class App extends Component {
 					fetchingLike: true
 				}));
 
-				const { id, authToken } = cookieControl.get("authdata"),
+				const { id } = cookieControl.get("authdata"),
 					errorTxt = "We couldn't like this tweet. Please, try again."
 
 				client.mutate({
 					mutation: gql`
-						mutation($id: ID!, $authToken: String!, $targetID: ID!) {
+						mutation($id: ID!, $targetID: ID!) {
 						  likePost(
 						    id: $id,
-						    authToken: $authToken,
 						    targetID: $targetID
 						  ) {
 						    id,
@@ -83,7 +82,7 @@ class App extends Component {
 						}
 					`,
 					variables: {
-						id, authToken,
+						id,
 						targetID: this.props.id
 					}
 				}).then(({ data: { likePost } }) => {
@@ -102,7 +101,7 @@ class App extends Component {
 
 				if(!content.replace(/\s|\n/g, "").length && !image) return;	
 
-				const { id, authToken } = cookieControl.get("authdata"),
+				const { id } = cookieControl.get("authdata"),
 					  errorTxt = "We couldn't publish your comment. Please, try again.";
 
 				this.setState(({ commentsInt: a }, { commentsInt: b }) => ({
@@ -112,8 +111,8 @@ class App extends Component {
 
 				client.mutate({ // *CommentType
 					mutation: gql`
-						mutation($id: ID!, $authToken: String!, $targetID: ID!, $content: String, $image: Upload) {
-							commentItem(id: $id, authToken: $authToken, targetID: $targetID, content: $content, image: $image) {
+						mutation($id: ID!, $targetID: ID!, $content: String, $image: Upload) {
+							commentItem(id: $id, targetID: $targetID, content: $content, image: $image) {
 								id,
 								content,
 								creator {
@@ -131,7 +130,7 @@ class App extends Component {
 						}
 					`,
 					variables: {
-						id, authToken,
+						id,
 						targetID: this.props.id,
 						content,
 						image

@@ -229,13 +229,13 @@ class App extends Component {
 
 	componentDidMount() {
 		// Fetch data from the API
-		let { id, authToken } = cookieControl.get("authdata"),
+		let { id } = cookieControl.get("authdata"),
 			errorTxt = "Sorry, we couldn't load your feed. Please, restart the page.";
 
 		client.query({
 			query: gql`
-				query($id: ID!, $authToken: String!) {
-					getFeed(id: $id, authToken: $authToken) {
+				query($id: ID!) {
+					getFeed(id: $id) {
 						id,
 						content,
 						time,
@@ -270,10 +270,10 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken
+				id
 			}
 		}).then(({ data: { getFeed } }) => {
-			if(!getFeed) this.props.castError(errorTxt);
+			if(!getFeed) return this.props.castError(errorTxt);
 
 			this.setState(() => ({
 				posts: getFeed
@@ -284,7 +284,7 @@ class App extends Component {
 	publishPost = (text, images) => {
 		if((!text || !text.replace(/\s|\n/g, "").length) && (!images || !images.length)) return;
 
-		let { id, authToken } = cookieControl.get("authdata"),
+		let { id } = cookieControl.get("authdata"),
 			errorTxt = "We couldn't publish your post. Please, try later.";
 
 		let sQr = pl => this.setState(() => ({ isPosting: pl }));
@@ -292,10 +292,9 @@ class App extends Component {
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $authToken: String!, $content: String, $images: [Upload!]) {
+				mutation($id: ID!, $content: String, $images: [Upload!]) {
 				  publishPost(
 				    id: $id,
-				    authToken: $authToken,
 				    content: $content,
 				    images: $images
 				  ) {
@@ -333,7 +332,7 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id, authToken, images,
+				id, images,
 				content: text
 			}
 		}).then(({ data: { publishPost: post } }) => {
