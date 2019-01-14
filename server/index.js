@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const session = require('cookie-session');
 const { ApolloServer } = require('apollo-server-express');
 
+const UserModel = require('./models').User;
 const schema = require('./schema');
 
 const app = express();

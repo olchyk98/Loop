@@ -147,7 +147,6 @@ class New extends Component {
 		photos.forEach(io => {
 			let a = io.file;
 			if(a) images.push(a);
-			else console.err("Image was not loaded correctly! NEW POST |COMPONENT : PUBLISH |FUNCTION!PRIMARY", a); // debug
 		})
 			// Send
 		this.props.onPublish(text, images);
@@ -225,6 +224,7 @@ class App extends Component {
 		}
 
 		this.screenRef = React.createRef();
+		this.feedSubscription = null;
 	}
 
 	componentDidMount() {
@@ -278,7 +278,62 @@ class App extends Component {
 			this.setState(() => ({
 				posts: getFeed
 			}));
+		}).then(() => {
+			this.feedSubscription = client.subscribe({
+				query: gql`
+					subscription($id: ID!) {
+						listenFeedUpdates(id: $id) {
+							id,
+							content,
+							time,
+							likesInt,
+							isLiked(id: $id),
+							commentsInt,
+							creator {
+								id,
+								name,
+								avatar
+							},
+							images {
+								id,
+								url
+							},
+							comments {
+								id,
+								content,
+								creator {
+									id,
+									avatar,
+									name
+								},
+								likesInt,
+								isLiked(id: $id),
+								image {
+									id,
+									url
+								}
+							}	
+						}
+					}
+				`,
+				variables: {
+					id
+				}
+			}).subscribe({
+				next: ({ data: { listenFeedUpdates: a } }) => {
+					this.setState(({ posts }) => ({
+						posts: [
+							a,
+							...posts
+						]
+					}));
+				}
+			});
 		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	componentWillUnmount() {
+		(this.feedSubscription && this.feedSubscription.unsubscribe());
 	}
 
 	publishPost = (text, images) => {

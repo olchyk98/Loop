@@ -800,6 +800,16 @@ class App extends Component {
 												blocked: false,
 												loading: this.state.friendProcessing,
 												action: this.toggleFriend
+											},
+											{
+												title: <i className="far fa-comment-alt" />,
+												active: false,
+												blocked: false,
+												loading: false,
+												action: () => {
+													this.props.history.push(`${ links["CHAT_PAGE"].absolute }/${ this.state.user.id }`);
+													this.props.refreshDock();
+												}
 											}
 										].map(({ title, active, action, blocked, loading }, index) => (
 											<button

@@ -58,7 +58,7 @@ html, body {
 .global_error {
 	--height:37.5px;
 	--trans:.35s;
-
+	
 	position:fixed;
 	bottom:calc(var(--height) * -1);
 	/*line-height:var(--height);*/
@@ -116,6 +116,44 @@ html, body {
 	.rn:not(.nonav) > * {
 		margin-left:auto!important;
 		margin-right:auto!important;
+	}
+
+	.gl-photomodal-infoc {
+		--modalres:calc(300px - var(--padding) * 2); 
+
+		width:var(--modalres)!important;
+	}
+}
+
+@media only screen and (max-width: 915px) {
+	.gl-photomodal-mg {
+		margin:0!important;
+	}
+
+	.gl-photomodal-infoc {
+		--trans:.45s;
+
+		opacity:0!important;
+		width:0!important;
+		visibility:hidden!important;
+		margin-right:calc((var(--modalres)) * -1)!important;
+		transition:all var(--trans), visibility var(--trans);
+	}
+
+	.gl-photomodal-mg.active {
+		display:none!important;
+	}
+
+	.gl-photomodal-mg.active ~ .gl-photomodal-infoc {
+		transition:all var(--trans);
+		margin-right:inherit!important;
+		opacity:1!important;
+		width:calc(100% - var(--padding) * 3)!important;
+		visibility:visible!important;
+	}
+
+	.gl-photomodal-infoc-account-closesm {
+		display:block!important;
 	}
 }
 

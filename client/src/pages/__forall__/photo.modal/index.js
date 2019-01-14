@@ -37,7 +37,8 @@ class App extends Component {
 			data: null,
 			isCommenting: false,
 			isLiking: false,
-			targetLoading: false
+			targetLoading: false,
+			sm_CommentsOpened: false
 		}
 
 		this.unsubscribe = null;
@@ -241,8 +242,8 @@ class App extends Component {
 			<Fragment>
 				<div className={ `gl-photomodal_bg${ (!this.state.isActive) ? "" : " active" }` } onClick={ this.closeModal } />
 				<div className={ `gl-photomodal${ (!this.state.isActive) ? "" : " active" }` }>
-					<section className="gl-photomodal-mg">
-						<div className="gl-photomodal-mg-mat" onClick={ () => null }>
+					<section className={ `gl-photomodal-mg${ (!this.state.sm_CommentsOpened) ? "" : " active" }` }>
+						<div className="gl-photomodal-mg-mat">
 							<img
 								onLoad={ () => this.setState({ targetLoading: false }) }
 								onError={ () => this.props.castError("We couldn't load this image. Please, try later.") }
@@ -275,7 +276,12 @@ class App extends Component {
 									{
 										title: "Comment",
 										icon: <i className="far fa-comment-alt" />,
-										action: () => (this.state.waitID) ? this.commentInputRef.focus() : null
+										action: (this.state.waitID) ? () => {
+											this.commentInputRef.focus();
+											this.setState(() => ({
+												sm_CommentsOpened: true
+											}));
+										} : null
 									},
 									{
 										title: "Download",
@@ -301,15 +307,18 @@ class App extends Component {
 						</div>
 					</section>
 					<section className="gl-photomodal-infoc">
-						<Link className="gl-photomodal-infoc-account" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.state.data && this.state.data.creator.id }` } onClick={ this.props.refreshDock } >
-							<div className="gl-photomodal-infoc-account-img">
+						<div className="gl-photomodal-infoc-account">
+							<Link to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.state.data && this.state.data.creator.id }` } onClick={ this.props.refreshDock } className="gl-photomodal-infoc-account-img">
 								<img src={ this.state.data && api.storage + this.state.data.creator.avatar } alt="profile user" />
-							</div>
-							<div className="gl-photomodal-infoc-account-info">
+							</Link>
+							<Link to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.state.data && this.state.data.creator.id }` } onClick={ this.props.refreshDock } className="gl-photomodal-infoc-account-info">
 								<p className="gl-photomodal-infoc-account-info-name">{ this.state.data && this.state.data.creator.name }</p>
 								<p className="gl-photomodal-infoc-account-info-date">{ this.state.data && convertTime(this.state.data.time, "ago") }</p>
-							</div>
-						</Link>
+							</Link>
+							<button className="gl-photomodal-infoc-account-closesm definp" onClick={ () => this.setState({ sm_CommentsOpened: false }) }>
+								<i className="fas fa-times" />
+							</button>
+						</div>
 						<div className="gl-photomodal-infoc-controls">
 							{
 								[

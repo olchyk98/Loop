@@ -125,11 +125,15 @@ class Conversation extends Component {
 							<span className="rn-chat-conversations-item-content-title-placeholder">•</span>
 							<span className="rn-chat-conversations-item-content-title-time">{ (this.props.preview && convertTime(this.props.preview.time, "ago", true, true)) || "" }</span>
 						</div>
-						<div className="rn-chat-conversations-item-content-controls">
-							<button className="rn-chat-conversations-item-content-controls-btn definp" onClick={ this.props.leaveConversation }>
-								<i className="fas fa-sign-out-alt" />
-							</button>
-						</div>
+						{
+							(!this.props.canLeave) ? null : (
+								<div className="rn-chat-conversations-item-content-controls">
+									<button className="rn-chat-conversations-item-content-controls-btn definp" onClick={ this.props.leaveConversation }>
+										<i className="fas fa-sign-out-alt" />
+									</button>
+								</div>
+							)
+						}
 					</div>
 					<div onClick={ this.props._onClick } className={ `rn-chat-conversations-item-content-last${ (+this.props.contInt > 1) ? "" : " lastinrow" }` }>
 						<span className="rn-chat-conversations-item-content-last-name">{ this.props.preview && this.props.preview.creator.name }</span>
@@ -153,168 +157,6 @@ class Conversation extends Component {
 						)
 					}
 				</div>
-			</div>
-		);
-	}
-}
-
-class DisplayMessageTimerNumber extends Component {
-	render() {
-		return(
-			<div className="rn-chat-display-mat-item-content-timer-display-number">
-				{
-					(!this.props.isEditable) ? (
-						<p className="rn-chat-display-mat-item-content-timer-display-number-mat">{ this.props.value }</p>
-					) : (
-						<p
-						className="rn-chat-display-mat-item-content-timer-display-number-mat definp"
-						contentEditable={ this.props.isEditable }
-						suppressContentEditableWarning={ true }
-						defaultValue={ this.props.value }
-						onInput={ ({ target }) => {
-							if(!target.textContent.replace(/|s|\n/g, "").length) {
-								target.textContent = "0";
-							}
-
-							let a = target.textContent;
-
-							if(a === "0") { // match(/0\d$/)
-								target.textContent = a.replace("0", "");
-							}
-
-							this.props._onChange(+a);
-						} }
-						onKeyPress={ e => {
-							if(e.target.textContent.length >= 10 || !e.key.match(/\d/)) e.preventDefault();
-						} }>{ this.props.value }</p>
-					)
-				}
-				<p className="rn-chat-display-mat-item-content-timer-display-number-title">{ this.props.title }</p>
-			</div>
-		);
-	}
-}
-
-class DisplayMessageTimer extends Component {
-	constructor(props) {
-		super(props);
-
-		if(!this.props.isProduction) {
-			this.state = {
-				customHours: 0,
-				customMinutes: 0,
-				customSeconds: 0
-			}
-		} else {
-			this.state = {
-				currentSeconds: 0,
-				currentMinutes: 0,
-				currentHours: 0,
-				isRunning: null
-			}
-
-			this.timerInt = null;
-		}
-	}
-
-	static defaultProps = {
-		isProduction: true
-	}
-
-	componentDidMount() {
-		if(this.props.isProduction) {
-			let { start, time, isRunning } = JSON.parse(this.props.data);
-
-			this.setState(() => ({
-				isRunning
-			}));
-			if(!isRunning) return;
-
-			// (time - (now - time)) / 1000
-
-			let set = () => {
-				let a = (time - (+new Date() - start)) / 1000,
-					f = f => {
-						let ff = Math.floor(f);
-
-						return ((ff.toString().length === 1) ? "0" + ff : ff);
-					},
-					b = f(a / 60), // m
-					c = a % 60,
-					d = f(c / 60000), //  h
-					e = f(c % 60000); // s
-
-				this.setState(() => ({
-					currentSeconds: (e > 0) ? e : "00",
-					currentMinutes: (b > 0) ? b : "00",
-					currentHours: (d > 0) ? d : "00"
-				}));
-
-				return (b <= 0 && d <= 0 && e <= 0);
-			}
-
-			if(!set()) {
-				this.timerInt = setInterval(set, 1000);
-			} else {
-				clearInterval(this.timerInt);			
-			}
-		}
-	}
-
-	componentWillUnmount() {
-		if(this.props.isProduction) clearInterval(this.timerInt);
-	}
-
-	render() {
-		return(
-			<div className="rn-chat-display-mat-item-content-timer">
-				<section className="rn-chat-display-mat-item-content-timer-display">
-					<DisplayMessageTimerNumber
-						title="Hours"
-						value={ (this.props.isProduction) ? this.state.currentHours : 0 }
-						isEditable={ !this.props.isProduction }
-						_onChange={ value => this.setState({ customHours: value }) }
-					/>
-					<span className="rn-chat-display-mat-item-content-timer-display-space">:</span>
-					<DisplayMessageTimerNumber
-						title="Minutes"
-						value={ (this.props.isProduction) ? this.state.currentMinutes : 0 }
-						isEditable={ !this.props.isProduction }
-						_onChange={ value => this.setState({ customMinutes: value }) }
-					/>
-					<span className="rn-chat-display-mat-item-content-timer-display-space">:</span>
-					<DisplayMessageTimerNumber
-						title="Seconds"
-						value={ (this.props.isProduction) ? this.state.currentSeconds : 0 }
-						isEditable={ !this.props.isProduction }
-						_onChange={ value => this.setState({ customSeconds: value }) }
-					/>
-				</section>
-				<section className="rn-chat-display-mat-item-content-timer-controls">
-					{
-						(this.props.isProduction) ? (
-							<Fragment>
-								<button className="rn-chat-display-mat-item-content-timer-controls-btn definp">
-									<i className="fas fa-stop" />
-								</button>
-								<button className="rn-chat-display-mat-item-content-timer-controls-btn definp">
-									<i className="fas fa-play" />
-								</button>
-								<button className="rn-chat-display-mat-item-content-timer-controls-btn definp">
-									<i className="fas fa-undo" />
-								</button>
-							</Fragment>
-						) : ( // in the edit modal
-							<button className="rn-chat-display-mat-item-content-timer-controls-btn definp" onClick={ () => this.props.submit({
-								s: this.state.customSeconds,
-								m: this.state.customMinutes,
-								h: this.state.customHours
-							}) }>
-								<i className="fas fa-play" />
-							</button>
-						)
-					}
-				</section>
 			</div>
 		);
 	}
@@ -346,27 +188,6 @@ class DisplayMessage extends Component {
 					</div>
 					<div className="rn-chat-display-mat-item-content">
 						<div><img className="rn-chat-display-mat-item-stickermg" alt="sticker" src={ stickers[this.props.content] } /></div>
-						<div className="rn-chat-display-mat-item-content-info">
-							<span>{ this.props.creator && this.props.creator.name }</span>
-							<span className="space">•</span>
-							<span>{ convertTime(this.props.time) }</span>
-						</div>
-					</div>
-				</article>
-			);
-		} else if(this.props.type === "TIMER_TYPE") {
-			return(
-				<article className={ `rn-chat-display-mat-item ${ (this.props.isClients) ? "client" : "contibutor" }` }>
-					<div className="rn-chat-display-mat-item-avatar">
-						<Link onClick={ this.props.refreshDock } className="rn-chat-display-mat-item-avatar-mat" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator && this.props.creator.id }` }>
-							<img src={ (this.props.creator && api.storage + this.props.creator.avatar) || placeholderGIF } alt="contributor's avatar" />
-						</Link>
-					</div>
-					<div className="rn-chat-display-mat-item-content">
-						<DisplayMessageTimer
-							isProduction={ true }
-							data={ this.props.content }
-						/>
 						<div className="rn-chat-display-mat-item-content-info">
 							<span>{ this.props.creator && this.props.creator.name }</span>
 							<span className="space">•</span>
@@ -499,23 +320,7 @@ class ContUser extends Component {
 
 class PortableModal extends Component {
 	render() {
-		if(this.props.stage === "STOPWATCH_STAGE") {
-			return(
-				<Fragment>
-					<div className="rn-chat-mm-modalbg" onClick={ this.props.onClose } />
-					<div className="rn-chat-mm-modal">
-						<DisplayMessageTimer
-							isProduction={ false }
-							submit={ ({ s, m, h }) => { this.props._onSubmit("TIMER_TYPE", JSON.stringify({
-								time: s * 1000 + m * 60000 + h * 3600000, // ms
-								start: +new Date(), // ms
-								isRunning: true
-							})); this.props.onClose() } }
-						/>
-					</div>
-				</Fragment>
-			);
-		} else if(this.props.stage === "STICKERS_STAGE") {
+		if(this.props.stage === "STICKERS_STAGE") {
 			return(
 				<Fragment>
 					<div className="rn-chat-mm-modalbg" onClick={ this.props.onClose } />
@@ -780,9 +585,23 @@ class App extends Component {
 
 		this.dialogDisplayRef = React.createRef();
 		this.conversationsUPSubscription = this.dialogSubscription = this.dialogSettingsSubscription = null;
+		this.sendingMessage = false;
 	}
 
-	componentDidMount() {
+	componentDidMount(a) {
+		let b = this.props.match.params.id;
+
+		if(!b) this.globalStageLoad();
+		else this.openConversation(b);
+	}
+
+	componentWillUnmount() {
+		(this.dialogSubscription && this.dialogSubscription.unsubscribe());
+		(this.dialogSettingsSubscription && this.dialogSettingsSubscription.unsubscribe());
+		(this.conversationsUPSubscription && this.conversationsUPSubscription.unsubscribe());
+	}
+
+	globalStageLoad = () => {
 		const { id } = cookieControl.get("authdata");
 		let errorTxt = "We couldn't load your conversations. Please, try again."
 
@@ -801,6 +620,7 @@ class App extends Component {
 							avatar(id: $id),
 							contributorsInt,
 							color,
+							canLeave,
 							name(id: $id),
 							lastMessage {
 								time,
@@ -866,12 +686,6 @@ class App extends Component {
 		});
 	}
 
-	componentWillUnmount() {
-		(this.dialogSubscription && this.dialogSubscription.unsubscribe());
-		(this.dialogSettingsSubscription && this.dialogSettingsSubscription.unsubscribe());
-		(this.conversationsUPSubscription && this.conversationsUPSubscription.unsubscribe());
-	}
-
 	openConversation = targetID => {
 		(this.dialogSubscription && this.dialogSubscription.unsubscribe());
 		(this.dialogSettingsSubscription && this.dialogSettingsSubscription.unsubscribe());
@@ -887,15 +701,15 @@ class App extends Component {
 
 		// Promise.all([])?
 		// Load conversation
-		client.query({
-			query: gql`
-				query($id: ID!, $targetID: ID!) {
-					conversation(id: $id, targetID: $targetID, seeConversation: true) {
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $targetID: ID!) {
+					createConversation(id: $id, targetID: $targetID, seeConversation: true) {
 						id,
 						name(id: $id),
 						avatar(id: $id),
-						color,
 						contributorsInt,
+						color,
 						messages {
 							id,
 							content,
@@ -919,124 +733,106 @@ class App extends Component {
 				id,
 				targetID
 			}
-		}).then(({ data: { conversation } }) => {
-			if(!conversation) return this.props.castError(errorTxt);
+		}).then(({ data: { createConversation: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
 
 			this.setState(() => ({
-				dialog: conversation
+				dialog: a
 			}), this.scrollEndDialog);
 
-			return conversation.id;
-		}).catch(() => this.props.castError(errorTxt));
-
-		errorTxt = "Something went wrong. Please, try later";
-
-		this.dialogSubscription = client.subscribe({
-			query: gql`
-				subscription($id: ID!, $conversationID: ID!) {
-				  hookConversationMessage(
-				    id: $id,
-				   ,
-				    conversationID: $conversationID
-				  ) {
-				    id,
-					content,
-					time,
-					type,
-					images {
-						id,
-						url
-					},
-					creatorID,
-					creator {
-						id,
-						name,
-						avatar
-					}
-				  }
-				}
-			`,
-			variables: {
-				id,
-				conversationID: targetID
-			}
-		}).subscribe({
-			next: ({ data: { hookConversationMessage: a } }) => {
-				if(
-					!a ||
-					!this.state.dialog || // This message will be loaded with open conversation fetch request.
-					this.state.dialog.messages.findIndex(io => io.id === a.id) !== -1 // few devices on one account in the same conversation
-				) return;
-
-				this.setState(({ dialog, dialog: { messages } }) => ({
-					dialog: {
-						...dialog,
-						messages: [
-							...messages,
-							a
-						]
-					}
-				}), () => {
-					// Filter
-					let b = Array.from(this.state.dialog.messages),
-						c = [];
-
-					b.filter(io => {
-						if(c.findIndex(ia => ia === io) === -1) {
-							c.push(io);
-							return true;
-						} else {
-							return false;
+			window.history.pushState(null, `Conversation: ${ targetID }`, links["CHAT_PAGE"].absolute + '/' + targetID);
+		}).then(() => {
+			this.dialogSubscription = client.subscribe({
+				query: gql`
+					subscription($id: ID!, $conversationID: ID!) {
+					  hookConversationMessage(id: $id, conversationID: $conversationID) {
+					    id,
+						content,
+						time,
+						type,
+						images {
+							id,
+							url
+						},
+						creatorID,
+						creator {
+							id,
+							name,
+							avatar
 						}
-					});
+					  }
+					}
+				`,
+				variables: {
+					id,
+					conversationID: targetID
+				}
+			}).subscribe({
+				next: ({ data: { hookConversationMessage: a } }) => {
+					if(
+						!a ||
+						!this.state.dialog || // This message will be loaded with open conversation fetch request.
+						this.state.dialog.messages.findIndex(io => io.id === a.id) !== -1 // few devices on one account in the same conversation
+					) return;
+
+					this.setState(({ dialog, dialog: { messages } }) => ({
+						dialog: {
+							...dialog,
+							messages: [
+								...messages,
+								a
+							]
+						}
+					}));
+				},
+				error: () => this.props.castError(errorTxt)
+			});
+		}).then(() => {
+			this.dialogSettingsSubscription = client.subscribe({
+				query: gql`
+					subscription($id: ID!, $conversationID: ID!) {
+						conversationSettingsUpdated(id: $id, conversationID: $conversationID) {
+							id,
+							name(id: $id),
+							avatar(id: $id)
+						}
+					}
+				`,
+				variables: {
+					id,
+					conversationID: targetID
+				}
+			}).subscribe({
+				next: ({ data: { conversationSettingsUpdated: a } }) => {
+					if(!a) return this.props.castError(errorTxt);
 
 					this.setState(({ dialog }) => ({
 						dialog: {
 							...dialog,
-							messages: b
+							...a
 						}
-					}), this.scrollEndDialog);
-				});
-			},
-			error: () => this.props.castError(errorTxt)
-		});
-
-		this.dialogSettingsSubscription = client.subscribe({
-			query: gql`
-				subscription($id: ID!, $conversationID: ID!) {
-					conversationSettingsUpdated(id: $id, conversationID: $conversationID) {
-						id,
-						name(id: $id),
-						avatar(id: $id)
-					}
-				}
-			`,
-			variables: {
-				id,
-				conversationID: targetID
-			}
-		}).subscribe({
-			next: ({ data: { conversationSettingsUpdated: a } }) => {
-				if(!a) return this.props.castError(errorTxt);
-
-				this.setState(({ dialog }) => ({
-					dialog: {
-						...dialog,
-						...a
-					}
-				}));
-			},
-			error: () => this.props.castError(errorTxt)
-		});
+					}));
+				},
+				error: () => this.props.castError(errorTxt)
+			});
+		}).catch(() => this.props.castError(errorTxt));
 	}
 
 	sendDialogMessage = (type, value) => {
-		if(!this.state.dialog || !value) return;
+		if(!this.state.dialog || !value || this.sendingMessage) return;
+
+		this.sendingMessage = true;
 
 		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "An error occured while we tried to send your message. Please, try again."
 
-		let a = this.state.dialog.messages.length;
+		const genID = () => {
+			let a = Math.floor(Math.random() * 1500);
+			if(this.state.dialog.messages.findIndex(io => io.id === a) !== -1) return this.genID();
+			else return a;
+		}
+
+		let a = genID();
 		this.setState(({ dialog, dialog: { messages } }) => ({
 			dialog: {
 				...dialog,
@@ -1063,8 +859,7 @@ class App extends Component {
 			mutation: gql`
 				mutation($id: ID!, $content: Upload!, $type: String!, $conversationID: ID!) {
 				  sendMessage(
-				    id: $id,
-				   ,
+				  	id: $id,
 				    content: $content,
 				    type: $type,
 				    conversationID: $conversationID
@@ -1093,31 +888,19 @@ class App extends Component {
 				conversationID: this.state.dialog.id
 			}
 		}).then(({ data: { sendMessage: message } }) => {
+			this.sendingMessage = false;
 			if(!message) return this.props.castError(errorTxt);
 
 			let aa = Array.from(this.state.dialog.messages),
-				ab = aa.findIndex( io => io.id.toString() === a.toString() );
+				ab = aa.findIndex(io => io.id.toString() === a.toString());
 
-			if(ab !== -1) {
-				aa[ab] = message;
-
-				this.setState(({ dialog }) => ({
-					dialog: {
-						...dialog,
-						messages: aa
-					}
-				}));
-			} else {
-				this.setState(({ dialog, dialog: { messages } }) => ({
-					dialog: {
-						...dialog,
-						messages: [
-							...messages,
-							message
-						]
-					}
-				}), this.scrollEndDialog);
-			}
+			aa[ab] = message;
+			this.setState(({ dialog }) => ({
+				dialog: {
+					...dialog,
+					messages: aa
+				}
+			}), this.scrollEndDialog);
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
@@ -1158,7 +941,6 @@ class App extends Component {
 			}
 		}).then(({ data: { addUserToConversation: b } }) => {
 			if(!b) return;
-
 			aqE(false);
 
 			let a = Array.from(this.state.dialog.inviteSuggestions);
@@ -1175,7 +957,6 @@ class App extends Component {
 					inviteSuggestions: a
 				}
 			}));
-
 		});
 	}
 
@@ -1291,7 +1072,7 @@ class App extends Component {
 
 			arA(false);
 			this.getDialogContributors();
-		}).catch(() => this.props.castError(errorTxt));
+		});
 	}
 
 	leaveConversation = targetID => {
@@ -1393,7 +1174,7 @@ class App extends Component {
 											<Loadericon />
 										)
 									) : (
-										(this.state.conversations).map(({ id: a, avatar: b, lastMessage: c, color: d, name: e, contributorsInt: f, isSeen: g }) => (
+										this.state.conversations.map(({ id: a, avatar: b, lastMessage: c, color: d, name: e, contributorsInt: f, isSeen: g, canLeave: h }) => (
 											<Conversation
 												key={ a }
 												id={ a }
@@ -1401,14 +1182,14 @@ class App extends Component {
 												name={ e }
 												color={ d }
 												isSeen={ g }
+												canLeave={ h }
 												contInt={ f - 1 }
 												preview={(c) ? {
 													...c,
 													content: (c.type === "MESSAGE_TYPE") ? c.content : ({
 														"FILE_TYPE": "FILE",
 														"IMAGES_TYPE": "IMAGE",
-														"STICKER_TYPE": "STICKER",
-														"TIMER_TYPE": "TIMER"
+														"STICKER_TYPE": "STICKER"
 													}[c.type])
 												} : null}
 												clientAvatar={ (this.props.userdata && this.props.userdata.avatar) || placeholderGIF }
@@ -1505,9 +1286,6 @@ class App extends Component {
 													</label>
 													<button title="Select smile" className="definp" onClick={ () => this.setState({ pModalStage: "STICKERS_STAGE" }) }>
 														<i className="far fa-smile-wink" />
-													</button>
-													<button title="Set timer" className="definp" onClick={ () => this.setState({ pModalStage: "STOPWATCH_STAGE" }) }>
-														<i className="fas fa-stopwatch" />
 													</button>
 												</div>
 												<ChatDisplayDialogInput

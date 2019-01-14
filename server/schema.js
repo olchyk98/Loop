@@ -293,14 +293,20 @@ const PostType = new GraphQLObjectType({
 		likes: { type: new GraphQLList(GraphQLID) },
 		likesInt: {
 			type: GraphQLInt,
-			resolve: ({ likes }) => likes.length
+			resolve: ({ likes }) => {
+				if(!likes) return 0;
+				else return likes.length;
+			}
 		},
 		isLiked: {
 			type: GraphQLBoolean,
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
 			},
-			resolve: ({ likes }, { id }) => likes.includes(str(id))
+			resolve: ({ likes }, { id }) => {
+				if(!likes) return false;
+				else return likes.includes(str(id));
+			}
 		},
 		images: {
 			type: new GraphQLList(ImageType),
@@ -517,6 +523,10 @@ const ConversationType = new GraphQLObjectType({
 
 				return (a) ? a.isSeen : true;
 			}
+		},
+		canLeave: {
+			type: GraphQLBoolean,
+			resolve: ({ contributors }) => contributors.length > 2
 		}
 	})
 });
@@ -541,7 +551,7 @@ const MessageType = new GraphQLObjectType({
 		},
 		creator: {
 			type: UserType,
-			resolve: ({ creatorID }) => User.findById(creatorID)
+			resolve: ({ creatorID }) => (creatorID !== "-1") ? User.findById(creatorID) : null
 		}
 	})
 });
@@ -948,6 +958,10 @@ const RootMutation = new GraphQLObjectType({
 						likes: []
 					})
 				).save();
+
+				pubsub.publish("feedContentUpdated", {
+					post
+				});
 
 				if(images && images.length) {
 					post.images = [];
@@ -1422,51 +1436,55 @@ const RootMutation = new GraphQLObjectType({
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
 				targetID: { type: new GraphQLNonNull(GraphQLID) },
+				seeConversation: { type: GraphQLBoolean }
 			},
-			async resolve(_, { id, targetID }, { req }) {
+			async resolve(_, { id, targetID, seeConversation }, { req }) {
 				// Validate init contributors
 				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
 				let b = await User.findById(targetID);
-				if(!b) return null;
-
-				// Validate if the conversation exists
-				let c = await Conversation.findOne({
-					$or: [ // XXX
-						{
-							contributors: [
-								str(id),
-								str(targetID)
-							]
-						},
-						{
-							contributors: [
-								str(targetID),
-								str(id)
-							]
+				if(b) { // targetID is user
+					if(a.friends.includes(str(targetID)) || b.friends.includes(str(id))) { // validate if friend
+						let c = await (
+							Conversation.findOne({
+								$or: [
+									{
+										contributors: [str(id), str(targetID)]
+									},
+									{
+										contributors: [str(targetID), str(id)]	
+									}
+								]
+							})
+						);
+						if(c) { // conversation exists -> return
+							return c;
+						} else { // conversation is not exists -> create new and return
+							return (
+								new Conversation({
+									name: "",
+									avatar: "",
+									contributors: [
+										str(id),
+										str(targetID)
+									],
+									creatorID: str(id),
+									color: "white"
+								})
+							).save();
 						}
-					]
-				});
-
-				if(c) return c;
-
-				// Create a new conversation
-				let d = await (
-					new Conversation({
-						name: "",
-						avatar: "",
-						contributors: [
-							str(id),
-							str(targetID)
-						],
-						creatorID: str(id),
-						color: "white"
+					} else {
+						return null;
+					}
+				} else { // targetID is conversation
+					return Conversation.findOne({
+						_id: targetID,
+						contributors: {
+							$in: [str(id)]
+						}
 					})
-				).save();
-
-				// Send the new conversation's data
-				return d;
+				}
 			}
 		},
 		sendMessage: {
@@ -1974,6 +1992,20 @@ const RootSubscription = new GraphQLObjectType({
 				}
 			),
 			resolve: ({ note }) => note
+		},
+		listenFeedUpdates: {
+			type: PostType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			subscribe: withFilter(
+				() => pubsub.asyncIterator('feedContentUpdated'),
+				async ({ post }, { id }) => {
+					let a = await User.findById(id);
+					return a.subscribedTo.includes(str(post.creatorID));
+				}
+			),
+			resolve: ({ post }) => post
 		}
 	}
 })
