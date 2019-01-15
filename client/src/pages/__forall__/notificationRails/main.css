@@ -1,0 +1,107 @@
+.popup_notificationrail {
+	--pmargin:15px;
+
+	position:fixed;
+	z-index:350;
+	bottom:var(--pmargin);
+	right:var(--pmargin);
+	display:flex;
+	flex-direction:column-reverse;
+	overflow:scroll;
+	height:calc(100% - var(--nav_realheight) * 2);
+}
+
+.popup_notificationrail-item {
+	--bxsh:5px;
+	--padding:20px;
+
+	padding:var(--padding);
+	flex-shrink:0;
+	border-radius:3px;
+	margin-left:var(--bxsh);
+	margin-bottom:5px;
+	box-shadow:-.5px .5px 30px -10px rgba(0, 0, 0, .55);
+	position:relative;
+	background:#212121;
+	min-height:calc(125px - var(--padding) * 2);
+	width:calc(325px - var(--padding) * 2);
+	display:flex;
+	align-items:stretch;
+	justify-content:flex-start;
+	flex-direction:column;
+}
+
+.popup_notificationrail-item-controls {
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	flex-shrink:0;
+	height:25px;
+}
+
+.popup_notificationrail-item-controls-info {
+	display:flex;
+	align-items:center;
+}
+
+.popup_notificationrail-item-controls-info-avatar,
+.popup_notificationrail-item-controls-info-avatar > img {
+	border-radius:50%;
+}
+
+.popup_notificationrail-item-controls-info-avatar {
+	--size:20px;
+
+	height:var(--size);
+	width:var(--size);
+	position:relative;
+	margin-right:7.5px;
+}
+
+.popup_notificationrail-item-controls-info-avatar > img {
+	object-fit:cover;
+	object-position:center;
+	height:100%;
+	width:100%;
+}
+
+.popup_notificationrail-item-controls-info-name,
+.popup_notificationrail-item-controls-info-close {
+	color:#52AF50;
+}
+
+.popup_notificationrail-item-controls-info-name {
+	font-family:"Quicksand";
+	font-weight:400;
+	font-size:.975em;
+}
+
+.popup_notificationrail-item-controls-info-close {
+	cursor:pointer;
+	font-size:1em;
+}
+
+.popup_notificationrail-item-content {
+	font-family:"Quicksand";
+	margin-top:10px;
+	display:flex;
+	flex-direction:column;
+}
+
+.popup_notificationrail-item-content-title,
+.popup_notificationrail-item-content-content {
+	--margin:1px;
+
+	margin-top:var(--margin);
+	margin-bottom:var(--margin);
+}
+
+.popup_notificationrail-item-content-title {
+	font-weight:500;
+	color:rgba(255, 255, 255, .9);
+}
+
+.popup_notificationrail-item-content-content {
+	font-weight:300;
+	color:rgba(255, 255, 255, .25);
+}

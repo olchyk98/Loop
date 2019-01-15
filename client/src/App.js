@@ -23,6 +23,7 @@ import links from './links'; // pages routes
 
 // Other stuff
 import PhotoModal from './pages/__forall__/photo.modal';
+import NotificationRails from './pages/__forall__/notificationRails';
 
 // Needle Route
 const NeedleRoute = ({ path, condition, component: Component, redirect: Redirect, ...settings }) => (
@@ -31,7 +32,7 @@ const NeedleRoute = ({ path, condition, component: Component, redirect: Redirect
 		{ ...settings }
 		component={props => (condition) ? <Component { ...props } /> : <Redirect to={ Redirect } /> }
 	/>
-)
+);
 
 class GlobalError extends Component {
 	constructor(props) {
@@ -98,6 +99,7 @@ class App extends Component {
 				<BrowserRouter>
 					<Fragment>
 						<GlobalError />
+						<NotificationRails />
 						<PhotoModal
 							store={ store }
 						/>

@@ -328,3 +328,9 @@ html, body {
 		margin-bottom:var(--mrgn)!important;
 	}
 }
+
+@media only screen and (max-width: 380px) {
+	.popup_notificationrail {
+		display:none!important;
+	}	
+}
