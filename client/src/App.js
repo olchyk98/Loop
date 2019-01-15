@@ -10,6 +10,7 @@ import Account from './pages/account';
 import Settings from './pages/settings';
 import Chat from './pages/chat';
 import Notes from './pages/notes';
+import PostDisplay from './pages/postDisplay';
 
 // Redux
 import store from './store';
@@ -144,6 +145,13 @@ class App extends Component {
 									path={ links["NOTES_PAGE"].route }
 									condition={ this.cookieID }
 									component={ Notes }
+									redirect={ Presentation }
+									exact
+								/>
+								<NeedleRoute
+									path={ links["POSTDISPLAY_PAGE"].route }
+									condition={ this.cookieID }
+									component={ PostDisplay }
 									redirect={ Presentation }
 									exact
 								/>

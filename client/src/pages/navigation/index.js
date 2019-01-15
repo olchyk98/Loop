@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
 import { Link } from 'react-router-dom';
 
-import { cookieControl } from '../../utils';
+import { cookieControl, convertTime } from '../../utils';
 import links from '../../links';
 import client from '../../apollo';
 import api from '../../api';
@@ -40,15 +40,15 @@ class NotificationsDockItem extends Component {
 class SearchDockUser extends Component {
 	render() {
 		return(
-			<div className="gl-nav-search-dock-section-user">
+			<Link className="gl-nav-search-dock-section-user" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.id }` } onClick={ this.props.onRoute }>
 				<div className="gl-nav-search-dock-section-user-avatar">
-					<img src={ image } alt="user" title="User's avatar" />
+					<img src={ api.storage + this.props.avatar } alt="user" title="User's avatar" />
 				</div>
-				<span className="gl-nav-search-dock-section-user-name">Oles Odynets</span>
+				<span className="gl-nav-search-dock-section-user-name">{ this.props.name }</span>
 				<div className="gl-nav-search-dock-section-user-arrow">
 					<i className="fas fa-angle-right" />
 				</div>
-			</div>
+			</Link>
 		);
 	}
 }
@@ -57,23 +57,17 @@ class SearchDockPost extends Component {
 	render() {
 		return(
 			<div className="gl-nav-search-dock-section-post">
-				<div className="gl-nav-search-dock-section-post-avatar">
-					<img src={ image } alt="User" title="User's avatar" />
-				</div>
-				<div className="gl-nav-search-dock-section-post-content">
+				<Link className="gl-nav-search-dock-section-post-avatar" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.onRoute }>
+					<img src={ api.storage + this.props.creator.avatar } alt="User" title="User's avatar" />
+				</Link>
+				<Link className="gl-nav-search-dock-section-post-content" to={ links["POSTDISPLAY_PAGE"].absolute + this.props.id } onClick={ this.props.onRoute }>
 					<p className="gl-nav-search-dock-section-post-content-mat">
-						LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd 
-						LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd 
-						LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd 
-						LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd 
-						LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd 
-						LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd 
-						LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd LoremInptakd 
+						{ this.props.content }
 					</p>
 					<div className="gl-nav-search-dock-section-post-content-info">
-						<span className="gl-nav-search-dock-section-post-content-info-time">8h</span>
+						<span className="gl-nav-search-dock-section-post-content-info-time">{ convertTime(this.props.time, "ago") }</span>
 					</div>
-				</div>
+				</Link>
 			</div>
 		);
 	}
@@ -86,7 +80,12 @@ class App extends Component {
 		this.state = {
 			visibleNotifications: false,
 			visibleSearch: false,
-			validatedSearch: false
+			validatedSearch: false,
+			searchingData: null,
+			searchingFlip: { // flips visibility
+				users: true, // false
+				posts: true // false
+			}
 		}
 
 		this.searchInt = null
@@ -141,8 +140,95 @@ class App extends Component {
 		if(a) return;
 
 		this.searchInt = setTimeout(() => {
-			console.log("REQUEST SENDED!");
-		}, 400);
+			// TODO: Hide/Show flip titles
+
+			this.setState(() => ({
+				searchingData: false
+			}));
+
+			// Getter/Setter? No.
+			let _export = {},
+				vap = () => {
+					if(_export.users && _export.posts) {
+						this.setState(() => ({
+							searchingData: {..._export}
+						}))
+					}
+				}
+
+			// client.query({ // Search users
+			// 	query: gql`
+			// 		query($query: String!) {
+			// 			glSearchUsers(query: $query) {
+
+			// 			}
+			// 		}		
+			// 	`,
+			// 	variables: {
+			// 		query: value
+			// 	}
+			// }).then(({ data: { glSearchUsers: a } }) => {
+			// 	if(!a) return this.props.castError("Something went wrong. Please, restart the page");
+
+			// 	_export.users = a;
+			// 	vap();
+			// });
+
+			Promise.all([
+				(
+					client.query({ // Search users
+						query: gql`
+							query($query: String!) {
+								glSearchUsers(query: $query) {
+									id,
+									avatar,
+									name
+								}
+							}		
+						`,
+						variables: {
+							query: value
+						}
+					})
+				),
+				(
+					client.query({ // Search posts
+						query: gql`
+							query($query: String!) {
+								glSearchPosts(query: $query) {
+									id,
+									content(limit: 45),
+									time,
+									creator {
+										id,
+										avatar
+									}
+								}
+							}		
+						`,
+						variables: {
+							query: value
+						}
+					})
+				)
+			]).then(([{ data: { glSearchUsers: users } }, { data: { glSearchPosts: posts } } ]) => {
+				if(!users || !posts) return this.props.castError("Something went wrong. Please, restart the page");
+
+				_export.users = users;
+				_export.posts = posts;
+
+				vap();
+			})
+		}, 100);
+	}
+
+	toggleSearchingFlip = field => {
+		this.setState(({ searchingFlip: a }) => ({
+			searchingFlip: {
+				...a,
+				[field]: !a[field]
+			}
+		}));
 	}
 
 	render() {
@@ -171,24 +257,91 @@ class App extends Component {
 							onClick={ () => this.search(false) }
 						/>
 						<div className={ `gl-nav-search-dock${ (!this.state.visibleSearch) ? "" : " visible" }` }>
-							{/* <Loadericon /> */}
-							<span className="gl-nav-search-dock-title">Users</span>
-							<div className="gl-nav-search-dock-section">
-								<SearchDockUser />
-								<SearchDockUser />
-								<SearchDockUser />
-								<SearchDockUser />
-							</div>
-							<span className="gl-nav-search-dock-title">Posts</span>
-							<div className="gl-nav-search-dock-section">
-								<SearchDockPost />
-								<SearchDockPost />
-								<SearchDockPost />
-								<SearchDockPost />
-								<SearchDockPost />
-								<SearchDockPost />
-								<SearchDockPost />
-							</div>
+							{
+								(!this.state.searchingData) ? (
+									(this.state.searchingData !== false) ? null : (
+										<Loadericon />
+									)
+								) : (
+									<Fragment>
+										<div className="gl-nav-search-dock-title" onClick={ () => this.toggleSearchingFlip("users") }>
+											<span>
+												Users
+											</span>
+											<div key={ (this.state.searchingFlip.users) ? "A" : "B" }>
+												{
+													(this.state.searchingFlip.users) ? (
+														<i className="fas fa-caret-down" />
+													) : (
+														<i className="fas fa-caret-up" />
+													)
+												}
+											</div>
+										</div>
+											{
+												(this.state.searchingFlip.users) ? (
+													<div className="gl-nav-search-dock-section">
+														{
+															this.state.searchingData.users.map(({ id, name, avatar }) => (
+																<SearchDockUser
+																	key={ id }
+																	id={ id }
+																	name={ name }
+																	avatar={ avatar }
+																	onRoute={() => {
+																		this.props.refreshDock();
+																		this.setState(() => ({
+																			visibleSearch: false
+																		}));
+																	}}
+																/>
+															))
+														}
+													</div>
+												) : null
+											}
+										<div className="gl-nav-search-dock-title" onClick={ () => this.toggleSearchingFlip("posts") }>
+											<span>
+												Posts
+											</span>
+											<div key={ (this.state.searchingFlip.posts) ? "A" : "B" }>
+												{
+													(this.state.searchingFlip.posts) ? (
+														<i className="fas fa-caret-down" />
+													) : (
+														<i className="fas fa-caret-up" />
+													)
+												}
+											</div>
+										</div>
+										<div className="gl-nav-search-dock-section">
+											{
+												(this.state.searchingFlip.posts) ? (
+													<div className="gl-nav-search-dock-section">
+														{
+															this.state.searchingData.posts.map(({ id, time, creator, content }) => (
+																<SearchDockPost
+																	key={ id }
+																	id={ id }
+																	creator={ creator }
+																	time={ time }
+																	content={ content }
+																	onRoute={() => {
+																		this.props.refreshDock();
+																		this.setState(() => ({
+																			visibleSearch: false
+																		}));
+																	}}
+																/>
+															))
+														}
+													</div>
+												) : null
+											}
+										</div>
+									</Fragment>
+								)
+							}
 						</div>
 					</div>
 					<div className="gl-nav-account">

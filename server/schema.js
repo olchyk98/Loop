@@ -288,7 +288,13 @@ const PostType = new GraphQLObjectType({
 	fields: () => ({
 		id: { type: GraphQLID },
 		creatorID: { type: GraphQLID },
-		content: { type: GraphQLString },
+		content: {
+			type: GraphQLString,
+			args: {
+				limit: { type: GraphQLInt }
+			},
+			resolve: ({ content }, { limit }) => (!limit) ? content : content.substring(0, limit)
+		},
 		time: { type: GraphQLString },
 		likes: { type: new GraphQLList(GraphQLID) },
 		likesInt: {
@@ -875,6 +881,41 @@ const RootQuery = new GraphQLObjectType({
 					}
 				});
 			}
+		},
+		post: {
+			type: PostType,
+			args: {
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			resolve: (_, { targetID }) => Post.findById(targetID)
+		},
+		glSearchUsers: {
+			type: new GraphQLList(UserType),
+			args: {
+				query: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			resolve: (_, { query }) => User.find({
+				$or: [
+					{
+						name: new RegExp(query, "i")
+					},
+					{
+						login: new RegExp(query, "i")
+					},
+					{
+						description: new RegExp(query, "i")
+					}
+				]
+			}).sort({ name: -1 })
+		},
+		glSearchPosts: {
+			type: new GraphQLList(PostType),
+			args: {
+				query: { type: new GraphQLNonNull(GraphQLString) }
+			},
+			resolve: (_, { query }) => Post.find({
+				content: new RegExp(query, "i")
+			}).sort({ time: -1 })
 		}
 	}
 });
@@ -890,7 +931,7 @@ const RootMutation = new GraphQLObjectType({
 				name: { type: new GraphQLNonNull(GraphQLString) },
 				avatar: { type: new GraphQLNonNull(GraphQLUpload) },
 			},
-			async resolve(_, { login, password, name, avatar }, {  req }) {
+			async resolve(_, { login, password, name, avatar }, { req }) {
 				{
 					let a = await User.findOne({ login });
 					if(a) return null;
@@ -898,8 +939,7 @@ const RootMutation = new GraphQLObjectType({
 
 				let token = generateNoise();
 
-				// receive image
-				if(avatar) {					
+				if(avatar) { // receive image
 					let { filename, stream } = await avatar;
 					var avatarPath = `${ settings.files.avatars }/${ generateNoise(128) },.${ getExtension(filename) },`
 
@@ -1006,7 +1046,7 @@ const RootMutation = new GraphQLObjectType({
 				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
-				// Target validation
+				// Detect target
 				let inTarget = false;
 				{
 					let b = [
@@ -1021,7 +1061,7 @@ const RootMutation = new GraphQLObjectType({
 						let d = await c.findById(targetID);
 
 						if(d) {
-							inTarget = true;
+							inTarget = io;
 							break;
 						}
 					}
@@ -1056,6 +1096,12 @@ const RootMutation = new GraphQLObjectType({
 					})).save();
 				}
 
+				if(inTarget === "Post") {
+					pubsub.publish("postCommentAdded", {
+						comment
+					});
+				}
+
 				return comment;
 			}
 		},
@@ -1086,6 +1132,10 @@ const RootMutation = new GraphQLObjectType({
 					b.likes.splice(b.likes.findIndex(io => str(io) === str(id)), 1);
 				}
 
+				pubsub.publish("postStatsUpdated", {
+					post: b
+				});
+
 				return b;
 			}
 		},
@@ -1115,6 +1165,10 @@ const RootMutation = new GraphQLObjectType({
 				} else {
 					b.likes.splice(b.likes.findIndex(io => str(io) === str(id)), 1);
 				}
+
+				pubsub.publish("commentLikesUpdated", {
+					comment: b
+				});
 
 				return b;
 			}
@@ -2006,6 +2060,45 @@ const RootSubscription = new GraphQLObjectType({
 				}
 			),
 			resolve: ({ post }) => post
+		},
+		listenPostStats: {
+			type: PostType,
+			args: {
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			subscribe: withFilter(
+				() => pubsub.asyncIterator('postStatsUpdated'),
+				({ post }, { targetID }) => str(post._id) === str(targetID)
+			),
+			resolve: ({ post }) => post
+		},
+		listenPostComments: {
+			type: CommentType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			subscribe: withFilter(
+				() => pubsub.asyncIterator('postCommentAdded'),
+				({ comment }, { id, targetID }) => (
+					str(comment.postID) === str(targetID) &&
+					str(comment.creatorID) !== str(id)
+				)
+			),
+			resolve: ({ comment }) => comment
+		},
+		listenPostCommentsLikes: {
+			type: CommentType,
+			args: {
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			subscribe: withFilter(
+				() => pubsub.asyncIterator('commentLikesUpdated'),
+				({ comment }, { targetID }) => (
+					str(comment.postID) === str(targetID)
+				)
+			),
+			resolve: ({ comment }) => comment
 		}
 	}
 })

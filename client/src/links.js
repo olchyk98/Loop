@@ -22,6 +22,10 @@ const links = {
 	"NOTES_PAGE": {
 		'absolute': '/notes',
 		'route': '/notes'
+	},
+	"POSTDISPLAY_PAGE": {
+		'absolute': '/post/',
+		'route': '/post/:id?'
 	}
 }
 

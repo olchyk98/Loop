@@ -27,8 +27,8 @@ class Hero extends Component {
 
 		qRa(true);
 		this.setState(( { isLiked: a, likesInt: b }, { isLiked: c, likesInt: d } ) => ({
-			isLiked: (a) ? !a : !c,
-			likesInt: (a) ? !a : !c ? a + 1 : -1
+			isLiked: (a !== null) ? !a : !c,
+			likesInt: (b !== null) ? !a ? b + 1 : b - 1 : !c ? d + 1 : d - 1
 		}));
 
 		const { id } = cookieControl.get("authdata"),

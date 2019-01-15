@@ -212,10 +212,13 @@ class App extends Component {
 								counter: (Number.isInteger(this.state.commentsInt)) ? this.state.commentsInt : this.props.commentsInt,
 								action: () => {
 									this.commentInputRef.focus();
-									this.props.parentScreen.scrollTo({
-										top: this.commentInputRef.getBoundingClientRect().top,
-										behavior: 'smooth'
-									});
+
+									if(this.props.parentScreen) {
+										this.props.parentScreen.scrollTo({
+											top: this.commentInputRef.getBoundingClientRect().top,
+											behavior: 'smooth'
+										});
+									}
 								},
 								active: false
 							}
