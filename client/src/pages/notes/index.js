@@ -227,7 +227,7 @@ class NoteEditorCloseAlert extends Component {
 				<div className={ `rn-notes-editor-closealert__control${ (!this.props.active) ? "" : " active" }` } onClick={ this.props.onClose } />
 				<div className="rn-notes-editor-closealert">
 					<h3 className="rn-notes-editor-closealert-title">Exit without saving?</h3>
-					<p className="rn-notes-editor-closealert-content">You're trying exit editor without saving the document. Do you wanna save it?</p>
+					<p className="rn-notes-editor-closealert-content">You're trying to exit editor without saving the document. Do you wanna save it?</p>
 					<div className="rn-notes-editor-closealert-val">
 						<button type="button" className="definp rn-notes-previewmodal-controls-btn cancel" onClick={ this.props.onClose }>Cancel</button>
 						<button type="button" className="definp rn-notes-previewmodal-controls-btn submit" onClick={ this.props.onExit }>Exit</button>

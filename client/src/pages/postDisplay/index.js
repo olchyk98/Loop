@@ -17,10 +17,12 @@ class App extends Component {
 		this.state = {
 			post: false
 		}
+
+		this.scrollTargetCommentsF = null;
 	}
 
 	// TODO: Load from api (+)
-	// TODO: Subscribe to comments (_)
+	// TODO: Subscribe to comments (+)
 	// TODO: Subscribe to stats (comments, likes) (+)
 	// TODO: Subscribe to comment likes (+)
 
@@ -76,6 +78,11 @@ class App extends Component {
 			this.setState(() => ({
 				post: a
 			}));
+
+			let aa = new URL(window.location.href).searchParams.get("stc");
+			if(aa === "true") {
+				(this.scrollTargetCommentsF && this.scrollTargetCommentsF());
+			}
 
 		}).then(() => { // Stats // PostType
 			client.subscribe({
@@ -188,6 +195,11 @@ class App extends Component {
 							commentsInt={ this.state.post.commentsInt }
 							images={ this.state.post.images }
 							comments={ this.state.post.comments }
+							onRef={ref => {
+								this.scrollTargetCommentsF = () => ref.scrollIntoView({
+									behavior: "smooth"
+								})
+							}}
 						/>
 					) : (
 						<Loadericon />

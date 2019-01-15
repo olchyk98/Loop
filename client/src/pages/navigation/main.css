@@ -395,6 +395,7 @@
 	width:calc(100% - var(--padding) * 2);
 	cursor:pointer;
 	flex-shrink:0;
+	text-decoration:none;
 }
 
 .gl-nav-account-notifications-dock-item-avatar,
@@ -403,7 +404,7 @@
 }
 
 .gl-nav-account-notifications-dock-item-avatar {
-	--size:calc(var(--height) / 100 * 60);
+	--size:calc(var(--height) / 100 * 67.5);
 
 	width:var(--size);
 	position:relative;
@@ -430,26 +431,29 @@
 	margin-left:var(--margin);
 	margin-right:var(--margin);
 	position:relative;
-}
-
-.gl-nav-account-notifications-dock-item-content {
 	min-width:0;
+	text-decoration:none;
+	font-size:1.025;
 }
 
 .gl-nav-account-notifications-dock-item-content-event,
 .gl-nav-account-notifications-dock-item-content-content {
 	width:100%;
 	text-align:left;
-	text-overflow: ellipsis;
+	text-overflow:ellipsis;
   	overflow:hidden;
   	white-space:nowrap;
+  	text-decoration:none;
+  	position:relative;
+  	bottom:-1px;
 }
 
 .gl-nav-account-notifications-dock-item-content-event {
 	font-family:"Arial";
 	font-weight:500;
-	font-size:.75em;
-	color:rgba(0, 0, 0, .35);
+	font-size:.8em;
+	color:rgba(0, 0, 0, .5);
+	width:100%;
 }
 
 .gl-nav-account-notifications-dock-item-content-content {
@@ -466,6 +470,8 @@
 	display:flex;
 	align-items:center;
 	margin-left:auto;
+	text-decoration:none;
+	color:rgba(0, 0, 0, .75);
 }
 
 .gl-nav-account-notifications-dock-item-time-arrow {
@@ -486,4 +492,11 @@
 
 .gl-nav-account-notifications-dock-item:hover .gl-nav-account-notifications-dock-item-time-arrow {
 	display:block;
+}
+
+.gl-nav-account-notifications-dock-empty {
+	font-size:.9em;
+	font-family:"Gothic A1";
+	font-weight:200;
+	color:rgba(0, 0, 0, .35);
 }

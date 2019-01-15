@@ -25,7 +25,8 @@ const {
 	Comment,
 	Conversation,
 	Message,
-	Note
+	Note,
+	Notification
 } = require('./models');
 
 const settings = require('./settings');
@@ -279,7 +280,65 @@ const UserType = new GraphQLObjectType({
 					$in: [str(id), str(anID)]
 				}
 			})
+		},
+		notifications: {
+			type: new GraphQLList(NotificationType),
+			resolve: ({ id }) => Notification.find({
+				influenced: {
+					$in: [str(id)]
+				}
+			}).sort({ time: -1 })
+		},
+		hasNotifications: {
+			type: GraphQLBoolean,
+			async resolve() {
+				let a = await (
+					Conversation.find({
+						influenced: {
+							$in: [str(id)]
+						}
+					})
+				);
+
+				return !!a.length;
+			}
 		}
+	})
+});
+
+const NotificationType = new GraphQLObjectType({
+	name: "Notification",
+	fields: () => ({
+		id: { type: GraphQLID },
+		urlID: { type: GraphQLString },
+		content: { type: GraphQLString },
+		subContent: {
+			type: GraphQLString,
+			async resolve({ pathType, urlID }) {
+				// POST, COMMENT
+
+				let a = await eval({
+					"POST_TYPE": "Post",
+					"COMMENT_TYPE": "Comment"
+				}[pathType]).findById(urlID).select("content");
+				return a.content.substring(0, 25); // Different types can have different fields that can represent content			
+			}
+		},
+		initID: { type: GraphQLID },
+		init: {
+			type: UserType,
+			resolve: ({ initID }) => User.findById(initID)
+		},
+		time: { type: GraphQLString },
+		influenced: {
+			type: new GraphQLList(UserType),
+			resolve: ({ influenced }) => User.find({
+				_id: {
+					$in: influenced
+				}
+			})
+		},
+		pathType: { type: GraphQLString }
 	})
 });
 
@@ -916,6 +975,39 @@ const RootQuery = new GraphQLObjectType({
 			resolve: (_, { query }) => Post.find({
 				content: new RegExp(query, "i")
 			}).sort({ time: -1 })
+		},
+		notifications: {
+			type: new GraphQLList(NotificationType),
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				see: { type: GraphQLBoolean }
+			},
+			async resolve(_, { id, see }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
+				if(!a) return null;
+
+				let b = await (
+					Notification.find({
+						influenced: {
+							$in: [str(id)]
+						}
+					}).sort({ time: -1 })
+				);
+
+				if(see) { // XXX: b.update is not a function, b.updateMany is not a function \ ???
+					await Notification.updateMany({
+						influenced: {
+							$in: [str(id)]
+						}
+					}, {
+						$pull: {
+							influenced: str(id)
+						}
+					});
+				}
+
+				return b;
+			}
 		}
 	}
 });
@@ -1047,7 +1139,9 @@ const RootMutation = new GraphQLObjectType({
 				if(!a) return null;
 
 				// Detect target
-				let inTarget = false;
+				let inTarget = false,
+					inTargetESE = null;
+
 				{
 					let b = [
 						"Post",
@@ -1062,6 +1156,7 @@ const RootMutation = new GraphQLObjectType({
 
 						if(d) {
 							inTarget = io;
+							inTargetESE = d;
 							break;
 						}
 					}
@@ -1097,6 +1192,19 @@ const RootMutation = new GraphQLObjectType({
 				}
 
 				if(inTarget === "Post") {
+					if(str(inTargetESE.creatorID) !== str(a._id)) {
+					await (
+						new Notification({
+							influenced: [str(inTargetESE.creatorID)],
+							urlID: str(inTargetESE._id),
+							content: `${ a.name } commented your post.`,
+							initID: str(a._id),
+							time: new Date,
+							pathType: "POST_TYPE"
+						})
+					).save();
+					}
+
 					pubsub.publish("postCommentAdded", {
 						comment
 					});
@@ -1132,6 +1240,19 @@ const RootMutation = new GraphQLObjectType({
 					b.likes.splice(b.likes.findIndex(io => str(io) === str(id)), 1);
 				}
 
+				if(str(b.creatorID) !== str(a._id)) {
+					await (
+						new Notification({
+							influenced: [str(b.creatorID)],
+							urlID: str(b._id),
+							content: `${ a.name } liked your post.`,
+							initID: str(a._id),
+							time: new Date,
+							pathType: "COMMENT_TYPE"
+						})
+					).save();
+				}
+
 				pubsub.publish("postStatsUpdated", {
 					post: b
 				});
@@ -1164,6 +1285,19 @@ const RootMutation = new GraphQLObjectType({
 					b.likes.push(id);
 				} else {
 					b.likes.splice(b.likes.findIndex(io => str(io) === str(id)), 1);
+				}
+
+				if(str(b.creatorID) !== str(a._id)) {
+					await (
+						new Notification({
+							influenced: [str(b.creatorID)],
+							urlID: str(b._id),
+							content: `${ a.name } liked your comment.`,
+							initID: str(a._id),
+							time: new Date,
+							pathType: "COMMENT_TYPE"
+						})
+					).save();
 				}
 
 				pubsub.publish("commentLikesUpdated", {

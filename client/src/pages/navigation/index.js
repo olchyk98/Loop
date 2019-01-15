@@ -11,27 +11,30 @@ import client from '../../apollo';
 import api from '../../api';
 
 import Loadericon from '../__forall__/loader.icon/';
-const image = 'https://lolstatic-a.akamaihd.net/frontpage/apps/prod/LolGameInfo-Harbinger/en_US/8588e206d560a23f4d6dd0faab1663e13e84e21d/assets/assets/images/gi-landing-top.jpg';
 
 class NotificationsDockItem extends Component {
 	render() {
+		const link = {
+			"POST_TYPE": links["POSTDISPLAY_PAGE"].absolute + this.props.path,
+			"COMMENT_TYPE": `${ links["POSTDISPLAY_PAGE"].absolute }${ this.props.path }?stc=true`
+		}[this.props.ptype];
+
 		return(
-			// <Loadericon />
 			<div className="gl-nav-account-notifications-dock-item">
-				<div className="gl-nav-account-notifications-dock-item-avatar">
-					<img src={ image } alt="user" title="Contributor" />
-				</div>
-				<div className="gl-nav-account-notifications-dock-item-content">
-					<span className="gl-nav-account-notifications-dock-item-content-event">Oles Odynets created new post</span>
-					<span className="gl-nav-account-notifications-dock-item-content-content">Create something with me. I'll be proud of you.</span>
-				</div>
-				<div className="gl-nav-account-notifications-dock-item-time">
-					<span className="gl-nav-account-notifications-dock-item-time-default">8h</span>
+				<Link className="gl-nav-account-notifications-dock-item-avatar" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.initID }` } onClick={ this.props.onRoute }>
+					<img src={ api.storage + this.props.image } alt="user" title="Contributor" />
+				</Link>
+				<Link className="gl-nav-account-notifications-dock-item-content" to={ link } onClick={ this.props.onRoute }>
+					<span className="gl-nav-account-notifications-dock-item-content-event">{ this.props.content }</span>
+					<span className="gl-nav-account-notifications-dock-item-content-content">{ this.props.subContent }</span>
+				</Link>
+				<Link className="gl-nav-account-notifications-dock-item-time" to={ link } onClick={ this.props.onRoute }>
+					<span className="gl-nav-account-notifications-dock-item-time-default">{ convertTime(this.props.time) }</span>
 					<div className="gl-nav-account-notifications-dock-item-time-arrow">
 						View
 						<i className="fas fa-angle-right" />
 					</div>
-				</div>
+				</Link>
 			</div>
 		);
 	}
@@ -83,9 +86,11 @@ class App extends Component {
 			validatedSearch: false,
 			searchingData: null,
 			searchingFlip: { // flips visibility
-				users: true, // false
-				posts: true // false
-			}
+				users: false,
+				posts: false
+			},
+			hasNotifications: false,
+			notifications: null
 		}
 
 		this.searchInt = null
@@ -105,7 +110,8 @@ class App extends Component {
 					user(id: $id) {
 						id,
 						avatar,
-						name
+						name,
+						hasNotifications
 					}
 				}
 			`,
@@ -114,6 +120,11 @@ class App extends Component {
 			}
 		}).then(({ data: { user } }) => {
 			if(!user) return this.props.castError(errorTxt);
+
+			this.setState(() => ({
+				hasNotifications: user.hasNotifications
+			}));
+			delete user.hasNotifications;
 
 			this.props.setUserData(user);
 		}).catch(() => this.props.castError(errorTxt))
@@ -140,7 +151,7 @@ class App extends Component {
 		if(a) return;
 
 		this.searchInt = setTimeout(() => {
-			// TODO: Hide/Show flip titles
+			// TODO: Hide/Show flips
 
 			this.setState(() => ({
 				searchingData: false
@@ -155,24 +166,6 @@ class App extends Component {
 						}))
 					}
 				}
-
-			// client.query({ // Search users
-			// 	query: gql`
-			// 		query($query: String!) {
-			// 			glSearchUsers(query: $query) {
-
-			// 			}
-			// 		}		
-			// 	`,
-			// 	variables: {
-			// 		query: value
-			// 	}
-			// }).then(({ data: { glSearchUsers: a } }) => {
-			// 	if(!a) return this.props.castError("Something went wrong. Please, restart the page");
-
-			// 	_export.users = a;
-			// 	vap();
-			// });
 
 			Promise.all([
 				(
@@ -229,6 +222,51 @@ class App extends Component {
 				[field]: !a[field]
 			}
 		}));
+	}
+
+	openNotifications = () => {
+		this.setState(({ visibleNotifications: a }) => ({
+			visibleNotifications: !a
+		}), () => {
+			if(!this.state.visibleNotifications) return;
+
+			if(!this.state.notifications) {
+				this.setState(() => ({
+					notifications: false
+				}))
+			}
+
+			const { id } = cookieControl.get("authdata"),
+				  errorTxt = "We couldn't load your notifications. Please, try later."
+
+			client.query({
+				query: gql`
+					query($id: ID!) {
+						notifications(id: $id, see: true) {
+							id,
+							content,
+							subContent,
+							time,
+							init {
+								id,
+								avatar
+							},
+							urlID,
+							pathType
+						}
+					}
+				`,
+				variables: {
+					id
+				}
+			}).then(({ data: { notifications: a } }) => {
+				if(!a) return this.props.castError(errorTxt);
+
+				this.setState(() => ({
+					notifications: a
+				}));
+			}).catch(() => this.props.castError(errorTxt));
+		})
 	}
 
 	render() {
@@ -345,27 +383,39 @@ class App extends Component {
 						</div>
 					</div>
 					<div className="gl-nav-account">
-						<button onClick={ () => this.setState(({ visibleNotifications: a }) => ({ visibleNotifications: !a })) } className="gl-nav-account-spc definp">
+						<button onClick={ this.openNotifications } className="gl-nav-account-spc definp">
 							<i className="far fa-bell" />
-							<div className="gl-nav-account-spc-dot"></div>
+							{
+								(!this.state.hasNotifications) ? null : (
+									<div className="gl-nav-account-spc-dot" />
+								)
+							}							
 							<div className={ `gl-nav-account-notifications-dock${ (!this.state.visibleNotifications) ? "" : " visible" }` }>
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
-								<NotificationsDockItem />
+								{
+									(!this.state.notifications) ? (
+										(this.state.notifications !== false) ? null : (
+											<Loadericon />
+										)
+									) : (
+										(this.state.notifications.length) ? (
+											this.state.notifications.map(({ id, content, subContent, time, urlID, init, pathType }) => (
+												<NotificationsDockItem
+													key={ id }
+													content={ content }
+													subContent={ subContent }
+													image={ init.avatar }
+													initID={ init.id }
+													path={ urlID }
+													ptype={ pathType }
+													time={ time }
+													onRoute={ this.props.refreshDock }
+												/>
+											))
+										) : (
+											<p className="gl-nav-account-notifications-dock-empty">Nothing here <span role="img" aria-label="Heart with stars">💖</span></p>
+										)
+									)
+								}
 							</div>
 						</button>
 						<Link className="gl-nav-account-img" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.user && this.props.user.id }` } onClick={ this.props.refreshDock }>

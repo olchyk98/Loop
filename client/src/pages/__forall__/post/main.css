@@ -52,7 +52,7 @@
 
 .rn-feed-mat-item-head-info-mat-name,
 .rn-feed-mat-item-head-info-mat-date {
-	--margin:1px;
+	--margin:-1px;
 
 	margin-top:var(--margin);
 	margin-bottom:var(--margin);
@@ -75,7 +75,7 @@
 .rn-feed-mat-item-head-info-mat-date {
 	font-family:"Lato";
 	font-weight:400;
-	font-size:.8em;
+	font-size:.85em;
 	color:rgba(0, 0, 0, .4);
 }
 

@@ -50,7 +50,8 @@
 
 .rn-feed-mat-item-comments-comment-content-mat {
 	--padding:10px;
-
+	
+	margin-top:-5px;
 	width:auto;
 	padding:var(--padding);
 	border-radius:1rem;

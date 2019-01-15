@@ -5,6 +5,7 @@ const Comment = require('./comment');
 const Conversation = require('./conversation');
 const Message = require('./message');
 const Note = require('./note');
+const Notification = require('./notification');
 
 module.exports = {
 	User,
@@ -13,5 +14,6 @@ module.exports = {
 	Comment,
 	Conversation,
 	Message,
-	Note
+	Note,
+	Notification
 }

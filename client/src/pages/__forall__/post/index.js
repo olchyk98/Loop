@@ -160,7 +160,7 @@ class App extends Component {
 
 	render() {
 		return(
-			<div className="rn-feed-mat-item rn-feed-item">
+			<div className="rn-feed-mat-item rn-feed-item" ref={ ref => (this.props.onRef) ? this.props.onRef(ref) : null }>
 				<div className="rn-feed-mat-item-head">
 					<Link className="rn-feed-mat-item-head-info" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.refreshDock }>
 						<div className="rn-feed-mat-item-head-info-avatar">
