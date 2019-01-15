@@ -9,8 +9,8 @@ const image = "https://avatars0.githubusercontent.com/u/40524044?s=460&v=4";
 
 class NotificationRailsPopup extends Component {
 	render() {
-		return(
-			<div className="popup_notificationrail-item">
+		return( // DEBUG -D
+			<div className="popup_notificationrail-item" onClick={ this.props._onClick }>
 				<div className="popup_notificationrail-item-controls">
 					<div className="popup_notificationrail-item-controls-info">
 						<div className="popup_notificationrail-item-controls-info-avatar">
@@ -58,6 +58,7 @@ class Hero extends Component {
 						this.state.num.map((session, index) => ( // DEBUG
 							<NotificationRailsPopup
 								key={ session }
+								_onClick={ () => {let a=Array.from(this.state.num);a=a.filter(io => io !== session);this.setState({num:a})} } // DEBUG
 							/>
 						))
 					}
