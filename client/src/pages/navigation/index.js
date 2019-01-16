@@ -102,7 +102,7 @@ class App extends Component {
 
 	fetchAPI = () => {
 		let { id } = cookieControl.get("authdata"),
-			errorTxt = "This application was loaded incorrectly. Please, restart the page."
+			errorTxt = "This application was loaded incorrectly. Please, restart the page.";
 
 		client.query({
 			query: gql`

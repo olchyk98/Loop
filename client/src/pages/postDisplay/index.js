@@ -195,8 +195,9 @@ class App extends Component {
 							commentsInt={ this.state.post.commentsInt }
 							images={ this.state.post.images }
 							comments={ this.state.post.comments }
-							onRef={ref => {
-								this.scrollTargetCommentsF = () => ref.scrollIntoView({
+							onRef={ref => this.scrollTargetCommentsF = () => {
+								ref.parentNode.scrollTo({
+									top: ref.offsetTop + ref.scrollHeight,
 									behavior: "smooth"
 								})
 							}}

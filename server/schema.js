@@ -291,16 +291,16 @@ const UserType = new GraphQLObjectType({
 		},
 		hasNotifications: {
 			type: GraphQLBoolean,
-			async resolve() {
+			async resolve({ id }) {
 				let a = await (
-					Conversation.find({
+					Notification.countDocuments({
 						influenced: {
 							$in: [str(id)]
 						}
 					})
 				);
 
-				return !!a.length;
+				return !!a;
 			}
 		}
 	})
@@ -310,7 +310,17 @@ const NotificationType = new GraphQLObjectType({
 	name: "Notification",
 	fields: () => ({
 		id: { type: GraphQLID },
-		urlID: { type: GraphQLString },
+		urlID: {
+			type: GraphQLID,
+			async resolve({ urlID, pathType }) {
+				if(pathType === "COMMENT_TYPE") {
+					let a = await Comment.findById(urlID).select("postID");
+					return a.postID;
+				} else {
+					return urlID;
+				}
+			}
+		},
 		content: { type: GraphQLString },
 		subContent: {
 			type: GraphQLString,
@@ -321,7 +331,8 @@ const NotificationType = new GraphQLObjectType({
 					"POST_TYPE": "Post",
 					"COMMENT_TYPE": "Comment"
 				}[pathType]).findById(urlID).select("content");
-				return a.content.substring(0, 25); // Different types can have different fields that can represent content			
+
+				return a.content.substring(0, 25); // XXX: Different types can have different fields that can represent content			
 			}
 		},
 		initID: { type: GraphQLID },
@@ -995,7 +1006,7 @@ const RootQuery = new GraphQLObjectType({
 				);
 
 				if(see) { // XXX: b.update is not a function, b.updateMany is not a function \ ???
-					await Notification.updateMany({
+					const aa = await Notification.updateMany({
 						influenced: {
 							$in: [str(id)]
 						}
@@ -1003,6 +1014,10 @@ const RootQuery = new GraphQLObjectType({
 						$pull: {
 							influenced: str(id)
 						}
+					}, (_, a) => a);
+
+					await Notification.remove({
+						$where: "this.influenced.length === 0"
 					});
 				}
 
@@ -1193,16 +1208,20 @@ const RootMutation = new GraphQLObjectType({
 
 				if(inTarget === "Post") {
 					if(str(inTargetESE.creatorID) !== str(a._id)) {
-					await (
-						new Notification({
-							influenced: [str(inTargetESE.creatorID)],
-							urlID: str(inTargetESE._id),
-							content: `${ a.name } commented your post.`,
-							initID: str(a._id),
-							time: new Date,
-							pathType: "POST_TYPE"
-						})
-					).save();
+						const notification = await (
+							new Notification({
+								influenced: [str(inTargetESE.creatorID)],
+								urlID: str(comment._id),
+								content: `${ a.name } commented your post.`,
+								initID: str(a._id),
+								time: new Date,
+								pathType: "COMMENT_TYPE"
+							})
+						).save();
+
+						pubsub.publish("notificationPublished", {
+							notification
+						});
 					}
 
 					pubsub.publish("postCommentAdded", {
@@ -1235,27 +1254,31 @@ const RootMutation = new GraphQLObjectType({
 				});
 
 				if(c) {
-					b.likes.push(id)
+					b.likes.push(id);
+
+					if(str(b.creatorID) !== str(a._id)) {
+						const notification = await (
+							new Notification({
+								influenced: [str(b.creatorID)],
+								urlID: str(b._id),
+								content: `${ a.name } liked your post.`,
+								initID: str(a._id),
+								time: new Date,
+								pathType: "POST_TYPE"
+							})
+						).save();
+
+						pubsub.publish("notificationPublished", {
+							notification
+						});
+					}
+
+					pubsub.publish("postStatsUpdated", {
+						post: b
+					});
 				} else {
 					b.likes.splice(b.likes.findIndex(io => str(io) === str(id)), 1);
 				}
-
-				if(str(b.creatorID) !== str(a._id)) {
-					await (
-						new Notification({
-							influenced: [str(b.creatorID)],
-							urlID: str(b._id),
-							content: `${ a.name } liked your post.`,
-							initID: str(a._id),
-							time: new Date,
-							pathType: "COMMENT_TYPE"
-						})
-					).save();
-				}
-
-				pubsub.publish("postStatsUpdated", {
-					post: b
-				});
 
 				return b;
 			}
@@ -1283,26 +1306,30 @@ const RootMutation = new GraphQLObjectType({
 
 				if(c) {
 					b.likes.push(id);
+
+					if(str(b.creatorID) !== str(a._id)) {
+						const notification = await (
+							new Notification({
+								influenced: [str(b.creatorID)],
+								urlID: str(b._id),
+								content: `${ a.name } liked your comment.`,
+								initID: str(a._id),
+								time: new Date,
+								pathType: "COMMENT_TYPE"
+							})
+						).save();
+
+						pubsub.publish("notificationPublished", {
+							notification
+						});
+					}
+
+					pubsub.publish("commentLikesUpdated", {
+						comment: b
+					});
 				} else {
 					b.likes.splice(b.likes.findIndex(io => str(io) === str(id)), 1);
 				}
-
-				if(str(b.creatorID) !== str(a._id)) {
-					await (
-						new Notification({
-							influenced: [str(b.creatorID)],
-							urlID: str(b._id),
-							content: `${ a.name } liked your comment.`,
-							initID: str(a._id),
-							time: new Date,
-							pathType: "COMMENT_TYPE"
-						})
-					).save();
-				}
-
-				pubsub.publish("commentLikesUpdated", {
-					comment: b
-				});
 
 				return b;
 			}
@@ -2233,6 +2260,17 @@ const RootSubscription = new GraphQLObjectType({
 				)
 			),
 			resolve: ({ comment }) => comment
+		},
+		listenNotifications: {
+			type: NotificationType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			subscribe: withFilter(
+				() => pubsub.asyncIterator('notificationPublished'),
+				({ notification }, { id }) => notification.influenced.includes(str(id))
+			),
+			resolve: ({ notification }) => notification
 		}
 	}
 })

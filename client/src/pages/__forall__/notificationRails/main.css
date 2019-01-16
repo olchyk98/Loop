@@ -42,6 +42,7 @@
 .popup_notificationrail-item-controls-info {
 	display:flex;
 	align-items:center;
+	text-decoration:none;
 }
 
 .popup_notificationrail-item-controls-info-avatar,
@@ -86,6 +87,7 @@
 	margin-top:10px;
 	display:flex;
 	flex-direction:column;
+	text-decoration:none;
 }
 
 .popup_notificationrail-item-content-title,
