@@ -760,8 +760,9 @@ const RootQuery = new GraphQLObjectType({
 				id: { type: new GraphQLNonNull(GraphQLID) },
 				match: { type: new GraphQLNonNull(GraphQLString) },
 				section: { type: new GraphQLNonNull(GraphQLString) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
 			},
-			async resolve(_, { id, match, section }, { req }) {
+			async resolve(_, { id, match, section, targetID }, { req }) {
 				// Validate requester
 				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
@@ -774,7 +775,7 @@ const RootQuery = new GraphQLObjectType({
  
 				let d = await User.find({ // select more friends
 					[c]: {
-						$in: [str(id)]
+						$in: [str(targetID)]
 					}
 				}).select("_id");
 
@@ -786,10 +787,12 @@ const RootQuery = new GraphQLObjectType({
 				// Submit response
 				return User.find({
 					_id: {
-						$in: a[c]
+						$in: a[c],
+						$ne: str(targetID)
 					},
 					$or: [
 						{ name: b },
+						{ login: b },
 						{ description: b }
 					]
 				});

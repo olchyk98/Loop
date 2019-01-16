@@ -654,6 +654,7 @@ class App extends Component {
 	}
 
 	searchFriends = value => {
+		if(!this.state.user) return;
 		if(!value.replace(/\s|\n/g, "").length) {
 			return this.setState(() => ({
 				friendsSearch: null
@@ -669,8 +670,8 @@ class App extends Component {
 
 		client.query({
 			query: gql`
-				query($id: ID!, $match: String!, $section: String!) {
-					searchFriends(id: $id, match: $match, section: $section) {
+				query($id: ID!, $match: String!, $section: String!, $targetID: ID!) {
+					searchFriends(id: $id, match: $match, section: $section, targetID: $targetID) {
 						id,
 						avatar,
 						name
@@ -683,14 +684,14 @@ class App extends Component {
 				section: {
 					"MAIN_STAGE": 'FRIENDS',
 					"REQUESTS_STAGE": 'REQUESTS'
-				}[this.state.friendsStage]
+				}[this.state.friendsStage],
+				targetID: this.state.user.id
 			}
 		}).then(({ data: { searchFriends } }) => {
 			this.setState(() => ({
 				friendsLoading: false
 			}));
 			if(!searchFriends) return this.props.castError(errorTxt);
-
 
 			this.setState(() => ({
 				friendsSearch: searchFriends
@@ -962,8 +963,11 @@ class App extends Component {
 								)
 							}
 							{
-								(!this.state.friendsSearch || this.state.friendsSearch.length) ? null : (
-									<p className="rn-account-display-friends-nav-grid-alertion">Nothing here...</p>
+								(!this.state.friendsSearch || this.state.friendsSearch.length || this.state.friendsLoading) ? null : (
+									<p className="rn-account-display-friends-nav-grid-alertion">
+										Nothing here...
+										<span role="img" aria-label="Oops smile">😓</span>
+									</p>
 								)
 							}
 						</div>

@@ -12,8 +12,6 @@ import { cookieControl } from '../../../utils';
 import api from '../../../api';
 import links from '../../../links';
 
-const image = "https://avatars0.githubusercontent.com/u/40524044?s=460&v=4";
-
 class NotificationRailsPopup extends Component {
 	render() {
 		const link = {
