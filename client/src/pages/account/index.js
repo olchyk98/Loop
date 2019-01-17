@@ -5,6 +5,7 @@ import TimelineItem from '../__forall__/post';
 import Loadericon from '../__forall__/loader.icon';
 import placeholderGIF from '../__forall__/placeholder.gif';
 import Switch from '../__forall__/switcher';
+import BandsRail from '../__forall__/bandsRail';
 
 import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
@@ -775,6 +776,7 @@ class App extends Component {
 									<input
 										type="file"
 										className="hidden"
+										accept="image/*"
 										id="rn-account-thumb-cover-edit"
 										onChange={ ({ target: { files: [file] } }) => this.replaceCover(file) }
 									/>
@@ -805,9 +807,11 @@ class App extends Component {
 											{
 												title: <i className="far fa-comment-alt" />,
 												active: false,
-												blocked: false,
+												blocked: !this.state.user.isFriend,
 												loading: false,
 												action: () => {
+													if(!this.state.user.isFriend) return;
+
 													this.props.history.push(`${ links["CHAT_PAGE"].absolute }/${ this.state.user.id }`);
 													this.props.refreshDock();
 												}
@@ -849,7 +853,10 @@ class App extends Component {
 									) : null
 								}
 							</div>
-							<span className="rn-account-thumb-nav-name">{ this.state.user.name }</span>
+							<div className="rn-account-thumb-nav-name">
+								<span>{ this.state.user.name }</span>
+								<BandsRail />
+							</div>
 						</div>
 						<ThumbNavButton
 							title="Timeline"

@@ -1,0 +1,32 @@
+.coi-bandsrail {
+	display:flex;
+	align-items:center;
+}
+
+.coi-bandsrail-icon > * {
+	--margin:5px;
+
+	margin-left:var(--margin);
+	margin-right:var(--margin);
+}
+
+.coi-bandsrail-icon > :first-child {
+	margin-left:0;
+}
+
+.coi-bandsrail-icon > :last-child {
+	margin-right:0;
+}
+
+.coi-bandsrail-icon {
+	--size:20px;
+
+	height:var(--size);
+	width:var(--size);
+	background:#1da1f2;
+	border:1px solid rgba(255, 255, 255, .01);
+	border-radius:50%;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}

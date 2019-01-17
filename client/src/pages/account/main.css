@@ -222,6 +222,23 @@
 	-webkit-font-smoothing:antialiased;
 	font-size:1.2em;
 	white-space:nowrap;
+	display:flex;
+	align-items:center;
+}
+
+.rn-account-thumb-nav-name > * {
+	--margin:4px;
+
+	margin-left:var(--margin);
+	margin-right:var(--margin);
+}
+
+.rn-account-thumb-nav-name > :first-child {
+	margin-left:0;
+}
+
+.rn-account-thumb-nav-name > :last-child {
+	margin-right:0;
 }
 
 .rn-account-thumb-nav-btn-title,
