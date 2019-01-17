@@ -327,6 +327,18 @@ html, body {
 		margin-top:var(--mrgn)!important;
 		margin-bottom:var(--mrgn)!important;
 	}
+
+	.rn-account-thumb-nav-name {
+		flex-direction:column;
+	}
+
+	.rn-account-thumb-nav-name > * {
+		--margin:2.5px;
+
+		margin:0;
+		margin-top:var(--margin);
+		margin-bottom:var(--margin);
+	}
 }
 
 @media only screen and (max-width: 380px) {
