@@ -1,0 +1,82 @@
+:root {
+	--_cc-dialog-modal-inittm:.45s;
+}
+
+.rn-notes-editor-closealert__control {
+	height:100vh;
+	width:100vw;
+	background:rgba(0, 0, 0, .15);
+	z-index:4000;
+	position:fixed;
+	top:0;
+	left:0;
+	animation:notes-editor-fadebg-init var(--_cc-dialog-modal-inittm) ease-in-out;
+}
+
+@keyframes notes-editor-fadebg-init {
+	from {
+		opacity:0;
+	}
+	to {
+		opacity:1;
+	}
+}
+
+.rn-notes-editor-closealert {
+	padding:15px;
+	position:fixed;
+	top:50%;
+	left:50%;
+	margin-right:50%;
+	transform:translate(-50%, -50%);
+	height:auto;
+	width:400px;
+	border-radius:5px;
+	background:white;
+	z-index:4001;
+	animation:notes-editor-bounce-init var(--_cc-dialog-modal-inittm) ease-in-out;
+}
+
+@keyframes notes-editor-bounce-init {
+	0% {
+		transform:translate(-50%, -50%) scale(0);
+	}
+	25% {
+		transform:translate(-50%, -50%) scale(1.1);
+	}
+	50% {
+		transform:translate(-50%, -50%) scale(.9);
+	}
+	75% {
+		transform:translate(-50%, -50%) scale(1.05);
+	}
+	100% {
+		transform:translate(-50%, -50%) scale(1);
+	}
+}
+
+.rn-notes-editor-closealert-title {
+	text-align:center;
+	color:rgba(0, 0, 0, .45);
+	font-weight:400;
+	font-family:"Quicksand";
+	margin:0;
+	font-size:1.25em;
+}
+
+.rn-notes-editor-closealert-content {
+	margin-top:20px;
+	margin-bottom:10px;
+	font-family:"Exo";
+	font-weight:500;
+}
+
+.rn-notes-editor-closealert-val {
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+}
+
+.rn-notes-editor-closealert-val > * {
+	width:100%;
+}

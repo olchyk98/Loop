@@ -220,25 +220,6 @@ class NoteCreator extends Component {
 	}
 }
 
-class NoteEditorCloseAlert extends Component {
-	render() {
-		return(
-			<Fragment>
-				<div className={ `rn-notes-editor-closealert__control${ (!this.props.active) ? "" : " active" }` } onClick={ this.props.onClose } />
-				<div className="rn-notes-editor-closealert">
-					<h3 className="rn-notes-editor-closealert-title">Exit without saving?</h3>
-					<p className="rn-notes-editor-closealert-content">You're trying to exit editor without saving the document. Do you wanna save it?</p>
-					<div className="rn-notes-editor-closealert-val">
-						<button type="button" className="definp rn-notes-previewmodal-controls-btn cancel" onClick={ this.props.onClose }>Cancel</button>
-						<button type="button" className="definp rn-notes-previewmodal-controls-btn submit" onClick={ this.props.onExit }>Exit</button>
-						<button type="button" className="definp rn-notes-previewmodal-controls-btn accept" onClick={ this.props.onExitSave }>Save and Exit</button>
-					</div>
-				</div>
-			</Fragment>
-		);
-	}
-}
-
 class NoteEditor extends Component {
 	constructor(props) {
 		super(props);
@@ -247,7 +228,6 @@ class NoteEditor extends Component {
 			editState: EditorState.createEmpty(),
 			settingsOpen: false,
 			showPlaceholder: true,
-			warningNSaveExit: false,
 			internalData: null
 		}
 
@@ -417,12 +397,33 @@ class NoteEditor extends Component {
 	}
 
 	closeDoc = (force = false) => {
-		if(force || this.props.docSaved) {
+		if(this.props.docSaved || force) {
 			this.props.onClose();
 		} else {
-			this.setState(() => ({
-				warningNSaveExit: true
-			}));
+			this.props.runFrontDialog(true, {
+				title: "Exit without saving?",
+				content: "You're trying to exit editor without saving the document. Do you wanna save it?",
+				buttons: [
+					{
+						color: "cancel",
+						action: () => this.props.runFrontDialog(false, null),
+						content: "Cancel"
+					},
+					{
+						color: "submit",
+						action: () => {
+							this.props.runFrontDialog(false, null);
+							this.closeDoc(true);
+						},
+						content: "Exit"
+					},
+					{
+						color: "accept",
+						action: () => { this.saveDocument(true); this.props.runFrontDialog(false, null); this.closeDoc(true); },
+						content: "Save and Exit"
+					}
+				]
+			});
 		}
 	}
 
@@ -579,12 +580,6 @@ class NoteEditor extends Component {
 						}}
 					/>
 				</div>
-			<NoteEditorCloseAlert
-				active={ this.state.warningNSaveExit }
-				onClose={ () => this.setState({ warningNSaveExit: false }) }
-				onExit={ () => this.setState(() => ({ warningNSaveExit: false }), () => this.closeDoc(true)) }
-				onExitSave={ () => { this.saveDocument(true); this.setState(() => ({ warningNSaveExit: false }), () => this.closeDoc(true)); } }
-			/>
 			</Fragment>
 		);
 	}
@@ -892,6 +887,7 @@ class App extends Component {
 					onSave={ this.saveNote }
 					onClose={ this.closeEditor }
 					onSettingNote={ this.settingNote }
+					runFrontDialog={ this.props.runFrontDialog }
 				/>
 			</div>
         );
@@ -901,7 +897,8 @@ class App extends Component {
 const mapStateToProps = () => ({});
 
 const mapActionsToProps = {
-	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } })
+	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } }),
+	runFrontDialog: (active, data) => ({ type: 'RUN_DIALOG', payload: { active, data } })
 }
 
 export default connect(

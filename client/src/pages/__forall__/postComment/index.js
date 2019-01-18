@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import './main.css';
 
 import { gql } from 'apollo-boost';
@@ -17,7 +17,8 @@ class Hero extends Component {
 		this.state = {
 			isLiked: null,
 			likesInt: null,
-			isLiking: false
+			isLiking: false,
+			isDeleted: false
 		}
 	}
 
@@ -59,7 +60,54 @@ class Hero extends Component {
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
+	deleteComment = (pass = false) => {
+		if(!pass) {
+			return this.props.runFrontDialog(true, {
+				title: "Delete this comment?",
+				content: "Do you really want to delete this comment?",
+				buttons: [
+					{
+						color: "submit",
+						action: () => this.props.runFrontDialog(false, null),
+						content: "Cancel"
+					},
+					{
+						color: "cancel",
+						action: () => { this.props.runFrontDialog(false, null); this.deleteComment(true); },
+						content: "Delete"
+					}
+				]
+			});
+		}
+
+
+		const { id } = cookieControl.get("authdata"),
+			  errorTxt = "We couldn't delete this comment. Please, try later.";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $targetID: ID!) {
+					deleteComment(id: $id, targetID: $targetID) {
+						id
+					}
+				}
+			`,
+			variables: {
+				id,
+				targetID: this.props.id
+			}
+		}).then(({ data: { deleteComment: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			this.setState(() => ({
+				isDeleted: true
+			}));
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
 	render() {
+		if(this.state.isDeleted) return null;
+
 		return(
 			<div className="rn-feed-mat-item-comments-comment">
 				<div className="rn-feed-mat-item-comments-comment-avatar">
@@ -87,11 +135,21 @@ class Hero extends Component {
 						)
 					}
 					<div className="rn-feed-mat-item-comments-comment-content-controls">
-						<button className="rn-feed-mat-item-comments-comment-content-controls-like definp" onClick={ this.likeComment }>
+						<button className="rn-feed-mat-item-comments-comment-content-controls-action definp" onClick={ this.likeComment }>
 							Like{ ( ((this.state.isLiked === null) ? this.props.isLiked : this.state.isLiked) ? "d" : "" ) } ({ this.state.likesInt || this.props.likesInt })
 						</button>
 						<span className="rn-feed-mat-item-comments-comment-content-controls-space">·</span>
 						<span className="rn-feed-mat-item-comments-comment-content-controls-time">{ convertTime(this.props.time, "ago") }</span>
+						{
+							(this.props.creator.id !== this.props.clientID) ? null : (
+								<Fragment>
+									<span className="rn-feed-mat-item-comments-comment-content-controls-space">·</span>
+									<button className="rn-feed-mat-item-comments-comment-content-controls-action definp" onClick={ () => this.deleteComment() }>
+										Delete
+									</button>
+								</Fragment>
+							)
+						}
 					</div>
 				</div>
 			</div>
@@ -99,14 +157,17 @@ class Hero extends Component {
 	}
 }
 
-const mapStateToProps = () => ({});
+const mapStateToProps = ({ user: { userdata } }) => ({
+	clientID: userdata.id
+});
 
 const mapActionsToProps = {
 	openPhoto: payload => ({
 		type: "TOGGLE_PHOTO_MODAL",
 		payload
 	}),
-	refreshDock: () => ({ type: "REFRESH_DOCK", payload: null })
+	refreshDock: () => ({ type: "REFRESH_DOCK", payload: null }),
+	runFrontDialog: (active, data) => ({ type: 'RUN_DIALOG', payload: { active, data } })
 }
 
 export default connect(

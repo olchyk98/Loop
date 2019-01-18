@@ -21,15 +21,7 @@ class Hero extends Component {
 					</button>
 					<div className="coi-selectionlist-mat">
 						{
-							[
-								{ name: "A" },
-								{ name: "A" },
-								{ name: "A" },
-								{ name: "A" },
-								{ name: "A" },
-								{ name: "A" },
-								{ name: "A" },
-							].map((session, index) => (
+							this.props.values.map((session, index) => (
 								<button key={ index } className="coi-selectionlist-item definp" onClick={ session.action }>{ session.name }</button>
 							))
 						}

@@ -191,6 +191,7 @@ class App extends Component {
 							comments {
 								id,
 								content,
+								time,
 								creator {
 									id,
 									avatar,

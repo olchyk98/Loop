@@ -19,6 +19,10 @@ function reducer(state = {}, { type, payload }) {
 			a.dockRefresher();
 			a.photoModalW = null;
 		break;
+		case 'RUN_DIALOG':
+			a.visibleDialog = payload.active;
+			a.visibleDialogData = payload.data;
+		break;
 		default:break;
 	}
 

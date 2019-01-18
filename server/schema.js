@@ -2126,6 +2126,68 @@ const RootMutation = new GraphQLObjectType({
 					}
 				}, (_, a) => a);
 			}
+		},
+		deletePost: {
+			type: PostType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
+				if(!a) return null;
+
+				let b = await Post.findOneAndDelete({
+					_id: targetID,
+					creatorID: str(id)
+				});
+				if(!b) return null;
+
+				await Comment.deleteMany({
+					postID: str(targetID)
+				});
+
+				return b;
+			}
+		},
+		deleteComment: {
+			type: CommentType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
+				if(!a) return null;
+
+				return Comment.findOneAndDelete({
+					_id: targetID,
+					creatorID: str(id)
+				});
+			}
+		},
+		deleteImage: {
+			type: ImageType,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) },
+				targetID: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve(_, { id, targetID }, { req }) {
+				let a = await validateAccount(id, req.session.authToken);
+				if(!a) return null;
+
+				let b = await Image.findOneAndDelete({
+					_id: targetID,
+					creatorID: str(id)
+				});
+				if(!b) return null;
+
+				await Comment.deleteMany({
+					postID: str(targetID)
+				});
+
+				return b;
+			}
 		}
 	}
 });

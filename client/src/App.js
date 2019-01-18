@@ -24,6 +24,7 @@ import links from './links'; // pages routes
 // Other stuff
 import PhotoModal from './pages/__forall__/photo.modal';
 import NotificationRails from './pages/__forall__/notificationRails';
+import AlertDialog from './pages/__forall__/dialog.modal';
 
 // Needle Route
 const NeedleRoute = ({ path, condition, component: Component, redirect: Redirect, ...settings }) => (
@@ -100,6 +101,7 @@ class App extends Component {
 					<Fragment>
 						<GlobalError />
 						<NotificationRails />
+						<AlertDialog />
 						<PhotoModal
 							store={ store }
 						/>

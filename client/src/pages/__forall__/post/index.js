@@ -40,7 +40,8 @@ class App extends Component {
 			isLiked: null,
 			commentsInt: null,
 			comments: null,
-			isCommenting: false
+			isCommenting: false,
+			isDeleted: false
 		}
 
 		this.updateInt = null;
@@ -115,6 +116,7 @@ class App extends Component {
 						mutation($id: ID!, $targetID: ID!, $content: String, $image: Upload) {
 							commentItem(id: $id, targetID: $targetID, content: $content, image: $image) {
 								id,
+								time,
 								content,
 								creator {
 									id,
@@ -159,128 +161,180 @@ class App extends Component {
 		}
 	}
 
-	render() {
-		return(
-			<div className="rn-feed-mat-item rn-feed-item" ref={ ref => (this.props.onRef) ? this.props.onRef(ref) : null }>
-				<div className="rn-feed-mat-item-head">
-					<div className="rn-feed-mat-item-head-info">
-						<Link className="rn-feed-mat-item-head-info-avatar" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.refreshDock }>
-							<img src={ ((this.props.creator.avatar && api.storage + this.props.creator.avatar) || "") } alt="creator" title="Creator's avatar" />
-						</Link>
-						<Link className="rn-feed-mat-item-head-info-mat" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.refreshDock }>
-							<div className="rn-feed-mat-item-head-info-mat-name">
-								{ this.props.creator.name }
-							</div>
-							<p className="rn-feed-mat-item-head-info-mat-date">{ convertTime(this.props.time, "ago") }</p>
-						</Link>
-						<SelectionList
-							values={[
-								{
-									name: "Delete post",
-									action: () => console.log("DELETE POST")
-								}
-							]}
-						/>
-					</div>
-				</div>
-				{
-					(this.props.content.replace(/\s|\n/g, "").length) ? (
-						<p className={ `rn-feed-mat-item-content${ (!this.props.images || !this.props.images.length) ? " single" : ""  }` }>
-							{
-								this.props.content.split(' ').map((session, index) => {
-									if(!session.match(/#[A-Za-z]+/g)) {
-										return session + ' ';
-									} else {
-										return <Fragment key={ index }><span className="rn-feed-mat-item-content-tag">{ session }</span> </Fragment>;
-									}
-								})
-							}
-							
-						</p>
-					) : null
-				}
-				{
-					(!this.props.images || !this.props.images.length) ? null : (
-						<FeedItemCollage
-							images={ this.props.images }
-						/>
-					)
-				}
-				<div className="rn-feed-mat-item-feedback">
+	deletePost = (force = false) => {
+		if(!force) {
+			return this.props.runFrontDialog(true, {
+				title: "Delete this post?",
+				content: "Do you really want to delete this post?",
+				buttons: [
 					{
-						[
-							{
-								icon: <i className="far fa-heart" />,
-								activeIcon: <i className="fas fa-heart" />,
-								counter: (Number.isInteger(this.state.likesInt)) ? this.state.likesInt : this.props.likesInt,
-								action: () => this.sendFeedback('LIKE_ACTION'),
-								active: (typeof this.state.isLiked === 'boolean') ? this.state.isLiked : this.props.isLiked
-							},
-							{
-								icon: <i className="far fa-comment" />,
-								counter: (Number.isInteger(this.state.commentsInt)) ? this.state.commentsInt : this.props.commentsInt,
-								action: () => {
-									this.commentInputRef.focus();
+						color: "submit",
+						action: () => this.props.runFrontDialog(false, null),
+						content: "Cancel"
+					},
+					{
+						color: "cancel",
+						action: () => { this.props.runFrontDialog(false, null); this.deletePost(true); },
+						content: "Delete"
+					}
+				]
+			});
+		}
 
-									if(this.props.parentScreen) {
-										this.props.parentScreen.scrollTo({
-											top: this.commentInputRef.getBoundingClientRect().top,
-											behavior: 'smooth'
-										});
-									}
-								},
-								active: false
+		const { id } = cookieControl.get("authdata"),
+			  errorTxt = "We we couldn't delete this post. Plaese, try later";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $targetID: ID!) {
+					deletePost(id: $id, targetID: $targetID) {
+						id
+					}
+				}
+			`,
+			variables: {
+				id,
+				targetID: this.props.id
+			}
+		}).then(({ data: { deletePost: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			this.setState(() => ({
+				isDeleted: true
+			}));
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	render() {
+		if(this.state.isDeleted) return null;
+
+		return(
+			<Fragment>
+				<div className="rn-feed-mat-item rn-feed-item" ref={ ref => (this.props.onRef) ? this.props.onRef(ref) : null }>
+					<div className="rn-feed-mat-item-head">
+						<div className="rn-feed-mat-item-head-info">
+							<Link className="rn-feed-mat-item-head-info-avatar" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.refreshDock }>
+								<img src={ ((this.props.creator.avatar && api.storage + this.props.creator.avatar) || "") } alt="creator" title="Creator's avatar" />
+							</Link>
+							<Link className="rn-feed-mat-item-head-info-mat" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.refreshDock }>
+								<div className="rn-feed-mat-item-head-info-mat-name">
+									{ this.props.creator.name }
+								</div>
+								<p className="rn-feed-mat-item-head-info-mat-date">{ convertTime(this.props.time, "ago") }</p>
+							</Link>
+							{
+								(this.props.creator.id !== this.props.userdata.id) ? null : (
+									<SelectionList
+										values={[
+											{
+												name: "Delete post",
+												action: () => this.deletePost()
+											}
+										]}
+									/>
+								)
 							}
-						].map(({ icon, counter, action, active, activeIcon }, index) => (
-							<FeedItemFeedbackButton
-								key={ index }
-								icon={ icon }
-								counter={ counter }
-								isActive={ active }
-								activeIcon={ activeIcon }
-								_onClick={ action }
-							/>
-						))
-					}
-				</div>
-				<div className="rn-feed-mat-item-comments">
+						</div>
+					</div>
 					{
-						(this.state.comments || this.props.comments || []).map(({ id, image, content, creator, likesInt, isLiked, time }) => (
-							<FeedItemComment
-								key={ id }
-								id={ id }
-								content={ content }
-								creator={ creator }
-								time={ time }
-								likesInt={ likesInt }
-								isLiked={ isLiked }
-								image={ image }
-								castError={ this.props.castError }
-							/>
-						))
+						(this.props.content.replace(/\s|\n/g, "").length) ? (
+							<p className={ `rn-feed-mat-item-content${ (!this.props.images || !this.props.images.length) ? " single" : ""  }` }>
+								{
+									this.props.content.split(' ').map((session, index) => {
+										if(!session.match(/#[A-Za-z]+/g)) {
+											return session + ' ';
+										} else {
+											return <Fragment key={ index }><span className="rn-feed-mat-item-content-tag">{ session }</span> </Fragment>;
+										}
+									})
+								}
+								
+							</p>
+						) : null
 					}
 					{
-						(!this.state.isCommenting) ? null : (
-							<Loadericon
-								style={{
-									height: "15px",
-									width: "15px",
-									borderWidth: "2px"
-								}}
-							/>	
+						(!this.props.images || !this.props.images.length) ? null : (
+							<FeedItemCollage
+								images={ this.props.images }
+							/>
 						)
 					}
-					<button className="rn-feed-mat-item-comments-loadmore definp">
-						Load more (limit as notificator)
-					</button>
+					<div className="rn-feed-mat-item-feedback">
+						{
+							[
+								{
+									icon: <i className="far fa-heart" />,
+									activeIcon: <i className="fas fa-heart" />,
+									counter: (Number.isInteger(this.state.likesInt)) ? this.state.likesInt : this.props.likesInt,
+									action: () => this.sendFeedback('LIKE_ACTION'),
+									active: (typeof this.state.isLiked === 'boolean') ? this.state.isLiked : this.props.isLiked
+								},
+								{
+									icon: <i className="far fa-comment" />,
+									counter: (Number.isInteger(this.state.commentsInt)) ? this.state.commentsInt : this.props.commentsInt,
+									action: () => {
+										this.commentInputRef.focus();
+
+										if(this.props.parentScreen) {
+											this.props.parentScreen.scrollTo({
+												top: this.commentInputRef.getBoundingClientRect().top,
+												behavior: 'smooth'
+											});
+										}
+									},
+									active: false
+								}
+							].map(({ icon, counter, action, active, activeIcon }, index) => (
+								<FeedItemFeedbackButton
+									key={ index }
+									icon={ icon }
+									counter={ counter }
+									isActive={ active }
+									activeIcon={ activeIcon }
+									_onClick={ action }
+								/>
+							))
+						}
+					</div>
+					<div className="rn-feed-mat-item-comments">
+						{
+							(this.state.comments || this.props.comments || []).map(({ id, image, content, creator, likesInt, isLiked, time }) => (
+								<FeedItemComment
+									key={ id }
+									id={ id }
+									content={ content }
+									creator={ creator }
+									time={ time }
+									likesInt={ likesInt }
+									isLiked={ isLiked }
+									image={ image }
+									castError={ this.props.castError }
+								/>
+							))
+						}
+						{
+							(!this.state.isCommenting) ? null : (
+								<Loadericon
+									style={{
+										height: "15px",
+										width: "15px",
+										borderWidth: "2px"
+									}}
+								/>	
+							)
+						}
+						<button className="rn-feed-mat-item-comments-loadmore definp">
+							Load more (limit as notificator)
+						</button>
+					</div>
+					<FeedItemCommentinput
+						uavatar={ ((this.props.userdata && Object.keys(this.props.userdata).length && api.storage + this.props.userdata.avatar) || "") }
+						_onRef={ ref => this.commentInputRef = ref }
+						_onSubmit={ data => this.sendFeedback('COMMENT_ACTION', data) }
+						rootId={ this.props.id }
+					/>
 				</div>
-				<FeedItemCommentinput
-					uavatar={ ((this.props.userdata && Object.keys(this.props.userdata).length && api.storage + this.props.userdata.avatar) || "") }
-					_onRef={ ref => this.commentInputRef = ref }
-					_onSubmit={ data => this.sendFeedback('COMMENT_ACTION', data) }
-					rootId={ this.props.id }
-				/>
-			</div>
+			</Fragment>
 		);
 	}
 }
@@ -291,7 +345,8 @@ const mapStateToProps = ({ user: { userdata } }) => ({
 
 const mapActionsToProps = {
 	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } }),
-	refreshDock: () => ({ type: "REFRESH_DOCK", payload: null })
+	refreshDock: () => ({ type: 'REFRESH_DOCK', payload: null }),
+	runFrontDialog: (active, data) => ({ type: 'RUN_DIALOG', payload: { active, data } })
 }
 
 export default connect(

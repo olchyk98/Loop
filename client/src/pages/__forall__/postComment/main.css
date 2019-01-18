@@ -71,17 +71,19 @@
 	margin-right:2.5px;
 }
 
-.rn-feed-mat-item-comments-comment-content-controls-like {
+.rn-feed-mat-item-comments-comment-content-controls-action {
 	cursor:pointer;
 	color:blue;
 }
 
-.rn-feed-mat-item-comments-comment-content-controls-like:hover {
+.rn-feed-mat-item-comments-comment-content-controls-action:hover {
 	text-decoration:underline;
 }
 
 .rn-feed-mat-item-comments-comment-content-controls-space {
 	color:rgba(0, 0, 0, .25);
+	position:relative;
+	bottom:-2px;
 }
 
 .rn-feed-mat-item-comments-comment-content-controls-time {

@@ -122,7 +122,7 @@ class App extends Component {
 		 		data: image
 		 	}));
 
-		 }).catch((error) => console.log(error) || this.props.castError(errorTxt));
+		 }).catch(() => this.props.castError(errorTxt));
 	}
 
 	publishComment = tosend => {
@@ -237,6 +237,48 @@ class App extends Component {
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
+	deleteImage = (force = false) => { // Doesnt fire
+		if(!force) {
+			return this.props.runFrontDialog(true, {
+				title: "Delete this image?",
+				content: "Do you really want to delete this image?",
+				buttons: [
+					{
+						color: "submit",
+						action: () => this.props.runFrontDialog(false, null),
+						content: "Cancel"
+					},
+					{
+						color: "cancel",
+						action: () => { this.props.runFrontDialog(false, null); this.deleteImage(true); },
+						content: "Delete"
+					}
+				]
+			});
+		}
+
+		const { id } = cookieControl.get("authdata"),
+			  errorTxt = "We couldn't delete the image. Please, try later.";
+
+		client.mutate({
+			mutation: gql`
+				mutation($id: ID!, $targetID: ID!) {
+					deleteImage(id: $id, targetID: $targetID) {
+						id
+					}
+				}
+			`,
+			variables: {
+				id,
+				targetID: this.state.data.id
+			}
+		}).then(({ data: { deleteImage: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+
+			this.closeModal();
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
 	render() {
 		return(
 			<Fragment>
@@ -303,6 +345,15 @@ class App extends Component {
 										icon={ icon }
 									/>
 								))
+							}
+							{
+								(this.state.data && this.props.userdata && this.state.data.creator.id !== this.props.userdata.id) ? null : (
+									<ControlsBtn
+										_onClick={ () => this.deleteImage(false) }
+										title="Delete"
+										icon={ <i className="far fa-trash-alt" /> }
+									/>
+								)
 							}
 						</div>
 					</section>
@@ -393,7 +444,8 @@ const mapStateToProps = ({ user: { userdata } }) => ({
 
 const mapActionsToProps = {
 	castError: text => ({ type: 'CAST_GLOBAL_ERROR', payload: { status: true, text } }),
-	refreshDock: () => ({ type: "REFRESH_DOCK", payload: null })
+	refreshDock: () => ({ type: "REFRESH_DOCK", payload: null }),
+	runFrontDialog: (active, data) => ({ type: 'RUN_DIALOG', payload: { active, data } })
 }
 
 export default connect(
