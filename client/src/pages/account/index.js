@@ -167,6 +167,7 @@ class App extends Component {
 						friendsInt,
 						galleryImages,
 						waitingFriendsInt,
+						bands,
 						isFriend(id: $id),
 						isWaitingFriend(id: $id),
 						isTrialFriend(id: $id),
@@ -855,7 +856,9 @@ class App extends Component {
 							</div>
 							<div className="rn-account-thumb-nav-name">
 								<span>{ this.state.user.name }</span>
-								<BandsRail />
+								<BandsRail
+									labels={ this.state.user.bands }
+								/>
 							</div>
 						</div>
 						<ThumbNavButton

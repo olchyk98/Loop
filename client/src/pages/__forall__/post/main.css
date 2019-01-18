@@ -20,9 +20,10 @@
 
 .rn-feed-mat-item-head {
 	justify-content:space-between;
+	position:relative;
 }
 
-.rn-feed-mat-item-head-info {
+.rn-feed-mat-item-head-info > * {
 	text-decoration:none;
 }
 

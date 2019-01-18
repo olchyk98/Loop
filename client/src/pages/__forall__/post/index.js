@@ -5,6 +5,7 @@ import Loadericon from '../loader.icon';
 import FeedItemComment from '../postComment';
 import FeedItemCommentinput from '../postCommentInput';
 import FeedItemCollage from './FeedItemCollage';
+import SelectionList from '../selection.list'
 
 import { connect } from 'react-redux';
 import { gql } from 'apollo-boost';
@@ -162,17 +163,25 @@ class App extends Component {
 		return(
 			<div className="rn-feed-mat-item rn-feed-item" ref={ ref => (this.props.onRef) ? this.props.onRef(ref) : null }>
 				<div className="rn-feed-mat-item-head">
-					<Link className="rn-feed-mat-item-head-info" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.refreshDock }>
-						<div className="rn-feed-mat-item-head-info-avatar">
+					<div className="rn-feed-mat-item-head-info">
+						<Link className="rn-feed-mat-item-head-info-avatar" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.refreshDock }>
 							<img src={ ((this.props.creator.avatar && api.storage + this.props.creator.avatar) || "") } alt="creator" title="Creator's avatar" />
-						</div>
-						<div className="rn-feed-mat-item-head-info-mat">
+						</Link>
+						<Link className="rn-feed-mat-item-head-info-mat" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.refreshDock }>
 							<div className="rn-feed-mat-item-head-info-mat-name">
 								{ this.props.creator.name }
 							</div>
 							<p className="rn-feed-mat-item-head-info-mat-date">{ convertTime(this.props.time, "ago") }</p>
-						</div>
-					</Link>
+						</Link>
+						<SelectionList
+							values={[
+								{
+									name: "Delete post",
+									action: () => console.log("DELETE POST")
+								}
+							]}
+						/>
+					</div>
 				</div>
 				{
 					(this.props.content.replace(/\s|\n/g, "").length) ? (

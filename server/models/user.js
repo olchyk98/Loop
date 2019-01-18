@@ -11,7 +11,8 @@ const UserSchema = new mongoose.Schema({
 	waitingFriends: Array,
 	friends: Array,
 	authTokens: Array,
-	subscribedTo: Array
+	subscribedTo: Array,
+	bands: Array
 });
 
 module.exports = mongoose.model("User", UserSchema);

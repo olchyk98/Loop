@@ -82,6 +82,7 @@ const UserType = new GraphQLObjectType({
 				}
 			})
 		},
+		bands: { type: new GraphQLList(GraphQLString) },
 		posts: {
 			type: new GraphQLList(PostType),
 			resolve: ({ id }) => Post.find({ creatorID: id }).sort({ time: -1 })
