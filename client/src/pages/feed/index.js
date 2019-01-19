@@ -15,6 +15,10 @@ import FeedItem from '../__forall__/post';
 import NewGridPhoto from '../__forall__/gridphoto';
 import placeholderGF from '../__forall__/placeholder.gif';
 
+const options = {
+	postsLimit: 5
+}
+
 class NewAddonsBtn extends Component {
 	render() {
 		if(this.props._type === 'photo') {
@@ -231,22 +235,41 @@ class App extends Component {
 
 		this.state = {
 			posts: false,
-			isPosting: false
+			isPosting: false,
+			infPostsLoading: false
 		}
 
 		this.screenRef = React.createRef();
 		this.feedSubscription = null;
+		this.fetchablePosts = true;
 	}
 
 	componentDidMount() {
+		this.fetchPosts();
+	}
+
+	componentWillUnmount() {
+		(this.feedSubscription && this.feedSubscription.unsubscribe());
+	}
+
+	fetchPosts = () => {
+		if(!this.fetchablePosts || this.state.infPostsLoading) return;
+
+		if(this.state.posts) {
+			this.setState(() => ({
+				infPostsLoading: true
+			}));
+		}
+
 		// Fetch data from the API
 		let { id } = cookieControl.get("authdata"),
-			errorTxt = "Sorry, we couldn't load your feed. Please, restart the page.";
+			errorTxt = "Sorry, we couldn't load your feed. Please, restart the page.",
+			offsetID = (this.state.posts && this.state.posts.slice(-1)[0].id) || 0;
 
 		client.query({
 			query: gql`
-				query($id: ID!) {
-					getFeed(id: $id) {
+				query($id: ID!, $limit: Int, $offsetID: ID) {
+					getFeed(id: $id, limit: $limit, offsetID: $offsetID) {
 						id,
 						content,
 						time,
@@ -282,15 +305,26 @@ class App extends Component {
 				}
 			`,
 			variables: {
-				id
+				id,
+				limit: options.postsLimit,
+				offsetID: offsetID
 			}
-		}).then(({ data: { getFeed } }) => {
-			if(!getFeed) return this.props.castError(errorTxt);
+		}).then(({ data: { getFeed: a } }) => {
+			if(!a && !offsetID) {
+				this.props.castError(errorTxt);
+				return false;
+			}
 
-			this.setState(() => ({
-				posts: getFeed
+			this.setState(({ posts: b }) => ({
+				posts: (!b) ? a : [ ...b, ...a ],
+				infPostsLoading: false
 			}));
-		}).then(() => {
+			this.fetchablePosts = a.length === options.postsLimit;
+
+			return true;
+		}).then(result => {
+			if(!result) return;
+
 			this.feedSubscription = client.subscribe({
 				query: gql`
 					subscription($id: ID!) {
@@ -342,10 +376,6 @@ class App extends Component {
 				}
 			});
 		}).catch(() => this.props.castError(errorTxt));
-	}
-
-	componentWillUnmount() {
-		(this.feedSubscription && this.feedSubscription.unsubscribe());
 	}
 
 	publishPost = (text, images) => {
@@ -414,7 +444,13 @@ class App extends Component {
 
 	render() {
 		return(
-			<div className="rn rn-feed" ref={ ref => this.screenRef = ref }>
+			<div className="rn rn-feed" ref={ ref => this.screenRef = ref } onScroll={({ target: { scrollHeight, clientHeight, scrollTop } }) => {
+				// If |<= 1%
+
+				if(100 / ((scrollHeight - clientHeight) / scrollTop) >= 99) {
+					this.fetchPosts();
+				}
+			}}>
 				<New
 					uavatar={
 						((this.props.userdata &&
@@ -459,6 +495,11 @@ class App extends Component {
 							<FeedItemPlaceholder />
 							<FeedItemPlaceholder />
 						</Fragment>
+					)
+				}
+				{
+					(!this.state.infPostsLoading) ? null : (
+						<LoadingIcon />
 					)
 				}
 			</div>

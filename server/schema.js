@@ -738,12 +738,14 @@ const RootQuery = new GraphQLObjectType({
 			type: new GraphQLList(PostType),
 			args: {
 				id: { type: new GraphQLNonNull(GraphQLID) },
+				limit: { type: GraphQLInt },
+				offsetID: { type: GraphQLID }
 			},
-			async resolve(_, { id }, { req }) {
+			async resolve(_, { id, limit, offsetID }, { req }) {
 				let a = await validateAccount(id, req.session.authToken);
 				if(!a) return null;
 
-				return Post.find({
+				let b = {
 					$or: [
 						{
 							creatorID: {
@@ -752,7 +754,22 @@ const RootQuery = new GraphQLObjectType({
 						},
 						{ creatorID: id }
 					]
-				}).sort({ time: -1 });
+				}
+
+				if(limit) { // INFINITE_SCROLL_LABEL
+					if(offsetID === "0") {
+						return Post.find(b).sort({ time: -1 }).limit(limit);
+					} else {
+						return Post.find({
+							...b,
+							_id: {
+								$lt: offsetID
+							}
+						}).sort({ time: -1 }).limit(limit)
+					}
+				} else {
+					return Post.find(b).sort({ time: -1 });
+				}
 			}
 		},
 		searchFriends: {
