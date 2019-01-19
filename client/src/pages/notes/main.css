@@ -28,6 +28,7 @@
 	overflow:visible;
 }
 
+.rn-notes-grid-item__placeholder,
 .rn-notes-item {
 	--padding:15px;
 	--height:320px;
@@ -35,6 +36,9 @@
 	padding-top:var(--padding);
 	height:calc(var(--height) - var(--padding));
 	width:var(--notes_item-previewdef-swidth);
+}
+
+.rn-notes-item {
 	border-radius:5px;
 	background:white;
 	box-shadow:0px 0px 10px -4px rgba(0, 0, 0, .25);
@@ -860,4 +864,8 @@
 	border-radius:5px;
 	background:rebeccapurple;
 	transition:.25s;
+}
+
+.rn-notes-grid-item__placeholder {
+	border-radius:5px;
 }

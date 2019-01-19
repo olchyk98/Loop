@@ -13,6 +13,7 @@ import links from '../../links';
 import LoadingIcon from '../__forall__/loader.icon';
 import FeedItem from '../__forall__/post';
 import NewGridPhoto from '../__forall__/gridphoto';
+import placeholderGF from '../__forall__/placeholder.gif';
 
 class NewAddonsBtn extends Component {
 	render() {
@@ -209,6 +210,16 @@ class New extends Component {
 					</div>
 					<button className="rn-feed-new-addons-submit definp" onClick={ this.publish }>Post</button>
 				</div>
+			</div>
+		);
+	}
+}
+
+class FeedItemPlaceholder extends Component {
+	render() {
+		return(
+			<div className="rn-feed-item__placeholder">
+				<img src={ placeholderGF } alt="article placeholder" />	
 			</div>
 		);
 	}
@@ -444,11 +455,10 @@ class App extends Component {
 							/>
 						))
 					) : (
-						<LoadingIcon
-							style={{
-								marginLeft: "inherit"
-							}}
-						/>
+						<Fragment>
+							<FeedItemPlaceholder />
+							<FeedItemPlaceholder />
+						</Fragment>
 					)
 				}
 			</div>

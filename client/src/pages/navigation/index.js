@@ -383,7 +383,7 @@ class App extends Component {
 						</div>
 					</div>
 					<div className="gl-nav-account">
-						<button onClick={ this.openNotifications } className="gl-nav-account-spc definp">
+						<button aria-label="Notifications bell" onClick={ this.openNotifications } className="gl-nav-account-spc definp">
 							<i className="far fa-bell" />
 							{
 								(!this.state.hasNotifications) ? null : (

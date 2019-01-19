@@ -294,3 +294,17 @@
 .rn-feed-new-main-photos-photo.sphere > .rn-feed-new-main-photos-photo-error {
 	font-size:.55em;
 }
+
+.rn-feed-item__placeholder {
+	position:relative;
+	height:175px;
+	border-radius:5px;
+	overflow:hidden;
+	margin-bottom:15px;
+	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, .05);
+}
+
+.rn-feed-item__placeholder > img {
+	height:100%;
+	width:100%;
+}

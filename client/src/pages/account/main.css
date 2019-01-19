@@ -667,3 +667,27 @@
 	font-weight:400;
 	font-family:"Quicksand";
 }
+
+.rn-account-placeholder {
+	border-radius:5px;
+	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, .05);
+	width:var(--account_width);
+	max-width:calc(100% - 20px);
+}
+
+.rn-account-placeholder.block {
+	margin-top:20px;
+	height:250px;
+}
+
+.rn-account-placeholder.menu {
+	margin-top:10px;
+	margin-bottom:15px;
+	height:45px;
+}
+
+.rn-account-placeholder.articles {
+	margin-bottom:10px;
+	height:175px;
+	width:calc(var(--account_width) * .9);
+}

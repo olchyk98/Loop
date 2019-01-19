@@ -12,7 +12,7 @@ const app = express();
 mongoose.connect('mongodb://oles:0password@ds113935.mlab.com:13935/dev-tunaconnect', {
 	useNewUrlParser: true
 });
-mongoose.connection.once('open', () => console.log("Server was successfully connected to the database."))
+mongoose.connection.once('open', () => console.log("Server was successfully connected to the database."));
 
 app.use(new session({
 	age: 7 * 24 * 60 * 60 * 1000,

@@ -4,6 +4,7 @@ import './main.css';
 import Loadericon from '../__forall__/loader.icon';
 import NoteEditorSettings from './NoteEditorSettings';
 import NoteCreatorInput from  './NoteCreatorInput';
+import PlaceholderGF from '../__forall__/placeholder.gif'
 
 import { gql } from 'apollo-boost';
 import { Link } from 'react-router-dom';
@@ -865,13 +866,14 @@ class App extends Component {
 								}
 							</Fragment>
 						) : (
-							<Loadericon
-								style={{
-									marginLeft: "auto",
-									marginRight: "auto",
-									marginTop: "20px"
-								}}
-							/>
+							<Fragment>
+								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+							</Fragment>
 						)
 					}
 				</div>

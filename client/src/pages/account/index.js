@@ -758,7 +758,10 @@ class App extends Component {
 	render() {
 		if(!this.state.user) return(
 			<div className="rn rn-account">
-				<Loadericon />
+				<img src={ placeholderGIF } alt="placeholder block" className="rn-account-placeholder block" />
+				<img src={ placeholderGIF } alt="placeholder menu" className="rn-account-placeholder menu" />
+				<img src={ placeholderGIF } alt="placeholder articles" className="rn-account-placeholder articles" />
+				<img src={ placeholderGIF } alt="placeholder articles" className="rn-account-placeholder articles" />
 			</div>
 		);
 
