@@ -174,6 +174,7 @@ class App extends Component {
 						galleryImages,
 						waitingFriendsInt,
 						bands,
+						hasClientConversation(id: $id),
 						isFriend(id: $id),
 						isWaitingFriend(id: $id),
 						isTrialFriend(id: $id),
@@ -898,10 +899,10 @@ class App extends Component {
 											{
 												title: <i className="far fa-comment-alt" />,
 												active: false,
-												blocked: !this.state.user.isFriend,
+												blocked: !this.state.user.hasClientConversation && !this.state.user.isFriend,
 												loading: false,
 												action: () => {
-													if(!this.state.user.isFriend) return;
+													if(!this.state.user.hasClientConversation && !this.state.user.isFriend) return;
 
 													this.props.history.push(`${ links["CHAT_PAGE"].absolute }/${ this.state.user.id }`);
 													this.props.refreshDock();

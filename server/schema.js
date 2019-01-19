@@ -83,6 +83,30 @@ const UserType = new GraphQLObjectType({
 			})
 		},
 		bands: { type: new GraphQLList(GraphQLString) },
+		hasClientConversation: {
+			type: GraphQLBoolean,
+			args: {
+				id: { type: new GraphQLNonNull(GraphQLID) }
+			},
+			async resolve({ id: _id }, { id }) {
+				let a = await Conversation.findOne({
+					$or: [
+						{
+							contributors: [
+								str(id), str(_id)
+							]
+						},
+						{
+							contributors: [
+								str(_id), str(id)
+							]
+						}
+					]
+				});
+
+				return !!a;
+			}
+		},
 		posts: {
 			type: new GraphQLList(PostType),
 			args: {
@@ -574,7 +598,30 @@ const ConversationType = new GraphQLObjectType({
 		},
 		messages: {
 			type: new GraphQLList(MessageType),
-			resolve: ({ id }) => Message.find({ conversationID: id })
+			args: {
+				limit: { type: GraphQLInt },
+				offsetID: { type: GraphQLID }
+			},
+			resolve({ id }, { limit, offsetID }) {
+				let a = {
+					conversationID: id
+				}
+
+				if(limit) {
+					if(offsetID) {
+						return Message.find({
+							...a,
+							_id: {
+								$lt: offsetID
+							}
+						}).sort({ time: -1 }).limit(limit);
+					} else {
+						return Message.find(a).sort({ time: -1 }).limit(limit);
+					}
+				} else {
+					return Message.find(a).sort({ time: -1 });
+				}
+			}
 		},
 		inviteSuggestions: {
 			type: new GraphQLList(UserType),
@@ -1060,7 +1107,7 @@ const RootQuery = new GraphQLObjectType({
 						}
 					}, (_, a) => a);
 
-					await Notification.remove({
+					await Notification.deleteMany({
 						$where: "this.influenced.length === 0"
 					});
 				}
@@ -1704,35 +1751,34 @@ const RootMutation = new GraphQLObjectType({
 
 				let b = await User.findById(targetID);
 				if(b) { // targetID is user
-					if(a.friends.includes(str(targetID)) || b.friends.includes(str(id))) { // validate if friend
-						let c = await (
-							Conversation.findOne({
-								$or: [
-									{
-										contributors: [str(id), str(targetID)]
-									},
-									{
-										contributors: [str(targetID), str(id)]	
-									}
-								]
+					let c = await (
+						Conversation.findOne({
+							$or: [
+								{
+									contributors: [str(id), str(targetID)]
+								},
+								{
+									contributors: [str(targetID), str(id)]	
+								}
+							]
+						})
+					);
+
+					if(c) {
+						return c;
+					} else if(a.friends.includes(str(targetID)) || b.friends.includes(str(id))) { // validate if friend
+						return (
+							new Conversation({
+								name: "",
+								avatar: "",
+								contributors: [
+									str(id),
+									str(targetID)
+								],
+								creatorID: str(id),
+								color: "white"
 							})
-						);
-						if(c) { // conversation exists -> return
-							return c;
-						} else { // conversation is not exists -> create new and return
-							return (
-								new Conversation({
-									name: "",
-									avatar: "",
-									contributors: [
-										str(id),
-										str(targetID)
-									],
-									creatorID: str(id),
-									color: "white"
-								})
-							).save();
-						}
+						).save();
 					} else {
 						return null;
 					}
@@ -1769,7 +1815,7 @@ const RootMutation = new GraphQLObjectType({
 				let images = [];
 				if(type === "FILE_TYPE") { // Download file and return url as value
 					let { filename, stream } = await content;
-					content = `${ settings.files.files }/${ generateNoise(128) },.${ getExtension(filename) },`
+					content = `${ settings.files.files }/${ generateNoise(128) }.${ getExtension(filename) }`
 
 					stream.pipe(fileSystem.createWriteStream('.' + content));
 				} else if(type === "IMAGES_TYPE") {
@@ -2243,8 +2289,8 @@ const RootSubscription = new GraphQLObjectType({
 			},
 			subscribe: withFilter(
 				() => pubsub.asyncIterator('conversationMessageSent'),
-				async ({ conversationID: targetID }, { id, conversationID }, { req }) => {
-					if(str(targetID) !== str(conversationID)) return false;
+				async ({ conversationID: targetID, message: { creatorID } }, { id, conversationID }, { req }) => {
+					if(str(targetID) !== str(conversationID) || str(creatorID) === str(id)) return false;
 
 					return true;
 				}

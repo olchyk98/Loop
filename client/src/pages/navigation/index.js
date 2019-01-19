@@ -263,7 +263,8 @@ class App extends Component {
 				if(!a) return this.props.castError(errorTxt);
 
 				this.setState(() => ({
-					notifications: a
+					notifications: a,
+					hasNotifications: false
 				}));
 			}).catch(() => this.props.castError(errorTxt));
 		})

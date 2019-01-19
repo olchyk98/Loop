@@ -405,7 +405,7 @@
 .rn-chat-display-mat {
 	height:100%;
 	display:flex;
-	flex-direction:column;
+	flex-direction:column-reverse;
 	justify-content:flex-start;
 	align-items:flex-start;
 	border-top:1px solid var(--defaultborder);
@@ -719,6 +719,7 @@
 	height:auto;
 	display:flex;
 	flex-direction:column;
+	padding-bottom:0;
 }
 
 .rn-chat-display-header-input-media {
@@ -751,7 +752,9 @@
 }
 
 .rn-chat-display-header-field-send {
-	width:45px;
+	--size:35px;
+
+	width:var(--size);
 	display:flex;
 	align-items:center;
 	position:relative;
@@ -759,13 +762,11 @@
 }
 
 .rn-chat-display-header-field-send > button {
-	--size:45px;
-
 	height:var(--size);
 	width:var(--size);
 	border-radius:50%;
 	border:1px solid rgba(0, 0, 0, .1);
-	font-size:1.1em;
+	font-size:1em;
 	color:white;
 	background:rebeccapurple;
 	cursor:pointer;
@@ -778,6 +779,11 @@
 
 .rn-chat-display-header-field-send > button:active {
 	transform:scale(.9);
+}
+
+.rn-chat-display-header-field-send > button > svg {
+	position:relative;
+	bottom:-1px;
 }
 
 .rn-chat-display-contnav {

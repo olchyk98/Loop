@@ -72,7 +72,9 @@ const fileTypes = {
 	"zip":     require('../__forall__/mg_filetypes/zip.svg')
 }
 
-// TODO: Conversation, small device -> on scroll top hide input bar.
+const options = {
+	messagesLimit: 20
+}
 
 class ConversationMember extends Component {
 	static defaultProps = {
@@ -189,6 +191,20 @@ class DisplayMessage extends Component {
 					<div className="rn-chat-display-mat-item-content">
 						<div><img className="rn-chat-display-mat-item-stickermg" alt="sticker" src={ stickers[this.props.content] } /></div>
 						<div className="rn-chat-display-mat-item-content-info">
+							{
+								(!this.props.isNew) ? null : (
+									<Fragment>
+										{
+											(this.props.isSent) ? (
+												<span>Sent</span>
+											) : (
+												<span>Sending...</span>
+											)
+										}
+										<span className="space">•</span>
+									</Fragment>
+								)
+							}
 							<span>{ this.props.creator && this.props.creator.name }</span>
 							<span className="space">•</span>
 							<span>{ convertTime(this.props.time) }</span>
@@ -221,6 +237,20 @@ class DisplayMessage extends Component {
 							</div>
 						</div>
 						<div className="rn-chat-display-mat-item-content-info">
+							{
+								(!this.props.isNew) ? null : (
+									<Fragment>
+										{
+											(this.props.isSent) ? (
+												<span>Sent</span>
+											) : (
+												<span>Sending...</span>
+											)
+										}
+										<span className="space">•</span>
+									</Fragment>
+								)
+							}
 							<span>{ this.props.creator && this.props.creator.name }</span>
 							<span className="space">•</span>
 							{
@@ -273,6 +303,20 @@ class DisplayMessage extends Component {
 							</div>
 						</div>
 						<div className="rn-chat-display-mat-item-content-info">
+							{
+								(!this.props.isNew) ? null : (
+									<Fragment>
+										{
+											(this.props.isSent) ? (
+												<span>Sent</span>
+											) : (
+												<span>Sending...</span>
+											)
+										}
+										<span className="space">•</span>
+									</Fragment>
+								)
+							}
 							<span>{ this.props.creator && this.props.creator.name }</span>
 							<span className="space">•</span>
 							<span>{ convertTime(this.props.time) }</span>
@@ -580,18 +624,18 @@ class App extends Component {
 			pModalStage: null, // STOPWATCH_STAGE, STICKERS_STAGE
 			conversations: null,
 			dialog: null,
-			photoGrid: false
+			photoGrid: false,
+			fetchingDialogMessages: false
 		}
 
 		this.dialogDisplayRef = React.createRef();
 		this.conversationsUPSubscription = this.dialogSubscription = this.dialogSettingsSubscription = null;
-		this.sendingMessage = false;
 	}
 
 	componentDidMount(a) {
 		let b = this.props.match.params.id;
 
-		if(!b) this.globalStageLoad();
+		if(!b) this.loadConversationsList();
 		else this.openConversation(b);
 	}
 
@@ -601,7 +645,7 @@ class App extends Component {
 		(this.conversationsUPSubscription && this.conversationsUPSubscription.unsubscribe());
 	}
 
-	globalStageLoad = () => {
+	loadConversationsList = () => {
 		const { id } = cookieControl.get("authdata");
 		let errorTxt = "We couldn't load your conversations. Please, try again."
 
@@ -696,6 +740,8 @@ class App extends Component {
 			dialog: false
 		}));
 
+		this.fetchableDialogMessages = true;
+
 		const { id } = cookieControl.get("authdata");
 		let errorTxt = "We couldn't load this conversation. Please, try later.";
 
@@ -703,14 +749,14 @@ class App extends Component {
 		// Load conversation
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $targetID: ID!) {
+				mutation($id: ID!, $targetID: ID!, $limit: Int) {
 					createConversation(id: $id, targetID: $targetID, seeConversation: true) {
 						id,
 						name(id: $id),
 						avatar(id: $id),
 						contributorsInt,
 						color,
-						messages {
+						messages(limit: $limit) {
 							id,
 							content,
 							time,
@@ -731,7 +777,8 @@ class App extends Component {
 			`,
 			variables: {
 				id,
-				targetID
+				targetID,
+				limit: options.messagesLimit
 			}
 		}).then(({ data: { createConversation: a } }) => {
 			if(!a) return this.props.castError(errorTxt);
@@ -739,6 +786,7 @@ class App extends Component {
 			this.setState(() => ({
 				dialog: a
 			}), this.scrollEndDialog);
+			this.fetchableDialogMessages = a.messages.length === options.messagesLimit;
 
 			window.history.pushState(null, `Conversation: ${ targetID }`, links["CHAT_PAGE"].absolute + '/' + targetID);
 		}).then(() => {
@@ -779,11 +827,11 @@ class App extends Component {
 						dialog: {
 							...dialog,
 							messages: [
-								...messages,
-								a
+								a,
+								...messages
 							]
 						}
-					}));
+					}), this.scrollEndDialog);
 				},
 				error: () => this.props.castError(errorTxt)
 			});
@@ -818,13 +866,78 @@ class App extends Component {
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
-	sendDialogMessage = (type, value) => {
-		if(!this.state.dialog || !value || this.sendingMessage) return;
+	fetchDialogMessages = () => {
+		if(!this.fetchableDialogMessages || this.state.fetchingDialogMessages || !this.state.dialog) return;
 
-		this.sendingMessage = true;
+		this.setState(() => ({
+			fetchingDialogMessages: true
+		}));
+
+		const { id } = cookieControl.get("authdata");
+
+		{
+			const { scrollHeight, offsetHeight, scrollTop } = this.dialogDisplayRef;
+			var menusScrollTop = Math.abs(scrollTop - (scrollHeight - offsetHeight));
+		}
+
+		client.query({
+			query: gql`
+				query($id: ID!, $targetID: ID!, $limit: Int, $offsetID: ID) {
+					conversation(id: $id, targetID: $targetID) {
+						id,
+						messages(limit: $limit, offsetID: $offsetID) {
+							id,
+							content,
+							time,
+							type,
+							images {
+								id,
+								url
+							},
+							creatorID,
+							creator {
+								id,
+								name,
+								avatar
+							}
+						}
+					}
+				}
+			`,
+			variables: {
+				id,
+				targetID: this.state.dialog.id,
+				limit: options.messagesLimit,
+				offsetID: this.state.dialog.messages.slice(-1)[0].id
+			}
+		}).then(({ data: { conversation: a } }) => {
+			this.setState(() => ({
+				fetchingDialogMessages: false
+			}));
+			if(!a) return;
+
+			this.setState(({ dialog, dialog: { messages } }) => ({
+				dialog: {
+					...dialog,
+					messages: [
+						...messages,
+						...a.messages
+					]
+				}
+			}), () => this.dialogDisplayRef.scrollTop = this.dialogDisplayRef.scrollHeight - this.dialogDisplayRef.offsetHeight - menusScrollTop);
+			this.fetchableDialogMessages = a.messages.length === options.messagesLimit;
+		});
+	}
+
+	sendDialogMessage = (type, value) => {
+		if(
+			!this.state.dialog ||
+			!value ||
+			(value.replace && !value.replace(/\s|\n/g, "").length)
+		) return;
 
 		const { id } = cookieControl.get("authdata"),
-			  errorTxt = "An error occured while we tried to send your message. Please, try again."
+			  errorTxt = "An error occured while we tried to send your message. Please, try again.";
 
 		const genID = () => {
 			let a = Math.floor(Math.random() * 1500);
@@ -832,15 +945,18 @@ class App extends Component {
 			else return a;
 		}
 
+		// TODO: Reverse list
+
 		let a = genID();
 		this.setState(({ dialog, dialog: { messages } }) => ({
 			dialog: {
 				...dialog,
 				messages: [
-					...messages,
 					{
 						id: a,
-						content: (type !== "FILE_TYPE" && type !== "IMAGES_TYPE") ? value : "",
+						content: (type !== "FILE_TYPE" && type !== "IMAGES_TYPE") ? value : (type === "FILE_TYPE") ? (
+							`filename.${ value.name.match(/[^\\]*\.(\w+)$/)[1] }`
+						) : "",
 						time: +new Date(),
 						type,
 						images: [],
@@ -849,8 +965,10 @@ class App extends Component {
 							id: this.props.userdata.id,
 							name: this.props.userdata.name,
 							avatar: this.props.userdata.avatar,
-						}
-					}
+						},
+						isSent: false
+					},
+					...messages
 				]
 			}
 		}), this.scrollEndDialog);
@@ -888,13 +1006,16 @@ class App extends Component {
 				conversationID: this.state.dialog.id
 			}
 		}).then(({ data: { sendMessage: message } }) => {
-			this.sendingMessage = false;
 			if(!message) return this.props.castError(errorTxt);
 
 			let aa = Array.from(this.state.dialog.messages),
 				ab = aa.findIndex(io => io.id.toString() === a.toString());
 
-			aa[ab] = message;
+			aa[ab] = {
+				...message,
+				isSent: true
+			}
+
 			this.setState(({ dialog }) => ({
 				dialog: {
 					...dialog,
@@ -1241,9 +1362,11 @@ class App extends Component {
 								{
 									(this.state.chatStage === "CONVERSATION_STAGE") ? (
 										<Fragment>
-											<section className="rn-chat-display-mat" ref={ ref => this.dialogDisplayRef = ref }>
+											<section className="rn-chat-display-mat" ref={ ref => this.dialogDisplayRef = ref } onScroll={({ target: { offsetHeight, scrollTop, scrollHeight } }) => {
+												if(100 / ((scrollHeight - offsetHeight) / scrollTop) <= 1) this.fetchDialogMessages();
+											}}>
 												{
-													((this.state.dialog && this.state.dialog.messages) || []).map(({ id, content, time, images, creatorID, creator, type }) => (
+													((this.state.dialog && this.state.dialog.messages) || []).map(({ id, content, time, images, creatorID, creator, type, isSent }) => (
 														(creatorID !== "SYSTEM_ID") ? (
 															<DisplayMessage
 																key={ id }
@@ -1256,6 +1379,8 @@ class App extends Component {
 																openPhoto={ this.props.openPhotoModal }
 																isClients={ creatorID === this.props.userdata.id }
 																refreshDock={ this.props.refreshDock }
+																isSent={ isSent }
+																isNew={ typeof isSent === "boolean" }
 															/>
 														) : (
 															<p
@@ -1266,6 +1391,15 @@ class App extends Component {
 															</p>
 														)
 													))
+												}
+												{
+													(!this.state.fetchingDialogMessages) ? null : (
+														<Loadericon
+															style={{
+																marginTop: "15px"
+															}}
+														/>
+													)
 												}
 											</section>
 											<section className="rn-chat-display-header-input">
