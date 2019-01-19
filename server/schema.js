@@ -85,7 +85,30 @@ const UserType = new GraphQLObjectType({
 		bands: { type: new GraphQLList(GraphQLString) },
 		posts: {
 			type: new GraphQLList(PostType),
-			resolve: ({ id }) => Post.find({ creatorID: id }).sort({ time: -1 })
+			args: {
+				limit: { type: GraphQLInt },
+				offsetID: { type: GraphQLID }
+			},
+			resolve({ id }, { limit, offsetID }) {
+				let a = {
+					creatorID: id
+				}
+
+				if(!limit) {
+					return Post.find(a).sort({ time: -1 });
+				} else {
+					if(!offsetID) {
+						return Post.find(a).sort({ time: -1 }).limit(limit);
+					} else {
+						return Post.find({
+							...a,
+							_id: {
+								$lt: offsetID
+							}
+						}).sort({ time: -1 }).limit(limit);
+					}
+				}
+			}
 		},
 		postsInt: {
 			type: GraphQLInt,

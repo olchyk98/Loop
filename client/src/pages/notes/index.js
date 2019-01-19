@@ -54,9 +54,11 @@ class Note extends Component {
 	}
 
 	getProgressClass = () => {
-		let a = this.props.currWords,
+		let a = this.props.currWords, // always > 0
 			b = this.props.estWords,
 			c = ""; // lowcontent, mediumcontent, highcontent, fullcontent
+
+		if(!this.props.content.replace(/\s|\n/g, "").length) return;
 
 		// convert to procents
 		let d = 100 / (b / a);

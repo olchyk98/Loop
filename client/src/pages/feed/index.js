@@ -499,7 +499,13 @@ class App extends Component {
 				}
 				{
 					(!this.state.infPostsLoading) ? null : (
-						<LoadingIcon />
+						<LoadingIcon
+							style={{
+								marginTop: "10px",
+								marginBottom: "10px",
+								marginLeft: "inherit"
+							}}
+						/>
 					)
 				}
 			</div>

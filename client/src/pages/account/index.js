@@ -16,6 +16,10 @@ import client from '../../apollo';
 import { cookieControl } from '../../utils';
 import links from '../../links';
 
+const options = {
+	postsTimelineLimit: 5
+}
+
 class ThumbNavButton extends Component {
 	render() {
 		return(
@@ -145,10 +149,12 @@ class App extends Component {
 			isSubscribing: false,
 			aboutMeEditing: false,
 			descriptionLoading: false,
-			descriptionStatus: null
+			descriptionStatus: null,
+			timelineFetching: false
 		}
 
 		this.descriptionNewRef = React.createRef();
+		this.fetchableInfPosts = true;
 	}
 
 	componentDidMount() {
@@ -157,7 +163,7 @@ class App extends Component {
 
 		client.query({
 			query: gql`
-				query($id: ID!, $targetID: ID) {
+				query($id: ID!, $targetID: ID, $limit: Int) {
 					user(id: $id, targetID: $targetID) {
 						id,
 						avatar,
@@ -172,7 +178,7 @@ class App extends Component {
 						isWaitingFriend(id: $id),
 						isTrialFriend(id: $id),
 						isSubscribed(id: $id),
-						posts {
+						posts(limit: $limit) {
 							id,
 							content,
 							time,
@@ -210,22 +216,100 @@ class App extends Component {
 			`,
 			variables: {
 				id,
-				targetID: this.props.match.params.id || ""
+				targetID: this.props.match.params.id || "",
+				limit: options.postsTimelineLimit
 			}
-		}).then(({ data: { user } }) => {
-			if(!user) {
+		}).then(({ data: { user: a } }) => {
+			if(!a) {
 				this.props.history.push(links["HOME_PAGE"].absolute);
 				this.props.refreshDock();
 				return this.props.castError(errorTxt);
 			}
 
 			this.setState(() => ({
-				user
+				user: a
 			}));
+
+			this.fetchableInfPosts = a.posts.length === options.postsTimelineLimit;
 		}).catch(() => {
 			this.props.history.push(links["HOME_PAGE"].absolute);
 			this.props.refreshDock();
 			this.props.castError(errorTxt);
+		});
+	}
+
+	fetchTimeline = () => {
+		if(!this.state.user || !this.fetchableInfPosts || this.state.stage !== "TIMELINE_STAGE" || this.state.timelineFetching) return;
+
+		this.setState(() => ({
+			timelineFetching: true
+		}));
+
+		const { id } = cookieControl.get("authdata");
+		client.query({
+			query: gql`
+				query($id: ID!, $targetID: ID, $limit: Int, $offsetID: ID) {
+					user(id: $id, targetID: $targetID) {
+						id,
+						posts(limit: $limit, offsetID: $offsetID) {
+							id,
+							content,
+							time,
+							likesInt,
+							commentsInt,
+							isLiked(id: $id),
+							creator {
+								id,
+								name,
+								avatar
+							},
+							images {
+								id,
+								url
+							},
+							comments {
+								id,
+								content,
+								time,
+								creator {
+									id,
+									avatar,
+									name
+								},
+								likesInt,
+								isLiked(id: $id),
+								image {
+									id,
+									url
+								}
+							}
+						}
+					}
+				}
+			`,
+			variables: {
+				id,
+				targetID: this.props.match.params.id || "",
+				limit: options.postsTimelineLimit,
+				offsetID: this.state.user.posts.slice(-1)[0].id
+			}
+		}).then(({ data: { user: a } }) => {
+			this.setState(() => ({
+				timelineFetching: false
+			}));
+
+			if(!a) return;
+
+			this.setState(({ user, user: { posts } }) => ({
+				user: {
+					...user,
+					posts: [
+						...posts,
+						...a.posts
+					]
+				}
+			}));
+			this.fetchableInfPosts = a.posts.length === options.postsTimelineLimit;
 		});
 	}
 
@@ -766,7 +850,9 @@ class App extends Component {
 		);
 
 		return(
-			<div className="rn rn-account">
+			<div className="rn rn-account" onScroll={({ target: { scrollHeight, offsetHeight, scrollTop } }) => { // XXX: Too high
+				if(100 / ( (scrollHeight - offsetHeight) / scrollTop ) >= 99) this.fetchTimeline();
+			}}>
 				<div className="rn-account-thumb">
 					<div className="rn-account-thumb-cover">
 						<img
@@ -916,6 +1002,18 @@ class App extends Component {
 										parentScreen={ this.screenRef }
 									/>
 								))
+							)
+						}
+						{
+							(!this.state.timelineFetching) ? null : (
+								<div>
+									<Loadericon
+										style={{
+											marginTop: "15px",
+											marginLeft: "inherit",
+										}}
+									/>
+								</div>
 							)
 						}
 					</div>
