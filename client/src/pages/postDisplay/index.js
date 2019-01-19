@@ -10,21 +10,24 @@ import { connect } from 'react-redux';
 import client from '../../apollo';
 import { cookieControl } from '../../utils';
 
+const options = {
+	limitComments: 5,
+	commentsLimit: 7
+}
+
 class App extends Component {
 	constructor(props) {
 		super(props);
 
 		this.state = {
-			post: false
+			post: false,
+			fetchingComments: false,
+			fetchableComments: true
 		}
 
 		this.scrollTargetCommentsF = null;
+		this.matRef = React.createRef();
 	}
-
-	// TODO: Load from api (+)
-	// TODO: Subscribe to comments (+)
-	// TODO: Subscribe to stats (comments, likes) (+)
-	// TODO: Subscribe to comment likes (+)
 
 	componentDidMount() {
 		const errorTxt = "We couldn't load this post. Please, try later";
@@ -33,7 +36,7 @@ class App extends Component {
 
 		client.query({
 			query: gql`
-				query($id: ID!, $targetID: ID!) {
+				query($id: ID!, $targetID: ID!, $limitComments: Int) {
 					post(targetID: $targetID) {
 						id,
 						content,
@@ -50,9 +53,10 @@ class App extends Component {
 							id,
 							url
 						},
-						comments {
+						comments(limit: $limitComments) {
 							id,
 							content,
+							time,
 							creator {
 								id,
 								avatar,
@@ -70,7 +74,8 @@ class App extends Component {
 			`,
 			variables: {
 				id,
-				targetID: this.props.match.params.id
+				targetID: this.props.match.params.id,
+				limitComments: options.limitComments
 			}
 		}).then(({ data: { post: a } }) => {
 			if(!a) return this.props.castError(errorTxt);
@@ -180,9 +185,71 @@ class App extends Component {
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
+	fetchMoreComments = () => {
+		if(!this.state.fetchableComments || this.state.fetchingComments || !this.state.post) return;
+		// Get new comments, sort by time (client post moves top)
+
+		this.setState(() => ({
+			fetchingComments: true
+		}));
+
+		const { id } = cookieControl.get("authdata"),
+			  errorTxt = "An error occured while tried to load more comments to this post. Please, try later.",
+			  scrollTop = this.matRef.scrollTop;
+
+		client.query({
+			query: gql`
+				query($id: ID!, $targetID: ID!, $limit: Int, $offsetID: ID) {
+					post(targetID: $targetID) {
+						id,
+						comments(limit: $limit, offsetID: $offsetID) {
+							id,
+							content,
+							time,
+							creator {
+								id,
+								avatar,
+								name
+							},
+							likesInt,
+							isLiked(id: $id),
+							image {
+								id,
+								url
+							}
+						}
+					}
+				}
+			`,
+			variables: {
+				id,
+				targetID: this.state.post.id,
+				limit: options.commentsLimit,
+				offsetID: (this.state.post.comments.length && this.state.post.comments.slice(-1)[0].id) || 0
+			}
+		}).then(({ data: { post: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+			if(!a.comments) return;
+
+			this.setState(({ post, post: { comments } }) => ({
+				post: {
+					...post,
+					comments: [
+						...comments,
+						...a.comments
+					].sort((a, b) => (a.time < b.time) ? 1 : -1)
+				},
+				fetchingComments: false,
+				fetchableComments: this.state.post.comments.length + a.comments.length < this.state.post.commentsInt
+			}), () => {
+				if(this.matRef.scrollTop < scrollTop) this.matRef.scrollTop = scrollTop;
+			});
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
 	render() {
 		return(
-			<div className="rn rn-postdisplay nonav">
+			<div className="rn rn-postdisplay nonav" ref={ ref => this.matRef = ref }>
 				{
 					(this.state.post) ? (
 						<Post
@@ -195,11 +262,14 @@ class App extends Component {
 							commentsInt={ this.state.post.commentsInt }
 							images={ this.state.post.images }
 							comments={ this.state.post.comments }
+							fetchingComments={ this.state.fetchingComments }
+							fetchableComments={ this.state.fetchableComments }
+							onFetchComments={ this.fetchMoreComments }
 							onRef={ref => this.scrollTargetCommentsF = () => {
 								ref.parentNode.scrollTo({
 									top: ref.offsetTop + ref.scrollHeight,
 									behavior: "smooth"
-								})
+								});
 							}}
 						/>
 					) : (

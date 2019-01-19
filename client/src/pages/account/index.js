@@ -17,7 +17,8 @@ import { cookieControl } from '../../utils';
 import links from '../../links';
 
 const options = {
-	postsTimelineLimit: 5
+	postsTimelineLimit: 5,
+	postsCommentsLimit: 5
 }
 
 class ThumbNavButton extends Component {
@@ -154,6 +155,8 @@ class App extends Component {
 		}
 
 		this.descriptionNewRef = React.createRef();
+		this.screenRef = React.createRef();
+		this.screenRefFired = false
 		this.fetchableInfPosts = true;
 	}
 
@@ -163,7 +166,7 @@ class App extends Component {
 
 		client.query({
 			query: gql`
-				query($id: ID!, $targetID: ID, $limit: Int) {
+				query($id: ID!, $targetID: ID, $limitPosts: Int, $limitComments: Int) {
 					user(id: $id, targetID: $targetID) {
 						id,
 						avatar,
@@ -179,7 +182,7 @@ class App extends Component {
 						isWaitingFriend(id: $id),
 						isTrialFriend(id: $id),
 						isSubscribed(id: $id),
-						posts(limit: $limit) {
+						posts(limit: $limitPosts) {
 							id,
 							content,
 							time,
@@ -195,7 +198,7 @@ class App extends Component {
 								id,
 								url
 							},
-							comments {
+							comments(limit: $limitComments) {
 								id,
 								content,
 								time,
@@ -218,7 +221,8 @@ class App extends Component {
 			variables: {
 				id,
 				targetID: this.props.match.params.id || "",
-				limit: options.postsTimelineLimit
+				limitPosts: options.postsTimelineLimit,
+				limitComments: options.postsCommentsLimit
 			}
 		}).then(({ data: { user: a } }) => {
 			if(!a) {
@@ -249,10 +253,10 @@ class App extends Component {
 		const { id } = cookieControl.get("authdata");
 		client.query({
 			query: gql`
-				query($id: ID!, $targetID: ID, $limit: Int, $offsetID: ID) {
+				query($id: ID!, $targetID: ID, $limitPosts: Int, $offsetIDPosts: ID, $limitComments: Int) {
 					user(id: $id, targetID: $targetID) {
 						id,
-						posts(limit: $limit, offsetID: $offsetID) {
+						posts(limit: $limitPosts, offsetID: $offsetIDPosts) {
 							id,
 							content,
 							time,
@@ -268,7 +272,7 @@ class App extends Component {
 								id,
 								url
 							},
-							comments {
+							comments(limit: $limitComments) {
 								id,
 								content,
 								time,
@@ -291,8 +295,9 @@ class App extends Component {
 			variables: {
 				id,
 				targetID: this.props.match.params.id || "",
-				limit: options.postsTimelineLimit,
-				offsetID: this.state.user.posts.slice(-1)[0].id
+				limitPosts: options.postsTimelineLimit,
+				offsetIDPosts: this.state.user.posts.slice(-1)[0].id,
+				limitComments: options.postsCommentsLimit
 			}
 		}).then(({ data: { user: a } }) => {
 			this.setState(() => ({
@@ -851,7 +856,15 @@ class App extends Component {
 		);
 
 		return(
-			<div className="rn rn-account" onScroll={({ target: { scrollHeight, offsetHeight, scrollTop } }) => { // XXX: Too high
+			<div className="rn rn-account" ref={(ref) => {
+				// XXX: Some shit here...
+
+				this.screenRef = ref;
+				if(!this.screenRefFired) {
+					this.screenRefFired = true;
+					this.forceUpdate();
+				}
+			}} onScroll={({ target: { scrollHeight, offsetHeight, scrollTop } }) => { // XXX: Too high
 				if(100 / ( (scrollHeight - offsetHeight) / scrollTop ) >= 99) this.fetchTimeline();
 			}}>
 				<div className="rn-account-thumb">

@@ -16,7 +16,8 @@ import NewGridPhoto from '../__forall__/gridphoto';
 import placeholderGF from '../__forall__/placeholder.gif';
 
 const options = {
-	postsLimit: 5
+	postsLimit: 5,
+	postsCommentsLimit: 7
 }
 
 class NewAddonsBtn extends Component {
@@ -268,8 +269,8 @@ class App extends Component {
 
 		client.query({
 			query: gql`
-				query($id: ID!, $limit: Int, $offsetID: ID) {
-					getFeed(id: $id, limit: $limit, offsetID: $offsetID) {
+				query($id: ID!, $limitPosts: Int, $offsetIDPosts: ID, $limitComments: Int) {
+					getFeed(id: $id, limit: $limitPosts, offsetID: $offsetIDPosts) {
 						id,
 						content,
 						time,
@@ -285,7 +286,7 @@ class App extends Component {
 							id,
 							url
 						},
-						comments {
+						comments(limit: $limitComments) {
 							id,
 							content,
 							time,
@@ -306,8 +307,9 @@ class App extends Component {
 			`,
 			variables: {
 				id,
-				limit: options.postsLimit,
-				offsetID: offsetID
+				limitPosts: options.postsLimit,
+				offsetIDPosts: offsetID,
+				limitComments: options.postsCommentsLimit
 			}
 		}).then(({ data: { getFeed: a } }) => {
 			if(!a && !offsetID) {
@@ -327,7 +329,7 @@ class App extends Component {
 
 			this.feedSubscription = client.subscribe({
 				query: gql`
-					subscription($id: ID!) {
+					subscription($id: ID!, $limitComments: Int) {
 						listenFeedUpdates(id: $id) {
 							id,
 							content,
@@ -344,7 +346,7 @@ class App extends Component {
 								id,
 								url
 							},
-							comments {
+							comments(limit: $limitComments) {
 								id,
 								content,
 								creator {
@@ -363,7 +365,8 @@ class App extends Component {
 					}
 				`,
 				variables: {
-					id
+					id,
+					limitComments: options.postsCommentsLimit
 				}
 			}).subscribe({
 				next: ({ data: { listenFeedUpdates: a } }) => {
@@ -389,7 +392,7 @@ class App extends Component {
 
 		client.mutate({
 			mutation: gql`
-				mutation($id: ID!, $content: String, $images: [Upload!]) {
+				mutation($id: ID!, $content: String, $images: [Upload!], $limitComments: Int) {
 				  publishPost(
 				    id: $id,
 				    content: $content,
@@ -410,7 +413,7 @@ class App extends Component {
 						id,
 						url
 					},
-					comments {
+					comments(limit: $limitComments) {
 						id,
 						content,
 						creator {
@@ -430,7 +433,8 @@ class App extends Component {
 			`,
 			variables: {
 				id, images,
-				content: text
+				content: text,
+				limitComments: options.postsCommentsLimit
 			}
 		}).then(({ data: { publishPost: post } }) => {
 			sQr(false);
@@ -446,10 +450,7 @@ class App extends Component {
 		return(
 			<div className="rn rn-feed" ref={ ref => this.screenRef = ref } onScroll={({ target: { scrollHeight, clientHeight, scrollTop } }) => {
 				// If |<= 1%
-
-				if(100 / ((scrollHeight - clientHeight) / scrollTop) >= 99) {
-					this.fetchPosts();
-				}
+				if(100 / ((scrollHeight - clientHeight) / scrollTop) >= 99) this.fetchPosts();
 			}}>
 				<New
 					uavatar={

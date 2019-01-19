@@ -303,3 +303,18 @@
 .rn-feed-mat-item-comments-loadmore:hover {
 	text-decoration:underline;
 }
+
+.rn-feed-mat-item-nocomments_i {
+	margin-top:6.5px;
+	margin-bottom:1.5px;
+	text-align:center;
+	font-size:.85em;
+	color:rgba(0, 0, 0, .5);
+	font-weight:400;
+	font-family:"Quicksand";
+	transition:.5s;
+}
+
+.rn-feed-mat-item-nocomments_i:hover {
+	color:rgba(0, 0, 0, .85);
+}

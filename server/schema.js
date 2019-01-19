@@ -442,7 +442,30 @@ const PostType = new GraphQLObjectType({
 		},
 		comments: {
 			type: new GraphQLList(CommentType),
-			resolve: ({ id }) => Comment.find({ postID: id })
+			args: {
+				limit: { type: GraphQLInt },
+				offsetID: { type: GraphQLID }
+			},
+			resolve({ id }, { limit, offsetID }) {
+				let a = {
+					postID: id
+				}
+
+				if(limit) {
+					if(offsetID) {
+						return Comment.find({
+							...a,
+							_id: {
+								$lt: offsetID
+							}
+						}).sort({ time: -1 }).limit(limit);
+					} else {
+						return Comment.find(a).sort({ time: -1 }).limit(limit);
+					}
+				} else {
+					return Comment.sort({ time: -1 }).find(a);
+				}
+			}
 		},
 		commentsInt: {
 			type: GraphQLInt,

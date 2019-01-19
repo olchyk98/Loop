@@ -16,6 +16,10 @@ import api from '../../../api';
 import links from '../../../links';
 import { cookieControl, convertTime } from '../../../utils';
 
+const options = {
+	commentsLimit: 5
+}
+
 class FeedItemFeedbackButton extends Component {
 	render() {
 		return(
@@ -41,7 +45,9 @@ class App extends Component {
 			commentsInt: null,
 			comments: null,
 			isCommenting: false,
-			isDeleted: false
+			isDeleted: false,
+			fetchingComments: false,
+			fetchableComments: true
 		}
 
 		this.updateInt = null;
@@ -144,6 +150,8 @@ class App extends Component {
 					}));
 					if(!commentItem) return this.props.castError(errorTxt);
 
+					commentItem.isManual = true;
+
 					this.setState(({ comments: a }, { comments: b }) => ({
 						comments: (a) ? [
 							...a,
@@ -202,6 +210,68 @@ class App extends Component {
 			this.setState(() => ({
 				isDeleted: true
 			}));
+		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	fetchComments = () => {
+		if(!this.state.fetchableComments || this.state.fetchingComments) return;
+		// Get new comments, sort by time (client post moves top)
+
+		this.setState(() => ({
+			fetchingComments: true
+		}));
+
+		const { id } = cookieControl.get("authdata"),
+			  errorTxt = "An error occured while tried to load more comments to this post. Please, try later.",
+			  scrollTop = this.props.parentScreen.scrollTop;
+
+		client.query({
+			query: gql`
+				query($id: ID!, $targetID: ID!, $limit: Int, $offsetID: ID) {
+					post(targetID: $targetID) {
+						id,
+						comments(limit: $limit, offsetID: $offsetID) {
+							id,
+							content,
+							time,
+							creator {
+								id,
+								avatar,
+								name
+							},
+							likesInt,
+							isLiked(id: $id),
+							image {
+								id,
+								url
+							}
+						}
+					}
+				}
+			`,
+			variables: {
+				id,
+				targetID: this.props.id,
+				limit: options.commentsLimit,
+				offsetID: ((this.state.comments && this.state.comments.length && this.state.comments.filter(io => !io.isManual).slice(-1)[0].id) || (this.props.comments && this.props.comments.length && this.props.comments.slice(-1)[0].id)) || 0
+			}
+		}).then(({ data: { post: a } }) => {
+			if(!a) return this.props.castError(errorTxt);
+			if(!a.comments) return;
+
+			this.setState(({ comments }, { comments: _comments }) => ({
+				comments: (!comments) ? [
+					..._comments,
+					...a.comments
+				] : [
+					...comments,
+					...a.comments
+				].sort((a, b) => (a.time < b.time) ? 1 : -1),
+				fetchingComments: false,
+				fetchableComments: ((this.state.comments && this.state.comments.length) || this.props.comments.length) < this.props.commentsInt
+			}), () => {
+				if(this.props.parentScreen.scrollTop < scrollTop) this.props.parentScreen.scrollTop = scrollTop;
+			});
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
@@ -274,13 +344,6 @@ class App extends Component {
 									counter: (Number.isInteger(this.state.commentsInt)) ? this.state.commentsInt : this.props.commentsInt,
 									action: () => {
 										this.commentInputRef.focus();
-
-										if(this.props.parentScreen) {
-											this.props.parentScreen.scrollTo({
-												top: this.commentInputRef.getBoundingClientRect().top,
-												behavior: 'smooth'
-											});
-										}
 									},
 									active: false
 								}
@@ -296,37 +359,49 @@ class App extends Component {
 							))
 						}
 					</div>
-					<div className="rn-feed-mat-item-comments">
-						{
-							(this.state.comments || this.props.comments || []).map(({ id, image, content, creator, likesInt, isLiked, time }) => (
-								<FeedItemComment
-									key={ id }
-									id={ id }
-									content={ content }
-									creator={ creator }
-									time={ time }
-									likesInt={ likesInt }
-									isLiked={ isLiked }
-									image={ image }
-									castError={ this.props.castError }
-								/>
-							))
-						}
-						{
-							(!this.state.isCommenting) ? null : (
-								<Loadericon
-									style={{
-										height: "15px",
-										width: "15px",
-										borderWidth: "2px"
-									}}
-								/>	
-							)
-						}
-						<button className="rn-feed-mat-item-comments-loadmore definp">
-							Load more (limit as notificator)
-						</button>
-					</div>
+					{
+						(this.props.commentsInt !== 0) ? (
+							<div className="rn-feed-mat-item-comments">
+								{
+									(this.state.comments || this.props.comments || []).map(({ id, image, content, creator, likesInt, isLiked, time }) => (
+										<FeedItemComment
+											key={ id }
+											id={ id }
+											content={ content }
+											creator={ creator }
+											time={ time }
+											likesInt={ likesInt }
+											isLiked={ isLiked }
+											image={ image }
+											castError={ this.props.castError }
+										/>
+									))
+								}
+								{
+									(!this.state.isCommenting) ? null : (
+										<Loadericon
+											style={{
+												height: "15px",
+												width: "15px",
+												borderWidth: "2px"
+											}}
+										/>	
+									)
+								}
+								{
+									(!this.props.fetchingComments && !this.state.fetchingComments && (this.props.fetchableComments || this.state.fetchableComments)) ? (
+										<button className="rn-feed-mat-item-comments-loadmore definp" onClick={ this.props.onFetchComments || this.fetchComments }>
+											Load more
+										</button>
+									) : (this.props.fetchingComments || this.state.fetchingComments) ? (
+										<Loadericon />
+									) : null
+								}
+							</div>
+						) : (
+							<p className="rn-feed-mat-item-nocomments_i">The post hasn't comments yet <span aria-label="Sad Smile" role="img">😒</span></p>
+						)
+					}
 					<FeedItemCommentinput
 						uavatar={ ((this.props.userdata && Object.keys(this.props.userdata).length && api.storage + this.props.userdata.avatar) || "") }
 						_onRef={ ref => this.commentInputRef = ref }
