@@ -5,7 +5,7 @@
 .rn-notes-editor-closealert__control {
 	height:100vh;
 	width:100vw;
-	background:rgba(0, 0, 0, .15);
+	background:rgba(0, 0, 0, .5);
 	z-index:4000;
 	position:fixed;
 	top:0;
@@ -58,7 +58,7 @@
 
 .rn-notes-editor-closealert-title {
 	text-align:center;
-	color:rgba(0, 0, 0, .45);
+	color:var(--lamp-white-mid);
 	font-weight:400;
 	font-family:"Quicksand";
 	margin:0;

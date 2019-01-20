@@ -19,12 +19,13 @@
 
 .rn-account-thumb {
 	height:400px;
-	background:white;
+	background:var(--lamp_item);
 	border:1px solid var(--defaultborder);
 	/*margin-top:35px;*/
 	position:relative;
 	border-radius:5px;
 	overflow:visible;
+	z-index:5;
 }
 
 .rn-account-thumb-cover {
@@ -39,7 +40,7 @@
 	left:0;
 	height:100%;
 	width:100%;
-	background:linear-gradient(0deg, rgba(0, 0, 0, .25), rgba(255, 255, 255, .1));
+	background:linear-gradient(0deg, rgba(0, 0, 0, .1), transparent);
 	z-index:5;
 }
 
@@ -54,7 +55,7 @@
 }
 
 .rn-account-thumb-cover-addonplace {
-	color:rgba(255, 255, 255, .85);
+	color:var(--lamp_white-alm-full);
 	font-weight:400;
 	font-family:"Quicksand";
 	position:absolute;
@@ -72,10 +73,16 @@
 	padding-left:var(--padding);
 	padding-right:var(--padding);
 	border-radius:5px;
-	background:rgba(0, 0, 0, .55);
+	background:var(--lamp_white-mid);
 	font-size:.9em;
 	cursor:pointer;
 	justify-content:center;
+	color:var(--lamp-black-high);
+}
+
+.rn-account-thumb-cover-edit > * {
+	position:relative;
+	bottom:-1px;
 }
 
 .rn-account-thumb-cover-edit > *,
@@ -98,7 +105,7 @@
 	font-weight:300;
 	text-transform:uppercase;
 	color:white;
-	box-shadow:0px 0px 15px -5px rgba(0, 0, 0, .5);
+	box-shadow:0px 0px 15px -5px var(--lamp-black-extra-mid);
 	height:var(--height);
 	line-height:var(--height);
 	opacity:.9;
@@ -174,7 +181,7 @@
 .rn-account-thumb-nav-img-mat {
 	height:var(--account_thumbnavavsize);
 	width:var(--account_thumbnavavsize);
-	border:1px solid rgba(0, 0, 0, .1);
+	border:1px solid var(--lamp-black-alme-low);
 	border-radius:50%;
 	overflow:hidden;
 	position:relative;
@@ -198,14 +205,16 @@
 	top:0;
 	left:0;
 	opacity:0;
-	background:rgba(0, 0, 0, .25);
+	background:rgba(0, 0, 0, .5);
 	transition:.25s;
 }
 
 .rn-account-thumb-nav-img-replace > label {
-	color:rgba(255, 255, 255, .9);
+	color:var(--lamp-black-low-high);
 	font-size:2em;
 	cursor:pointer;
+	position:relative;
+	bottom:-1px;
 }
 
 .rn-account-thumb-nav-img-mat:hover > .rn-account-thumb-nav-img-replace {
@@ -261,11 +270,11 @@
 }
 
 .rn-account-thumb-nav-btn-title {
-	color:rgba(0, 0, 0, .45);
+	color:var(--lamp-black-mid);
 }
 
 .rn-account-thumb-nav-btn-counter {
-	color:rgba(0, 0, 0, .25);
+	color:var(--lamp-black-alm-low);
 	font-weight:400;
 	font-family:"Quicksand";
 	font-size:.9em;
@@ -286,7 +295,7 @@
 
 .rn-account-thumb-nav-btn:hover .rn-account-thumb-nav-btn-title,
 .rn-account-thumb-nav-btn.active .rn-account-thumb-nav-btn-title {
-	color:black;
+	color:var(--lamp-black-low-high);
 }
 
 .rn-account-thumb-nav-btn.active:before {
@@ -322,7 +331,7 @@
 	--paddingud:12.5px;
 
 	border:1px solid var(--defaultborder);
-	background:white;
+	background:var(--lamp_item);
 	border-radius:5px;
 	padding-left:var(--account_dispitempadd);
 	padding-right:var(--account_dispitempadd);
@@ -351,6 +360,7 @@
 	font-family:"Roboto";
 	-webkit-font-smoothing:antialiased;
 	font-size:1.1em;
+	color:var(--lamp_const-black);
 }
 
 .rn-account-display-friends-nav {
@@ -383,6 +393,11 @@
 	flex-shrink:0;
 }
 
+.rn-account-display-friends-nav-search,
+.rn-account-display-friends-nav-search-field {
+	color:var(--lamp-black-high);
+}
+
 .rn-account-display-friends-nav-search {
 	height:27.5px;
 	width:155px;
@@ -391,7 +406,6 @@
 	align-items:stretch;
 	border-radius:3px;
 	position:relative;
-	color:rgba(0, 0, 0, .25);
 }
 
 .rn-account-display-friends-nav-search-field {
@@ -419,7 +433,7 @@
 }
 
 .rn-account-display-friends-nav-grid-alertion {
-	color:rgba(0, 0, 0, .5);
+	color:var(--lamp-black-extra-mid);
 	font-family:"Arial";
 	font-weight:400;
 	text-align:center;
@@ -479,18 +493,19 @@
 	font-family:"Lato";
 	font-weight:500;
 	font-size:.9em;
+	color:var(--lamp-black-high);
 }
 
 .rn-account-display-friends-nav-grid-user-info-info {
 	font-weight:400;
 	font-family:"Quicksand";
 	font-size:.8em;
-	color:rgba(0, 0, 0, .5);
+	color:var(--lamp-black-extra-mid);
 }
 
 .rn-account-display-friends-nav-grid-user-set {
 	margin-left:auto;
-	color:rgba(0, 0, 0, .3);
+	color:var(--lamp-black-alm-low);
 	cursor:pointer;
 	font-size:1.05em;
 	position:relative;
@@ -505,8 +520,8 @@
 	transform:translate(calc(-100% - 15px), 50%);
 	border:1px solid var(--defaultborder);
 	width:125px;
-	background:white;
-	box-shadow:0px 0px 15px -7.5px rgba(0, 0, 0, .25);
+	background:var(--lamp_item);
+	box-shadow:0px 0px 15px -7.5px var(--lamp-black-alm-low);
 	border-radius:3px;
 	display:none;
 }
@@ -521,10 +536,11 @@
 	width:100%;
 	cursor:pointer;
 	transition:all .1s;
+	color:var(--lamp_const-black);
 }
 
 .rn-account-display-friends-nav-grid-user-set-list-btn:hover {
-	background:rgba(0, 0, 0, .01);
+	background:var(--lamp-black-alme-low);
 }
 
 .rn-account-display-gallery {
@@ -548,9 +564,9 @@
 
 	height:var(--size);
 	width:var(--size);
-	box-shadow:0px 0px 10px -2.5px rgba(0, 0, 0, .25);
+	box-shadow:0px 0px 10px -2.5px var(--lamp-black-alm-low);
 	background:white;
-	border:1px solid rgba(0, 0, 0, .05);
+	border:1px solid var(--lamp-black-double-low);
 	border-radius:50%;
 	color:#9c47fc;
 	font-size:1em;
@@ -561,7 +577,7 @@
 }
 
 .rn-account-display-gallery-new-mat:active {
-	background:rgba(255, 255, 255, .35);
+	background:var(--lamp_white-extra-low);
 }
 
 .rn-account-display-gallery-grid {
@@ -595,7 +611,7 @@
 .rn-account-display-gallery-grid-photo {
 	position:relative;
 	cursor:pointer;
-	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, .1);
+	box-shadow:0px 0px 5px 0px var(--lamp-black-alme-low);
 }
 
 .rn-account-display-gallery-grid-photo > img {
@@ -612,7 +628,7 @@
 	z-index:4;
 	width:100%;
 	text-align:center;
-	color:rgba(0, 0, 0, .5);
+	color:var(--lamp-black-extra-mid);
 	font-family:"Quicksand";
 	font-weight:400;
 	margin:0;
@@ -630,6 +646,7 @@
 	font-weight:500;
 	font-size:var(--fs);
 	position:relative;
+	color:var(--lamp-black-low-high);
 	margin-bottom:5px;
 }
 
@@ -638,7 +655,7 @@
 }
 
 .rn-account-display-about-mat:before {
-	color:rgba(0, 0, 0, .25);
+	color:var(--lamp-black-alm-low);
 	position:absolute;
 	opacity:0;
 }
@@ -660,6 +677,7 @@
 	display:flex;
 	align-items:center;
 	margin-bottom:5px;
+	color:var(--lamp-black-low-high);
 }
 
 .rn-account-display-about-editsw > span {
@@ -670,7 +688,7 @@
 
 .rn-account-placeholder {
 	border-radius:5px;
-	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, .05);
+	box-shadow:0px 0px 5px 0px var(--lamp-black-double-low);
 	width:var(--account_width);
 	max-width:calc(100% - 20px);
 }

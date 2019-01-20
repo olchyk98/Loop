@@ -16,7 +16,7 @@
 	width:var(--glcomment_posteravatar_size);
 	height:var(--glcomment_posteravatar_size);
 	border-radius:50%;
-	border:1px solid rgba(0, 0, 0, .1);
+	border:1px solid var(--lamp-black-alme-low);
 	position:relative;
 	margin-right:10px;
 	flex-shrink:0;
@@ -36,7 +36,7 @@
 	position:relative;
 	top:1px;
 	font-size:1em;
-	color:rebeccapurple;
+	color:var(--lamp-black-high);
 	cursor:pointer;
 	text-decoration:none;
 }
@@ -55,7 +55,8 @@
 	width:auto;
 	padding:var(--padding);
 	border-radius:1rem;
-	background:#EFF1F3;
+	background:var(--lamp_item-exp);
+	color:var(--lamp-black-high);
 	font-family:"Lato";
 	font-size:.95em;
 }
@@ -63,7 +64,8 @@
 .rn-feed-mat-item-comments-comment-content-controls {
 	display:flex;
 	align-items:center;
-	margin-left:calc(var(--padding) + 2.5px);
+	margin-left:1px;
+	margin-top:2.5px;
 	font-size:.85em;
 }
 
@@ -73,7 +75,7 @@
 
 .rn-feed-mat-item-comments-comment-content-controls-action {
 	cursor:pointer;
-	color:blue;
+	color:var(--lamp_const-blue);
 }
 
 .rn-feed-mat-item-comments-comment-content-controls-action:hover {
@@ -81,13 +83,13 @@
 }
 
 .rn-feed-mat-item-comments-comment-content-controls-space {
-	color:rgba(0, 0, 0, .25);
+	color:var(--lamp-black-alm-low);
 	position:relative;
 	bottom:-2px;
 }
 
 .rn-feed-mat-item-comments-comment-content-controls-time {
-	color:rgba(0, 0, 0, .5);
+	color:var(--lamp-black-extra-mid);
 	font-weight:500;
 	font-family:"Quicksand";
 }

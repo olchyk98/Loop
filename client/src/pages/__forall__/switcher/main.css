@@ -14,7 +14,7 @@
 	font-weight:600;
 	font-family:"Gothic A1";
 	font-size:.95em;
-	color:rgba(0, 0, 0, .75);
+	color:var(--lamp-black-low-high);
 }
 
 .gl-assets-switch-ii > div,
@@ -27,8 +27,9 @@
 	width:40px;
 	background:black;
 	position:relative;
+	top:1px;
 	border-radius:45px;
-	background:#EEF0F4;
+	background:var(--lamp-black-double-low);
 }
 
 .gl-assets-switch-ii > div > div {
@@ -41,7 +42,7 @@
 	background:white;
 	border:1px solid var(--defaultborder);
 	position:absolute;
-	top:50%;
+	top:calc(50% - 1px);
 	transform:translateY(-50%);
 	left:calc(var(--size) / 6 * -1);
 }

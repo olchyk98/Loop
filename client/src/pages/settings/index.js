@@ -9,6 +9,7 @@ import client from '../../apollo';
 
 import Switch from '../__forall__/switcher';
 import AccountCard from '../__forall__/accountCard';
+import { selectTheme, applyTheme } from '../../theme.runner';
 
 class Input extends Component {
 	render() {
@@ -192,6 +193,14 @@ class App extends Component {
 		}
 	}
 
+	setDarkMode = value => {
+		selectTheme({
+			true: 'dark',
+			false: 'light'
+		}[value]);
+		applyTheme();
+	}
+
 	render() {
 		return(
 			<div className="rn rn-settings">
@@ -239,7 +248,7 @@ class App extends Component {
 					<div className="rn-settings-isl-st">
 						<span>Dark Mode</span>
 						<Switch
-							_onChange={ value => null }
+							_onChange={ this.setDarkMode }
 						/>
 					</div>
 				</div>

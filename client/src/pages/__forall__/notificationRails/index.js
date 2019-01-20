@@ -16,13 +16,14 @@ class NotificationRailsPopup extends Component {
 	render() {
 		const link = {
 			"POST_TYPE": links["POSTDISPLAY_PAGE"].absolute + this.props.path,
-			"COMMENT_TYPE": `${ links["POSTDISPLAY_PAGE"].absolute }${ this.props.path }?stc=true`
+			"COMMENT_TYPE": `${ links["POSTDISPLAY_PAGE"].absolute }${ this.props.path }?stc=true`,
+			"USER_TYPE": `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.path }`
 		}[this.props.ptype];
 
 		return(
 			<div className="popup_notificationrail-item">
 				<div className="popup_notificationrail-item-controls">
-					<Link className="popup_notificationrail-item-controls-info" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.initD }` } onClick={ () => { this.props.onRoute(); this.props.onClose(); } }>
+					<Link className="popup_notificationrail-item-controls-info" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.initID }` } onClick={ () => { this.props.onRoute(); this.props.onClose(); } }>
 						<div className="popup_notificationrail-item-controls-info-avatar">
 							<img src={ api.storage + this.props.image } alt="Init user" />
 						</div>
@@ -34,7 +35,7 @@ class NotificationRailsPopup extends Component {
 				</div>
 				<Link className="popup_notificationrail-item-content" to={ link } onClick={ () => { this.props.onRoute(); this.props.onClose(); } }>
 					<span className="popup_notificationrail-item-content-title">{ this.props.content }</span>
-					<span className="popup_notificationrail-item-content-content">{ this.props.subContent }...</span>
+					<span className="popup_notificationrail-item-content-content">{ this.props.subContent }</span>
 				</Link>
 			</div>
 		);

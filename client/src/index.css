@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css?family=Gothic+A1|Lato|Quicksand|Roboto|Exo');
 
 :root {
-	--defaultborder:rgba(0, 0, 0, .1);
 	--navheight:60px;
 	--navwidth:250px;
 	--rnnovnav-padds:65px;
@@ -11,9 +10,11 @@ html, body {
 	margin:0;
 	height:100%;
 	font-family:"Arial";
-	background:#FBFBFD;
+	background:var(--lamp_background);
 	overflow:hidden;
 }
+
+* { transition: .25s; }
 
 .hidden {
 	opacity:0;
@@ -31,6 +32,10 @@ html, body {
 	border:none;
 	outline:0;
 	text-decoration:none;
+}
+
+.__placeholder__ {
+	filter:invert(var(--lampeff_invert-placeholder));
 }
 
 .rn {
@@ -69,8 +74,8 @@ html, body {
 	width:100vw;
 	left:0;
 	z-index:99999999999999999;
-	background:#292A2C;
-	color:white;
+	background:var(--lamp-black-stylish);
+	color:var(--lamp_const-white);
 	font-weight:400;
 	font-family:"Quicksand";
 	text-align:center;

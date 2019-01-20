@@ -869,12 +869,12 @@ class App extends Component {
 							</Fragment>
 						) : (
 							<Fragment>
-								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
-								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
-								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
-								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
-								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
-								<img className="rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="__placeholder__ rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="__placeholder__ rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="__placeholder__ rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="__placeholder__ rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="__placeholder__ rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
+								<img className="__placeholder__ rn-notes-grid-item__placeholder" alt="placeholder" src={ PlaceholderGF } />
 							</Fragment>
 						)
 					}

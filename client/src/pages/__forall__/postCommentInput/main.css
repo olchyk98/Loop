@@ -41,7 +41,7 @@
 	height:100%;
 	width:100%;
 	border-radius:50%;
-	border:1px solid rgba(0, 0, 0, .1);
+	border:1px solid var(--lamp-black-alme-low);
 	object-fit:cover;
 	object-position:center;
 }
@@ -68,6 +68,7 @@
 	font-size:.95em;
 	width:100%;
 	height:100%;
+	color:var(--lamp_const-black);
 }
 
 .rn-feed-mat-item-commentinput-controls {
@@ -82,11 +83,11 @@
 	margin-left:var(--margin);
 	margin-right:var(--margin);
 	font-size:1.25em;
-	color:rgba(0, 0, 0, .45);
+	color:var(--lamp-black-mid);
 	cursor:pointer;
 	transition:.25s;
 }
 
 .rn-feed-mat-item-commentinput-controls-btn:hover {
-	color:rgba(0, 0, 0, .65);
+	color:var(--lamp-black-low-high);
 }

@@ -224,7 +224,7 @@ class FeedItemPlaceholder extends Component {
 	render() {
 		return(
 			<div className="rn-feed-item__placeholder">
-				<img src={ placeholderGF } alt="article placeholder" />	
+				<img src={ placeholderGF } className="__placeholder__" alt="article placeholder" />	
 			</div>
 		);
 	}

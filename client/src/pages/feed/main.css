@@ -13,7 +13,7 @@
 	padding-left:var(--feed_feeditempaddlr);
 	padding-right:var(--feed_feeditempaddlr);
 	width:calc(100% - var(--feed_feeditempaddlr) * 2);
-	background:white;
+	background:var(--lamp_item);
 	border:1px solid var(--defaultborder);
 	display:flex;
 	align-items:stretch;
@@ -72,7 +72,7 @@
 .rn-feed-new-title-mat {
 	font-family:"Gothic A1";
 	font-weight:500;
-	color:rgba(0, 0, 0, .75);
+	color:var(--lamp-black-low-high);
 }
 
 .rn-feed-new-main {
@@ -95,7 +95,7 @@
 	width:var(--feed_newmainavw);
 	border-radius:50%;
 	position:relative;
-	border:1px solid rgba(0, 0, 0, .1);
+	border:1px solid var(--lamp-black-alme-low);
 	cursor:pointer;
 	display:block;
 }
@@ -127,6 +127,7 @@
 	font-size:1em;
 	font-family:"Gothic A1";
 	resize:none;
+	color:var(--lamp-black-high);
 }
 
 .rn-feed-new-main.ph-expand .rn-feed-new-main-field {
@@ -164,13 +165,13 @@
 }
 
 .rn-feed-new-main-photos-photo.error .rn-feed-new-main-photos-photo-delete {
-	color:black!important;
+	color:var(--lamp_const-black)!important;
 }
 
 .rn-feed-new-main-photos-photo-error,
 .rn-feed-new-main-photos-photo-delete {
 	display:none;
-	color:white;
+	color:var(--lamp_const-white);
 	position:absolute;
 	transform:translate(-50%, -50%);
 	top:50%;
@@ -203,13 +204,13 @@
 .rn-feed-new-main-photos-photo:before {
 	width:100%;
 	height:100%;
-	background:linear-gradient(180deg, rgba(0, 0, 0, .45), transparent);
+	background:linear-gradient(180deg, var(--lamp-black-mid), transparent);
 }
 
 .rn-feed-new-main-photos-photo:after {
 	width:115%;
 	height:15px;
-	background:rgba(255, 255, 255, .3);
+	background:var(--lamp_white-extra-low);
 	transform:translateY(-10px) skewY(-30deg);
 }
 
@@ -234,11 +235,11 @@
 
 	height:var(--submith);
 	width:var(--submitw);
-	border:1px solid rgba(0, 0, 0, .15);
+	border:1px solid var(--lamp-black-alme-low);
 	border-radius:3px;
 	font-size:.9em;
 	cursor:pointer;
-	color:white;
+	color:rgba(255, 255, 255, .85);
 	font-family:"Gothic A1";
 	line-height:calc(var(--submith) + 20px);
 	background:#4267B1;
@@ -276,11 +277,11 @@
 	border:1px solid var(--defaultborder);
 	border-radius:3px;
 	cursor:pointer;
-	color:rgba(0, 0, 0, .5);
+	color:var(--lamp-black-extra-mid);
 }
 
 .rn-feed-new-btn:active {
-	background:rgba(0, 0, 0, .01);
+	background:var(--lamp-black-double-min);
 }
 
 .rn-feed-new-btn > * {
@@ -301,7 +302,7 @@
 	border-radius:5px;
 	overflow:hidden;
 	margin-bottom:15px;
-	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, .05);
+	box-shadow:0px 0px 5px 0px var(--lamp-black-double-low);
 }
 
 .rn-feed-item__placeholder > img {

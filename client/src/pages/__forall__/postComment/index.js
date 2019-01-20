@@ -110,9 +110,9 @@ class Hero extends Component {
 
 		return(
 			<div className="rn-feed-mat-item-comments-comment">
-				<div className="rn-feed-mat-item-comments-comment-avatar">
+				<Link className="rn-feed-mat-item-comments-comment-avatar" to={ `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.creator.id }` } onClick={ this.props.refreshDock }>
 					<img src={ ((this.props.creator.avatar && api.storage + this.props.creator.avatar) || "") } alt="creator" title="Creator's avatar" />
-				</div>
+				</Link>
 				<div className="rn-feed-mat-item-comments-comment-content">
 					<Link
 						className="rn-feed-mat-item-comments-comment-content-name"

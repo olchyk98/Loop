@@ -4,14 +4,14 @@
 	padding-top:var(--paddingt);
 	height:calc(100vh - var(--navheight) - var(--paddingt) - 1px);
 	width:var(--navwidth);
-	background:white;
+	background:var(--lamp_nav);
 	border-right:1px solid var(--defaultborder);
 	flex-shrink:0;
 }
 
 .gl-dock-title {
 	text-transform:uppercase;
-	color:rgba(0, 0, 0, .3);
+	color:var(--lamp-black-alm-low);
 	font-weight:600;
 	font-family:"Quicksand";
 	font-size:.8em;
@@ -46,11 +46,11 @@
 	font-weight:500;
 	cursor:pointer;
 	position:relative;
-	color:rgba(0, 0, 0, .9);
+	color:var(--lamp-black-high);
 }
 
 .gl-dock-title-navigation-btn:not(.active):hover {
-	background:rgba(0, 0, 0, .01);
+	background:var(--lamp-black-double-min);
 }
 
 .gl-dock-title-navigation-btn:before {
@@ -65,7 +65,7 @@
 }
 
 .gl-dock-title-navigation-btn.active {
-	background:#F6F9FE;
+	background:var(--lamp_item);
 }
 
 .gl-dock-title-navigation-btn.active:before {

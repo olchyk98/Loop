@@ -195,7 +195,10 @@ class App extends Component {
 
 		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "An error occured while tried to load more comments to this post. Please, try later.",
-			  scrollTop = this.matRef.scrollTop;
+			  scrollTop = this.matRef.scrollTop,
+			  offsetID = (this.state.post.comments.length && this.state.post.comments.slice(-1)[0].id);
+
+		if(!offsetID) return;
 
 		client.query({
 			query: gql`
@@ -225,7 +228,7 @@ class App extends Component {
 				id,
 				targetID: this.state.post.id,
 				limit: options.commentsLimit,
-				offsetID: (this.state.post.comments.length && this.state.post.comments.slice(-1)[0].id) || 0
+				offsetID
 			}
 		}).then(({ data: { post: a } }) => {
 			if(!a) return this.props.castError(errorTxt);

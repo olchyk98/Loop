@@ -20,7 +20,7 @@
 	transform:translateY(-50%);
 	font-size:1em;
 	cursor:pointer;
-	color:rgba(0, 0, 0, .75);
+	color:var(--lamp-black-low-high);
 }
 
 .coi-selectionlist {
@@ -34,7 +34,7 @@
 .coi-selectionlist-mat {
 	display:none;
 	border-radius:5px;
-	box-shadow:0px 0px 12.5px -5px rgba(0, 0, 0, .25);
+	box-shadow:0px 0px 12.5px -5px var(--lamp-black-alm-low);
 	background:white;
 	align-items:stretch;
 	height:auto;
@@ -64,9 +64,9 @@
 }
 
 .coi-selectionlist-item:hover {
-	background:rgba(0, 0, 0, .01);
+	background:rgba(0, 0, 0, .05);
 }
 
 .coi-selectionlist-item:active {
-	background:rgba(0, 0, 0, .05);
+	background:rgba(0, 0, 0, .1);
 }

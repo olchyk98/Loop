@@ -223,7 +223,10 @@ class App extends Component {
 
 		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "An error occured while tried to load more comments to this post. Please, try later.",
-			  scrollTop = this.props.parentScreen.scrollTop;
+			  scrollTop = this.props.parentScreen.scrollTop,
+			  offsetID = (this.state.comments && this.state.comments.length) ? this.state.comments.slice(-1)[0].id : (this.props.comments.length) ? this.props.comments.slice(-1)[0].id : 0;
+
+		if(!offsetID) return;
 
 		client.query({
 			query: gql`
@@ -253,7 +256,7 @@ class App extends Component {
 				id,
 				targetID: this.props.id,
 				limit: options.commentsLimit,
-				offsetID: ((this.state.comments && this.state.comments.length && this.state.comments.filter(io => !io.isManual).slice(-1)[0].id) || (this.props.comments && this.props.comments.length && this.props.comments.slice(-1)[0].id)) || 0
+				offsetID
 			}
 		}).then(({ data: { post: a } }) => {
 			if(!a) return this.props.castError(errorTxt);
@@ -360,7 +363,7 @@ class App extends Component {
 						}
 					</div>
 					{
-						(this.props.commentsInt !== 0) ? (
+						( (!this.state.comments) ? this.props.comments.length : this.state.comments.length ) ? (
 							<div className="rn-feed-mat-item-comments">
 								{
 									(this.state.comments || this.props.comments || []).map(({ id, image, content, creator, likesInt, isLiked, time }) => (

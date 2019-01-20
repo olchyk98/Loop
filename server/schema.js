@@ -373,14 +373,19 @@ const NotificationType = new GraphQLObjectType({
 		subContent: {
 			type: GraphQLString,
 			async resolve({ pathType, urlID }) {
-				// POST, COMMENT
+				// POST, COMMENT, USER
 
 				let a = await eval({
 					"POST_TYPE": "Post",
-					"COMMENT_TYPE": "Comment"
+					"COMMENT_TYPE": "Comment",
+					"USER_TYPE": "User"
 				}[pathType]).findById(urlID).select("content");
 
-				return a.content.substring(0, 25); // XXX: Different types can have different fields that can represent content			
+				if(pathType !== "USER_TYPE") {
+					return a.content.substring(0, 25);
+				} else {
+					return "";
+				}
 			}
 		},
 		initID: { type: GraphQLID },
@@ -559,7 +564,7 @@ const ConversationType = new GraphQLObjectType({
 				id: { type: GraphQLID }
 			},
 			async resolve({ name, contributors }, { id }) {
-				if(name || contributors.length > 2) return name || "Group";
+				if(name || contributors.length > 2) return name || "Unnamed conversation";
 
 				let a = await User.findById(
 					(id) ? (
@@ -1326,7 +1331,7 @@ const RootMutation = new GraphQLObjectType({
 							new Notification({
 								influenced: [str(inTargetESE.creatorID)],
 								urlID: str(comment._id),
-								content: `${ a.name } commented your post.`,
+								content: `${ a.name } commented your post`,
 								initID: str(a._id),
 								time: new Date,
 								pathType: "COMMENT_TYPE"
@@ -1375,7 +1380,7 @@ const RootMutation = new GraphQLObjectType({
 							new Notification({
 								influenced: [str(b.creatorID)],
 								urlID: str(b._id),
-								content: `${ a.name } liked your post.`,
+								content: `${ a.name } liked your post`,
 								initID: str(a._id),
 								time: new Date,
 								pathType: "POST_TYPE"
@@ -1426,7 +1431,7 @@ const RootMutation = new GraphQLObjectType({
 							new Notification({
 								influenced: [str(b.creatorID)],
 								urlID: str(b._id),
-								content: `${ a.name } liked your comment.`,
+								content: `${ a.name } liked your comment`,
 								initID: str(a._id),
 								time: new Date,
 								pathType: "COMMENT_TYPE"
@@ -1584,6 +1589,21 @@ const RootMutation = new GraphQLObjectType({
 					});
 
 					b.waitingFriends.push(str(id));
+
+					const notification = await (
+						new Notification({
+							influenced: [str(b._id)],
+							urlID: str(a._id),
+							content: `${ a.name } requested to be your friend`,
+							initID: str(a._id),
+							time: new Date,
+							pathType: "USER_TYPE"
+						})
+					).save();
+
+					pubsub.publish("notificationPublished", {
+						notification
+					});
 				} else if( // Cancel request
 					(
 						!a.friends.includes(str(targetID)) &&
@@ -1668,8 +1688,26 @@ const RootMutation = new GraphQLObjectType({
 					}
 				});
 
-				if(!d) c.push(str(targetID));
-				else c.splice(c.findIndex(io => str(io) === str(targetID)), 1);
+				if(!d) {
+					c.push(str(targetID));
+
+					const notification = await (
+						new Notification({
+							influenced: [str(b._id)],
+							urlID: str(a._id),
+							content: `${ a.name } subscribed to you`,
+							initID: str(a._id),
+							time: new Date,
+							pathType: "USER_TYPE"
+						})
+					).save();
+
+					pubsub.publish("notificationPublished", {
+						notification
+					});
+				} else {
+					c.splice(c.findIndex(io => str(io) === str(targetID)), 1);
+				}
 
 				return b;
 			}
@@ -2062,7 +2100,7 @@ const RootMutation = new GraphQLObjectType({
 				let c = await (
 					new Message({
 						time: new Date,
-						content: `${ a.name } leaved the conversation.`,
+						content: `${ a.name } leaved the conversation`,
 						type: "SYSTEM_MESSAGE",
 						creatorID: "-1",
 						conversationID: str(b._id),

@@ -25,6 +25,7 @@ import links from './links'; // pages routes
 import PhotoModal from './pages/__forall__/photo.modal';
 import NotificationRails from './pages/__forall__/notificationRails';
 import AlertDialog from './pages/__forall__/dialog.modal';
+import { applyTheme } from './theme.runner';
 
 // Needle Route
 const NeedleRoute = ({ path, condition, component: Component, redirect: Redirect, ...settings }) => (
@@ -93,6 +94,10 @@ class App extends Component {
 		super(props);
 
 		this.cookieID = cookieControl.get("authdata");
+	}
+
+	UNSAFE_componentWillMount() {
+		applyTheme();
 	}
 
 	render() {

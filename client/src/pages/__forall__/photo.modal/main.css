@@ -5,7 +5,7 @@
 	z-index:499;
 	top:0;
 	left:0;
-	background:rgba(0, 0, 0, .75);
+	background:var(--lamp-black-low-high);
 }
 
 .gl-photomodal {
@@ -100,11 +100,11 @@
 	transition:.25s;
 	border-radius:3px;
 	cursor:pointer;
-	color:rgba(255, 255, 255, .75);
+	color:var(--lamp_white-extra-mid);
 }
 
 .gl-photomodal-mg-controls-btn:hover {
-	background:rgba(255, 255, 255, .15);
+	background:var(--lamp_white-low);
 }
 
 .gl-photomodal-mg-controls-btn:active {
@@ -123,7 +123,7 @@
 	flex-shrink:0;
 	display:flex;
 	flex-direction:column;
-	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, .25);
+	box-shadow:0px 0px 5px 0px var(--lamp-black-alm-low);
 }
 
 .gl-photomodal-infoc-account,
@@ -181,14 +181,14 @@
 }
 
 .gl-photomodal-infoc-account-info-date {
-	color:rgba(0, 0, 0, .45);
+	color:var(--lamp-black-mid);
 	font-size:.85em;
 }
 
 .gl-photomodal-infoc-account-closesm {
 	margin-left:auto;
 	font-size:1.05em;
-	color:rgba(0, 0, 0, .85);
+	color:var(--lamp-black-low-high);
 	display:none;
 	position:relative;
 	top:-1px;
@@ -203,7 +203,7 @@
 	display:flex;
 	align-items:center;
 	justify-content:space-around;
-	color:rgba(0, 0, 0, .9);
+	color:var(--lamp-black-high);
 	font-family:"Quicksand";
 	font-weight:400;
 	border-bottom:1px solid var(--defaultborder);

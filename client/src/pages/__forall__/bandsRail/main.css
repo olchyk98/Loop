@@ -27,8 +27,8 @@
 	height:var(--size);
 	width:var(--size);
 	background:#1da1f2;
-	border:1px solid rgba(255, 255, 255, .01);
-	box-shadow:0px 0px 15px -5px rgba(0, 0, 0, .25);
+	border:1px solid var(--lamp_white-extra-low);
+	box-shadow:0px 0px 15px -5px var(--lamp-black-alm-low);
 	display:flex;
 	align-items:center;
 	justify-content:center;
@@ -49,9 +49,9 @@
 	bottom:-7.5px;
 	transform:translate(-50%, 100%);
 	left:50%;
-	box-shadow:0px 0px 15px -5px rgba(0, 0, 0, .15);
-	background:#272727;
-	color:white;
+	box-shadow:0px 0px 15px -5px var(--lamp-black-alme-low);
+	background:var(--lamp-black-stylish);
+	color:var(--lamp_const-white);
 	white-space:pre-wrap;
 	text-align:center;
 	font-size:.85em;

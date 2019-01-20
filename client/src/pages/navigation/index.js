@@ -16,7 +16,8 @@ class NotificationsDockItem extends Component {
 	render() {
 		const link = {
 			"POST_TYPE": links["POSTDISPLAY_PAGE"].absolute + this.props.path,
-			"COMMENT_TYPE": `${ links["POSTDISPLAY_PAGE"].absolute }${ this.props.path }?stc=true`
+			"COMMENT_TYPE": `${ links["POSTDISPLAY_PAGE"].absolute }${ this.props.path }?stc=true`,
+			"USER_TYPE": `${ links["ACCOUNT_PAGE"].absolute }/${ this.props.path }`
 		}[this.props.ptype];
 
 		return(
@@ -162,7 +163,11 @@ class App extends Component {
 				vap = () => {
 					if(_export.users && _export.posts) {
 						this.setState(() => ({
-							searchingData: {..._export}
+							searchingData: {..._export},
+							searchingFlip: {
+								users: _export.users.length <= 7,
+								posts: _export.posts.length <= 5
+							},
 						}))
 					}
 				}

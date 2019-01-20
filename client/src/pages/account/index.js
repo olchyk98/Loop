@@ -848,10 +848,10 @@ class App extends Component {
 	render() {
 		if(!this.state.user) return(
 			<div className="rn rn-account">
-				<img src={ placeholderGIF } alt="placeholder block" className="rn-account-placeholder block" />
-				<img src={ placeholderGIF } alt="placeholder menu" className="rn-account-placeholder menu" />
-				<img src={ placeholderGIF } alt="placeholder articles" className="rn-account-placeholder articles" />
-				<img src={ placeholderGIF } alt="placeholder articles" className="rn-account-placeholder articles" />
+				<img src={ placeholderGIF } alt="placeholder block" className="__placeholder__ rn-account-placeholder block" />
+				<img src={ placeholderGIF } alt="placeholder menu" className="__placeholder__ rn-account-placeholder menu" />
+				<img src={ placeholderGIF } alt="placeholder articles" className="__placeholder__ rn-account-placeholder articles" />
+				<img src={ placeholderGIF } alt="placeholder articles" className="__placeholder__ rn-account-placeholder articles" />
 			</div>
 		);
 
@@ -927,7 +927,7 @@ class App extends Component {
 												onClick={ action }
 												className={ `rn-account-thumb-cover-subfr-btn definp${ (!active) ? "" : " active" }${ (!blocked) ? "" : " blocked" }${ (!loading) ? "" : " loading" }` }>
 												{ (!loading) ? null : (
-													<img src={ placeholderGIF } alt="placeholder" className="rn-account-thumb-cover-subfr-btn-loader" />
+													<img src={ placeholderGIF } alt="placeholder" className="__placeholder__ rn-account-thumb-cover-subfr-btn-loader" />
 												) }
 												{ title }
 											</button>

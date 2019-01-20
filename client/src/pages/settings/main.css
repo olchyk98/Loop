@@ -4,10 +4,6 @@
 }
 
 .rn-settings-isl {
-	box-shadow:0px 0px 15px -7.5px rgba(0, 0, 0, .5);
-}
-
-.rn-settings-isl {
 	--padding:25px;
 	--margin:10px;
 
@@ -17,8 +13,9 @@
 	max-width:calc(100% - 15px);
 	padding:var(--padding);
 	border-radius:5px;
-	background:white;
+	background:var(--lamp_item);
 	display:flex;
+	box-shadow:0px 0px 15px -7.5px var(--lamp-black-extra-mid);
 	flex-direction:column;
 	align-items:flex-start;
 }
@@ -35,7 +32,7 @@
 	font-weight:600;
 	font-family:"Roboto";
 	-webkit-font-smoothing:antialiased;
-	color:black;
+	color:var(--lamp-black-high);
 	font-size:1.5em;
 }
 
@@ -43,7 +40,7 @@
 	margin-top:5px;
 	margin-bottom:5px;
 	font-size:.9em;
-	color:rgba(0, 0, 0, .5);
+	color:var(--lamp-black-extra-mid);
 	font-family:"Gothic A1";
 }
 
@@ -89,7 +86,7 @@
 
 .rn-settings-isl-input-title {
 	font-size:.75em;
-	color:rgba(0, 0, 0, .5);
+	color:var(--lamp-black-extra-mid);
 	font-family:"Gothic A1";
 	font-weight:400;
 	margin-bottom:5px;
@@ -99,7 +96,7 @@
 .rn-settings-isl-input-field {
 	height:40px;
 	width:195px;
-	background:#F8F9FC;
+	background:var(--lamp_white-mid_e-low);
 	border:1px solid var(--defaultborder);
 	position:relative;
 	display:flex;
@@ -131,7 +128,7 @@
 	height:100%;
 	width:100%;
 	font-size:.9em;
-	color:rgba(0, 0, 0, .9);
+	color:var(--lamp-black-high);
 	font-family:"Lato";
 }
 
@@ -145,5 +142,5 @@
 	margin-right:10px;
 	font-weight:500;
 	font-family:"Quicksand";
-	color:rgba(0, 0, 0, .85);
+	color:var(--lamp-black-low-high);
 }

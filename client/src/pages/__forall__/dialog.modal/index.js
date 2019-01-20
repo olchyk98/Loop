@@ -9,7 +9,7 @@ class Hero extends Component {
 
 		return(
 			<Fragment>
-				<div className="rn-notes-editor-closealert__control" onClick={ this.props.onClose } />
+				<div className="rn-notes-editor-closealert__control" onClick={ () => this.props.controlDialog(false, null) } />
 				<div className="rn-notes-editor-closealert">
 					<h3 className="rn-notes-editor-closealert-title">{ this.props.title }</h3>
 					<p className="rn-notes-editor-closealert-content">{ this.props.content }</p>
@@ -31,7 +31,9 @@ const mapStateToProps = ({ session }) => ({
 	active: session.visibleDialog
 });
 
-const mapActionsToProps = {}
+const mapActionsToProps = {
+	controlDialog: (active, data) => ({ type: 'RUN_DIALOG', payload: { active, data } })
+}
 
 export default connect(
 	mapStateToProps,
