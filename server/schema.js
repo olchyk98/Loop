@@ -1695,7 +1695,7 @@ const RootMutation = new GraphQLObjectType({
 						new Notification({
 							influenced: [str(b._id)],
 							urlID: str(a._id),
-							content: `${ a.name } subscribed to you`,
+							content: `${ a.name } subscribed to your updates`,
 							initID: str(a._id),
 							time: new Date,
 							pathType: "USER_TYPE"

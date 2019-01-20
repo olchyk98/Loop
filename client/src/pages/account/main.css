@@ -73,11 +73,11 @@
 	padding-left:var(--padding);
 	padding-right:var(--padding);
 	border-radius:5px;
-	background:var(--lamp_white-mid);
+	background:rgba(0, 0, 0, .55);
 	font-size:.9em;
 	cursor:pointer;
 	justify-content:center;
-	color:var(--lamp-black-high);
+	color:rgba(255, 255, 255, .9)
 }
 
 .rn-account-thumb-cover-edit > * {
@@ -210,7 +210,7 @@
 }
 
 .rn-account-thumb-nav-img-replace > label {
-	color:var(--lamp-black-low-high);
+	color:white;
 	font-size:2em;
 	cursor:pointer;
 	position:relative;

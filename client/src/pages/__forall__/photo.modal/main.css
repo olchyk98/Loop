@@ -5,7 +5,7 @@
 	z-index:499;
 	top:0;
 	left:0;
-	background:var(--lamp-black-low-high);
+	background:rgba(0, 0, 0, .5);
 }
 
 .gl-photomodal {
@@ -74,6 +74,7 @@
 	padding-right:var(--padding);
 	height:auto;
 	flex-wrap:wrap;
+	margin-bottom:5px;
 }
 
 .gl-photomodal-mg-controls-btn > * {
@@ -90,7 +91,7 @@
 
 	padding-left:var(--padding);
 	padding-right:var(--padding);
-	color:white;
+	color:rgba(255, 255, 255, .9);
 	font-family:"Gothic A1";
 	font-size:1em;
 	display:flex;
@@ -100,11 +101,10 @@
 	transition:.25s;
 	border-radius:3px;
 	cursor:pointer;
-	color:var(--lamp_white-extra-mid);
 }
 
 .gl-photomodal-mg-controls-btn:hover {
-	background:var(--lamp_white-low);
+	background:rgba(255, 255, 255, .125);
 }
 
 .gl-photomodal-mg-controls-btn:active {
@@ -119,7 +119,7 @@
 	height:calc(100% - var(--padding));
 	padding:var(--padding);
 	padding-bottom:0;
-	background:white;
+	background:var(--lamp_item);
 	flex-shrink:0;
 	display:flex;
 	flex-direction:column;
@@ -176,7 +176,7 @@
 }
 
 .gl-photomodal-infoc-account-info-name {
-	color:blue;
+	color:var(--lamp-black-high);
 	font-family:"Lato";
 }
 
@@ -214,6 +214,7 @@
 	align-items:center;
 	font-size:1em;
 	cursor:pointer;
+	color:var(--lamp-black-high);
 }
 
 .gl-photomodal-infoc-controls-btn > * {

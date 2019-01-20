@@ -11,7 +11,7 @@ class Hero extends Component {
 	}
 
 	render() {
-		if(!this.props.values) return;
+		if(!this.props.values) return null;
 
 		return(
 			<Fragment>

@@ -7,7 +7,6 @@ import { gql } from 'apollo-boost';
 import { cookieControl } from '../../utils';
 import client from '../../apollo';
 
-import Switch from '../__forall__/switcher';
 import AccountCard from '../__forall__/accountCard';
 import { selectTheme, applyTheme } from '../../theme.runner';
 
@@ -194,10 +193,7 @@ class App extends Component {
 	}
 
 	setDarkMode = value => {
-		selectTheme({
-			true: 'dark',
-			false: 'light'
-		}[value]);
+		selectTheme(value);
 		applyTheme();
 	}
 
@@ -246,10 +242,27 @@ class App extends Component {
 					<span className="rn-settings-isl-title">Design Settings</span>
 					<span className="rn-settings-isl-desc">Here you can customize the external site.</span>
 					<div className="rn-settings-isl-st">
-						<span>Dark Mode</span>
-						<Switch
-							_onChange={ this.setDarkMode }
-						/>
+						<span>Style:</span>
+						<div className="rn-settings-isl-st-slidestyle">
+							{
+								[
+									{
+										name: "Light",
+										label: "light"
+									},
+									{
+										name: "Dark",
+										label: "dark"
+									},
+									{
+										name: "Old glass",
+										label: "glass"
+									}
+								].map((session, index) => (
+									<button key={ index } className="definp rn-settings-isl-st-slidestyle-item" onClick={ () => this.setDarkMode(session.label) }>{ session.name }</button>
+								))
+							}
+						</div>
 					</div>
 				</div>
 			</div>
