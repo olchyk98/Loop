@@ -16,7 +16,8 @@ const icons = {
 	phone: require('./images/phone.svg'),
 	cube: require('./images/cube.svg'),
 	computer: require('./images/computer.svg'),
-	shield: require('./images/shield.svg')
+	shield: require('./images/shield.svg'),
+	friends: require('./images/friends.svg')
 }
 
 class Arrow extends Component {
@@ -163,6 +164,9 @@ class App extends Component {
 			},
 			"NEEDL_STAGE": {
 				background: "rebeccapurple"
+			},
+			"STAYONL_STAGE": {
+				background: "green"
 			},
 		}
 
@@ -406,8 +410,8 @@ class App extends Component {
 						visible={ this.getCurrentStage() === "EASY_STAGE" }
 						>
 						<img className="rn-presentation-view-stage-icon" src={ icons.phone } alt="phone" />
-						<span className="rn-presentation-view-stage-title">Easy to use</span>
-						<span className="rn-presentation-virew-stage-desc">You can easily set up everything that you want without any kind of problems.</span>
+						<span className="rn-presentation-view-stage-title">A social network for your school</span>
+						<span className="rn-presentation-virew-stage-desc">Use your school account to login and start using TunaConnect.</span>
 					</Stage>
 					<Stage
 						isOld={ this.isOldStage("FAST_STAGE") }
@@ -416,7 +420,7 @@ class App extends Component {
 						>
 						<img className="rn-presentation-view-stage-icon" src={ icons.shield } alt="shield" />
 						<span className="rn-presentation-view-stage-title">Fast and Safe</span>
-						<span className="rn-presentation-virew-stage-desc">Secure and high protected storage that you can use for saving your data.</span>
+						<span className="rn-presentation-virew-stage-desc">Security algorithms that will help you to hide your secrets under the lock.</span>
 					</Stage>
 					<Stage
 						isOld={ this.isOldStage("CLEAN_STAGE") }
@@ -424,8 +428,8 @@ class App extends Component {
 						visible={ this.getCurrentStage() === "CLEAN_STAGE" }
 						>
 						<img className="rn-presentation-view-stage-icon" src={ icons.cube } alt="cool design" />
-						<span className="rn-presentation-view-stage-title">Clean design</span>
-						<span className="rn-presentation-virew-stage-desc">Mostly white, clean and beautiful design.</span>
+						<span className="rn-presentation-view-stage-title">Choose your skin</span>
+						<span className="rn-presentation-virew-stage-desc">Different design styles for any tasks.</span>
 					</Stage>
 					<Stage
 						isOld={ this.isOldStage("NEEDL_STAGE") }
@@ -434,7 +438,16 @@ class App extends Component {
 						>
 						<img className="rn-presentation-view-stage-icon" src={ icons.computer } alt="easy modern" />
 						<span className="rn-presentation-view-stage-title">Everything that you need</span>
-						<span className="rn-presentation-virew-stage-desc">Many services that were created to replace exists Twitter and Facebook</span>
+						<span className="rn-presentation-virew-stage-desc">A lot of services for your school. Such as notes and chat.</span>
+					</Stage>
+					<Stage
+						isOld={ this.isOldStage("STAYONL_STAGE") }
+						isNew={ this.isNewStage("STAYONL_STAGE") }
+						visible={ this.getCurrentStage() === "STAYONL_STAGE" }
+						>
+						<img className="rn-presentation-view-stage-icon" src={ icons.friends } alt="easy modern" />
+						<span className="rn-presentation-view-stage-title">More friends</span>
+						<span className="rn-presentation-virew-stage-desc">Tell your friends about TunaConnect to stay on the same wave.</span>
 					</Stage>
 				</div>
 				{
@@ -450,7 +463,7 @@ class App extends Component {
 				<div className={ `rn-presentation-skip${ (!this.state.currDisplay) ? "" : " instage" }` }>
 					<button className="definp" onClick={ () => this.setState({ currDisplay: "LOGIN_FORM" }) }>Log in</button>
 					<span> | </span>
-					<button className="definp" onClick={ () => this.setState({ currDisplay: "" }) }>Preview</button>
+					<button className="definp" onClick={ () => this.setState({ currDisplay: "" }) }>Main</button>
 					<span> | </span>
 					<button className="definp" onClick={ () => this.setState({ currDisplay: "REGISTER_FORM" }) }>Register</button>
 				</div>
