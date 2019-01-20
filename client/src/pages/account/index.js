@@ -138,6 +138,7 @@ class FriendsSearch extends Component {
 class App extends Component {
 	constructor(props) {
 		super(props);
+		document.title = "Account";
 
 		this.state = {
 			stage: "TIMELINE_STAGE", // TIMELINE_STAGE, FRIENDS_STAGE, GALLERY_STAGE, ABOUT_STAGE
@@ -239,7 +240,9 @@ class App extends Component {
 
 			this.setState(() => ({
 				user: a
-			}));
+			}), () => {
+				document.title = `Account | ${ a.name }`;
+			});
 
 			this.fetchableInfPosts = a.posts.length === options.postsTimelineLimit;
 		}).catch(() => {
@@ -1110,7 +1113,7 @@ class App extends Component {
 					</div>
 					<div className={ `rn-account-display-item rn-account-display-gallery iostyle${ (this.state.stage !== "GALLERY_STAGE") ? "" : " visible" }` }>
 						{
-							(!cookieControl.get("authdata")) ? null : (
+							(this.state.user.id !== this.props.userdata.id) ? null : (
 								<div className="rn-account-display-gallery-new">
 									<input
 										type="file"

@@ -151,6 +151,7 @@ class Screen extends Component {
 class App extends Component {
 	constructor(props) {
 		super(props);
+		document.title = "Login";
 
 		this.stages = {
 			"EASY_STAGE": {

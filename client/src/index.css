@@ -14,8 +14,6 @@ html, body {
 	overflow:hidden;
 }
 
-* { transition: .25s; }
-
 .hidden {
 	opacity:0;
 	visibility:hidden;

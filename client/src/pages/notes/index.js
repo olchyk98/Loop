@@ -591,6 +591,7 @@ class NoteEditor extends Component {
 class App extends Component {
 	constructor(props) {
 		super(props);
+		document.title = "Notes";
 
 		this.state = {
 			isNewModal: false,
@@ -649,6 +650,8 @@ class App extends Component {
 			this.setState(() => ({
 				notes: a.notes
 			}));
+
+			document.title = "Notes";
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
@@ -737,6 +740,8 @@ class App extends Component {
 			this.setState(() => ({
 				editorData: a
 			}));
+
+			document.title = `Note | ${ a.title }`;
 		}).catch(() => this.props.castError(errorTxt));
 	}
 

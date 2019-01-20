@@ -72,6 +72,7 @@
 	margin-right:50%;
 	transform:translate(-50%, -50%);
 	transition:all var(--presentation_slidetransition);
+	width:100vw;
 }
 
 .rn-presentation-view-stage.new {
@@ -96,7 +97,7 @@
 .rn-presentation-virew-stage-desc {
 	font-weight:400;
 	font-family:"Quicksand";
-	max-width:90vw;
+	max-width:calc(100vw - 15px);
 	text-align:center;
 }
 
@@ -104,14 +105,14 @@
 	color:white;
 	font-size:1.5em;
 	text-align:center;
-	white-space:nowrap;
+	white-space:inherit;
 }
 
 .rn-presentation-virew-stage-desc {
 	font-size:1.15em;
 	color:var(--lamp_white-alm-full);
 	margin-top:5px;
-	width:150%;
+	width:400px;
 }
 
 .rn-presentation-skip {

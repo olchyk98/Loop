@@ -18,6 +18,7 @@ const options = {
 class App extends Component {
 	constructor(props) {
 		super(props);
+		document.title = "Post";
 
 		this.state = {
 			post: false,
@@ -87,7 +88,9 @@ class App extends Component {
 
 			this.setState(() => ({
 				post: a
-			}));
+			}), () => {
+				document.title = `Post | ${ a.id }`;
+			});
 
 			let aa = new URL(window.location.href).searchParams.get("stc");
 			if(aa === "true") {

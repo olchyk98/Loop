@@ -334,6 +334,7 @@ class App extends Component {
 											let a = document.createElement("a");
 											a.download = "Direct Image";
 											a.href = api.storage + this.state.data.url;
+											a.target = "_blank";
 											a.click();
 										}
 									}

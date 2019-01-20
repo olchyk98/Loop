@@ -233,6 +233,7 @@ class FeedItemPlaceholder extends Component {
 class App extends Component {
 	constructor(props) {
 		super(props);
+		document.title = "Feed";
 
 		this.state = {
 			posts: false,

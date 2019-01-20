@@ -616,6 +616,7 @@ class ConversationSettings extends Component {
 class App extends Component {
 	constructor(props) {
 		super(props);
+		document.title = "Conversations";
 
 		this.state = {
 			stage: "LIST_STAGE", // LIST_STAGE, CHAT_STAGE
@@ -796,6 +797,7 @@ class App extends Component {
 			}), this.scrollEndDialog);
 			this.fetchableDialogMessages = a.messages.length === options.messagesLimit;
 
+			document.title = `Chat | ${ a.name }`;
 			window.history.pushState(null, `Conversation: ${ targetID }`, links["CHAT_PAGE"].absolute + '/' + targetID);
 		}).then(() => {
 			this.dialogSubscription = client.subscribe({

@@ -42,6 +42,7 @@ class Input extends Component {
 class App extends Component {
 	constructor(props) {
 		super(props);
+		document.title = "Settings";
 
 		this.state = {
 			isSubmiting: false,
