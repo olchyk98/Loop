@@ -601,10 +601,16 @@ class App extends Component {
 		}
 
 		this.editorSaves = 0;
+		this.internalMounted = false;
 	}
 
 	componentDidMount() {
+		this.internalMounted = true;
 		this.loadNotesList();
+	}
+
+	componentWillUnmount() {
+		this.internalMounted = false;
 	}
 
 	loadNotesList = () => {
@@ -636,6 +642,8 @@ class App extends Component {
 				contentLimit: 16 // words
 			}
 		}).then(({ data: { user: a } }) => {
+			if(!this.internalMounted) return;
+
 			if(!a) return this.props.castError(errorTxt);
 
 			this.setState(() => ({
@@ -723,6 +731,7 @@ class App extends Component {
 				targetID
 			}
 		}).then(({ data: { note: a } }) => {
+			if(!this.internalMounted) return;
 			if(!a) return this.props.castError(errorTxt);
 
 			this.setState(() => ({

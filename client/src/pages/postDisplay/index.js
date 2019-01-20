@@ -27,12 +27,15 @@ class App extends Component {
 
 		this.scrollTargetCommentsF = null;
 		this.matRef = React.createRef();
+
+		this.internalMounted = false;
 	}
 
 	componentDidMount() {
-		const errorTxt = "We couldn't load this post. Please, try later";
+		this.internalMounted = true;
 
-		const { id } = cookieControl.get("authdata");
+		const errorTxt = "We couldn't load this post. Please, try later",
+			  { id } = cookieControl.get("authdata");
 
 		client.query({
 			query: gql`
@@ -78,6 +81,8 @@ class App extends Component {
 				limitComments: options.limitComments
 			}
 		}).then(({ data: { post: a } }) => {
+			if(!this.internalMounted) return;
+
 			if(!a) return this.props.castError(errorTxt);
 
 			this.setState(() => ({
@@ -90,6 +95,8 @@ class App extends Component {
 			}
 
 		}).then(() => { // Stats // PostType
+			if(!this.internalMounted) return;
+
 			client.subscribe({
 				query: gql`
 					subscription($targetID: ID!) {
@@ -116,6 +123,8 @@ class App extends Component {
 				}
 			});
 		}).then(() => { // Comments // CommentType
+			if(!this.internalMounted) return;
+
 			const { id } = cookieControl.get("authdata");
 
 			client.subscribe({
@@ -185,6 +194,10 @@ class App extends Component {
 		}).catch(() => this.props.castError(errorTxt));
 	}
 
+	componentWillUnmount() {
+		this.internalMounted = false;
+	}
+
 	fetchMoreComments = () => {
 		if(!this.state.fetchableComments || this.state.fetchingComments || !this.state.post) return;
 		// Get new comments, sort by time (client post moves top)
@@ -231,6 +244,7 @@ class App extends Component {
 				offsetID
 			}
 		}).then(({ data: { post: a } }) => {
+			if(!this.internalMounted) return;
 			if(!a) return this.props.castError(errorTxt);
 			if(!a.comments) return;
 

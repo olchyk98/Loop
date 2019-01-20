@@ -158,9 +158,13 @@ class App extends Component {
 		this.screenRef = React.createRef();
 		this.screenRefFired = false
 		this.fetchableInfPosts = true;
+
+		this.internalMounted = false;
 	}
 
 	componentDidMount() {
+		this.internalMounted = true;
+
 		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't find a user with that id in our library. Please, try again.";
 
@@ -225,6 +229,8 @@ class App extends Component {
 				limitComments: options.postsCommentsLimit
 			}
 		}).then(({ data: { user: a } }) => {
+			if(!this.internalMounted) return;
+
 			if(!a) {
 				this.props.history.push(links["HOME_PAGE"].absolute);
 				this.props.refreshDock();
@@ -241,6 +247,10 @@ class App extends Component {
 			this.props.refreshDock();
 			this.props.castError(errorTxt);
 		});
+	}
+
+	componentWillUnmount() {
+		this.internalMounted = false;
 	}
 
 	fetchTimeline = () => {

@@ -630,9 +630,12 @@ class App extends Component {
 
 		this.dialogDisplayRef = React.createRef();
 		this.conversationsUPSubscription = this.dialogSubscription = this.dialogSettingsSubscription = null;
+
+		this.internalMounted = false;
 	}
 
 	componentDidMount(a) {
+		this.internalMounted = true;
 		let b = this.props.match.params.id;
 
 		if(!b) this.loadConversationsList();
@@ -640,6 +643,7 @@ class App extends Component {
 	}
 
 	componentWillUnmount() {
+		this.internalMounted = false;
 		(this.dialogSubscription && this.dialogSubscription.unsubscribe());
 		(this.dialogSettingsSubscription && this.dialogSettingsSubscription.unsubscribe());
 		(this.conversationsUPSubscription && this.conversationsUPSubscription.unsubscribe());
@@ -682,6 +686,8 @@ class App extends Component {
 				id
 			}
 		}).then(({ data: { user } }) => {
+			if(!this.internalMounted) return;
+
 			if(!user) return this.props.castError(errorTxt);
 
 			this.setState(() => ({
@@ -781,6 +787,8 @@ class App extends Component {
 				limit: options.messagesLimit
 			}
 		}).then(({ data: { createConversation: a } }) => {
+			if(!this.internalMounted) return;
+			
 			if(!a) return this.props.castError(errorTxt);
 
 			this.setState(() => ({
@@ -911,6 +919,8 @@ class App extends Component {
 				offsetID: this.state.dialog.messages.slice(-1)[0].id
 			}
 		}).then(({ data: { conversation: a } }) => {
+			if(!this.internalMounted) return;
+
 			this.setState(() => ({
 				fetchingDialogMessages: false
 			}));

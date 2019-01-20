@@ -243,13 +243,17 @@ class App extends Component {
 		this.screenRef = React.createRef();
 		this.feedSubscription = null;
 		this.fetchablePosts = true;
+
+		this.internalMounted = false;
 	}
 
 	componentDidMount() {
+		this.internalMounted = true;
 		this.fetchPosts();
 	}
 
 	componentWillUnmount() {
+		this.internalMounted = false;
 		(this.feedSubscription && this.feedSubscription.unsubscribe());
 	}
 
@@ -312,6 +316,8 @@ class App extends Component {
 				limitComments: options.postsCommentsLimit
 			}
 		}).then(({ data: { getFeed: a } }) => {
+			if(!this.internalMounted) return;
+
 			if(!a && !offsetID) {
 				this.props.castError(errorTxt);
 				return false;

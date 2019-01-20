@@ -58,9 +58,13 @@ class App extends Component {
 		}
 
 		this.loginVInt = null;
+
+		this.internalMounted = false;
 	}
 
 	componentDidMount() {
+		this.internalMounted = true;
+
 		const { id } = cookieControl.get("authdata"),
 			  errorTxt = "We couldn't connect to the server. Please, check your internet connection."
 
@@ -78,6 +82,7 @@ class App extends Component {
 				id
 			}
 		}).then(({ data: { user } }) => {
+			if(!this.internalMounted) return;
 			if(!user) return this.props.castError(errorTxt);
 
 			this.setState(() => ({
@@ -86,6 +91,10 @@ class App extends Component {
 				userName: user.name
 			}));
 		}).catch(() => this.props.castError(errorTxt));
+	}
+
+	componentWillUnmount() {
+		this.internalMounted = false;
 	}
 
 	setValue = (stage, value) => {
@@ -133,6 +142,8 @@ class App extends Component {
 						login, password, name
 					}
 				}).then(({ data: { settingProfile: a } }) => {
+					if(!this.internalMounted) return;
+
 					this.setState(() => ({
 						isSubmiting: false
 					}));
